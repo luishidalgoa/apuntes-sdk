@@ -65,29 +65,17 @@ a.opts-item{text-decoration:none;}
 .seg-btn:hover{background:var(--paper-2);color:var(--ink);}
 .seg-btn.on{background:var(--ink);color:var(--paper);}
 
-/* Marcapáginas de tela: cinta de paja trenzada que cuelga desde arriba de la
-   página hasta el artículo marcado, con cola de milano en la punta. La textura
-   se pinta UNA vez; el balanceo es solo `transform` (giro alrededor del borde
-   superior), por eso rinde fluido por larga que sea la cinta. */
-.bookmark-ribbon{position:absolute;right:20px;width:34px;z-index:6;padding:0;border:none;background:none;cursor:pointer;
-  transform-origin:top center;will-change:transform;backface-visibility:hidden;
-  clip-path:polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 15px), 0 100%);
-  filter:drop-shadow(0 3px 5px rgba(42,38,32,.35));transition:filter .18s ease;}
+/* Marcapáginas de tela: cinta de paja trenzada con física de cuerda (verlet de
+   vértices). El contorno (banda + cola de milano) es un <path> relleno con la
+   trama; el ribete del color del tema es el stroke del propio contorno, así que
+   sigue las curvas de la cuerda. overflow:visible deja que la cinta ondule
+   fuera de su caja sin recortarse. */
+.bookmark-ribbon{position:absolute;right:12px;width:56px;z-index:6;padding:0;border:none;background:none;cursor:pointer;
+  filter:drop-shadow(0 3px 5px rgba(42,38,32,.32));transition:filter .18s ease;}
 .bookmark-ribbon[hidden]{display:none;}
-.bookmark-ribbon:hover{filter:drop-shadow(0 5px 9px rgba(42,38,32,.45)) brightness(1.04);}
-.br-cloth{position:relative;display:block;width:100%;height:100%;background:#5f4a20;overflow:hidden;}
-.br-weave{position:absolute;inset:0;width:100%;height:100%;display:block;}
-/* manchas suaves de sombra (ruido horneado) sobre la trama, para que no se vea
-   idéntica al repetirse a lo largo de la cinta */
-.br-cloth::before{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.5;
-  background-repeat:repeat;background-size:150px 320px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='320'%3E%3Cfilter id='bn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.013 0.02' numOctaves='3' seed='11' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0.55 0.55 0 -0.62'/%3E%3C/filter%3E%3Crect width='150' height='320' filter='url(%23bn)'/%3E%3C/svg%3E");}
-/* ribete del color del tema en los bordes verticales + sombreado convexo (da
-   volumen de "tubo": brillo a la izquierda, sombra a la derecha) */
-.br-cloth::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--tema-accent) 80%, #000) 0 2.5px, transparent 2.5px calc(100% - 2.5px), color-mix(in srgb, var(--tema-accent) 80%, #000) calc(100% - 2.5px) 100%),
-    linear-gradient(90deg, rgba(255,255,255,.22), rgba(255,255,255,0) 32%, rgba(0,0,0,.12) 74%, rgba(0,0,0,.26));}
+.bookmark-ribbon:hover{filter:drop-shadow(0 4px 8px rgba(42,38,32,.42)) brightness(1.04);}
+.br-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;}
+.br-shape{stroke:var(--tema-accent);stroke-width:2.4;stroke-linejoin:round;paint-order:stroke;}
 
 /* Modo "elegir dónde poner el marcapáginas" */
 body.bookmark-placing #temaContent{cursor:pointer;}

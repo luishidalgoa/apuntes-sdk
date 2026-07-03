@@ -9,11 +9,10 @@ import { config } from '../config.js';
 
 const KEY = 'tai-bookmark';
 
-/* Textura de paja trenzada (SVG): trama DIAGONAL (patternTransform rotate 45),
-   cada hilo con degradado 3D, valles oscuros y sombras en los cruces. Se pinta
-   UNA vez (capa cacheada); la animación es solo transform GPU, sin re-render. */
-const WEAVE_SVG = `<svg class="br-weave" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
-  <defs>
+/* Textura de paja trenzada (defs SVG): trama DIAGONAL (patternTransform rotate
+   45), cada hilo con degradado 3D, valles oscuros y sombras en los cruces. Se
+   usa como relleno del <path> de la cuerda (fill=url(#brStraw)). */
+const WEAVE_DEFS = `
     <linearGradient id="brWarp" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#8a6a2e"/><stop offset=".18" stop-color="#c7a458"/>
       <stop offset=".5" stop-color="#f2e3b6"/><stop offset=".82" stop-color="#c19d52"/>
@@ -41,10 +40,7 @@ const WEAVE_SVG = `<svg class="br-weave" xmlns="http://www.w3.org/2000/svg" pres
           <rect x="1" y="11.6" width="10.5" height="2.6"/>
         </g>
       </g>
-    </pattern>
-  </defs>
-  <rect width="100%" height="100%" fill="url(#brStraw)"/>
-</svg>`;
+    </pattern>`;
 
 export function getBookmark(){
   try{
@@ -84,16 +80,27 @@ export function relTime(ts){
   return d === 1 ? 'ayer' : 'hace ' + d + ' días';
 }
 
-/* ---------- la cinta de tela con física de "cuerda" (muelle por transform) ----------
-   La textura se pinta UNA sola vez (capa estática cacheada). La animación no
-   re-renderiza nada: es solo `transform` (compuesto en GPU), así que va fluida
-   por larga que sea la cinta. Física de péndulo amortiguado:
-     · `off` = desplazamiento horizontal de la PUNTA en px, oscila y se asienta.
-     · el giro es `asin(off / H)` alrededor del borde superior → la punta se
-       mueve SIEMPRE los mismos px oscile lo que oscile la cinta: cuanto más
-       larga (marcador lejano), menor el ángulo, nunca el arco brusco de antes.
-     · un segundo muelle `lag` va por detrás de `off` y su desfase se pinta como
-       `skewX` → la cola "late" con retardo, dando el flexo de cuerda (no rígido). */
+/* ---------- la cinta de tela con física de cuerda (verlet de vértices) ----------
+   16 vértices con gravedad + restricciones de segmento (verlet). El contorno de
+   la cinta (banda + cola de milano) se dibuja como un <path> relleno con la
+   trama; por frame SOLO se re-escribe el atributo `d` (16 puntos), sin capas de
+   ruido ni clip-path (que era el coste que congelaba antes). Al soltar cae y
+   ondula como una cuerda y se asienta recta; en reposo no hay bucle. */
+const R_W = 56, R_CX = 30, R_HW = 14, R_NOTCH = 15, R_N = 16;
+
+/* Contorno de la cinta a partir de los vértices: baja por el borde izquierdo,
+   hace la muesca (cola de milano) en la punta y sube por el derecho. */
+function ribbonPath(pts){
+  const n = pts.length;
+  let d = 'M ' + (pts[0].x - R_HW).toFixed(1) + ' ' + pts[0].y.toFixed(1);
+  for(let i = 1; i < n; i++) d += ' L ' + (pts[i].x - R_HW).toFixed(1) + ' ' + pts[i].y.toFixed(1);
+  const tip = pts[n - 1];
+  d += ' L ' + tip.x.toFixed(1) + ' ' + (tip.y - R_NOTCH).toFixed(1);
+  d += ' L ' + (tip.x + R_HW).toFixed(1) + ' ' + tip.y.toFixed(1);
+  for(let i = n - 2; i >= 0; i--) d += ' L ' + (pts[i].x + R_HW).toFixed(1) + ' ' + pts[i].y.toFixed(1);
+  return d + ' Z';
+}
+
 export function createRibbon(root){
   const wrap = root.querySelector('.wrap');
   const content = wrap && wrap.querySelector('#temaContent');
@@ -105,12 +112,16 @@ export function createRibbon(root){
   ribbon.className = 'bookmark-ribbon';
   ribbon.setAttribute('aria-label', 'Ir a tu marcador');
   ribbon.hidden = true;
-  ribbon.innerHTML = '<span class="br-cloth">' + WEAVE_SVG + '</span>';
+  ribbon.innerHTML = '<svg class="br-svg" xmlns="http://www.w3.org/2000/svg"><defs>' + WEAVE_DEFS + '</defs>'
+    + '<path class="br-shape" fill="url(#brStraw)"/></svg>';
   wrap.appendChild(ribbon);
+  const svg = ribbon.querySelector('.br-svg');
+  const shape = ribbon.querySelector('.br-shape');
 
   let anchorId = null;
   let ro = null;
   let raf = 0;
+  let pts = [];
   let H = 0;
 
   function withinWrapTop(el){
@@ -127,43 +138,62 @@ export function createRibbon(root){
     ribbon.style.top = g.start + 'px';
     ribbon.style.height = g.height + 'px';
     H = g.height;
+    svg.setAttribute('width', R_W);
+    svg.setAttribute('height', g.height);
+    svg.setAttribute('viewBox', '0 0 ' + R_W + ' ' + g.height);
+  }
+  function render(){ shape.setAttribute('d', ribbonPath(pts)); }
+  function straightPts(h){
+    const seg = h / (R_N - 1), out = [];
+    for(let i = 0; i < R_N; i++) out.push({ x: R_CX, y: i * seg, ox: R_CX, oy: i * seg });
+    return out;
   }
 
-  /* Muelle amortiguado: la punta arranca separada (A0 px, siempre la misma) y
-     oscila de vuelta a la vertical. El ángulo se deriva de la longitud viva,
-     así que basta con actualizar H al hacer scroll/resize para que se recalibre. */
-  const A0 = 46;           // amplitud inicial de la punta (px) — fija, acota el arco
-  const K = 0.045, C = 0.11;      // rigidez / amortiguación del péndulo
-  const K2 = 0.05, C2 = 0.14;     // segundo muelle (retardo de la cola → skew)
-  function paint(off, lag, energy){
-    const h = Math.max(60, H);
-    const ang = Math.asin(Math.max(-0.6, Math.min(0.6, off / h)));   // rad; acotado
-    const skew = Math.max(-0.11, Math.min(0.11, (off - lag) * 0.006));// rad; late la cola
-    const sy = 1 - 0.06 * energy;   // desenrolla al caer (leve estiramiento vertical)
-    ribbon.style.transform =
-      'rotate(' + ang.toFixed(4) + 'rad) skewX(' + skew.toFixed(4) + 'rad) scaleY(' + sy.toFixed(4) + ')';
+  /* Verlet: cuerda colgada del vértice 0 (fijo arriba), que cae por gravedad y
+     se estira hasta H con restricciones de segmento (8 iteraciones) y
+     amortiguación → onda de "látigo" que se asienta. */
+  function step(){
+    const seg = H / (R_N - 1);
+    const grav = Math.min(18, Math.max(1, H / 240));
+    for(let i = 1; i < R_N; i++){
+      const p = pts[i];
+      const vx = (p.x - p.ox) * 0.92, vy = (p.y - p.oy) * 0.92;
+      p.ox = p.x; p.oy = p.y;
+      p.x += vx; p.y += vy + grav;
+    }
+    pts[0].x = R_CX; pts[0].y = 0;
+    for(let k = 0; k < 8; k++){
+      for(let i = 0; i < R_N - 1; i++){
+        const a = pts[i], b = pts[i + 1];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy) || 0.001;
+        const diff = (dist - seg) / dist;
+        if(i === 0){ b.x -= dx * diff; b.y -= dy * diff; }
+        else { a.x += dx * diff * 0.5; a.y += dy * diff * 0.5; b.x -= dx * diff * 0.5; b.y -= dy * diff * 0.5; }
+      }
+      pts[0].x = R_CX; pts[0].y = 0;
+    }
   }
   function animate(){
-    let off = A0, vel = 0, lag = A0, lagVel = 0;
+    let frames = 0;
     const loop = () => {
-      vel += -K * off - C * vel;   off += vel;
-      lagVel += -K2 * (lag - off) - C2 * lagVel;   lag += lagVel;
-      paint(off, lag, Math.abs(off) / A0);
-      if(Math.abs(off) > 0.15 || Math.abs(vel) > 0.15 || Math.abs(off - lag) > 0.3){
-        raf = requestAnimationFrame(loop);
-      } else { ribbon.style.transform = ''; raf = 0; }   // en reposo: perfectamente vertical
+      step(); render(); frames++;
+      let moving = 0;
+      for(let i = 1; i < R_N; i++) moving += Math.abs(pts[i].x - pts[i].ox) + Math.abs(pts[i].y - pts[i].oy);
+      if(frames < 240 && moving > 0.4){ raf = requestAnimationFrame(loop); }
+      else { pts = straightPts(H); render(); raf = 0; }   // asentada: recta
     };
     raf = requestAnimationFrame(loop);
   }
 
-  /* Al hacer scroll/resize solo recolocamos la caja (top/H). Si hay una
-     oscilación en curso, el ángulo se recalcula con la H nueva en el próximo
-     frame; si está en reposo, sigue clavada y vertical. */
+  /* Al hacer scroll/resize solo recolocamos la caja; en reposo la cinta queda
+     recta (no re-anima). */
   function reposition(){
     if(!anchorId || ribbon.hidden) return;
     const g = geom();
     if(!g){ hide(); return; }
     applyBox(g);
+    if(!raf){ pts = straightPts(H); render(); }
   }
 
   ribbon.addEventListener('click', () => { if(anchorId) revealAnchor(anchorId); });
@@ -175,15 +205,20 @@ export function createRibbon(root){
     if(!g){ hide(); return; }
     applyBox(g);
     if(raf){ cancelAnimationFrame(raf); raf = 0; }
-    if(doAnim && !reduce) animate();
-    else ribbon.style.transform = '';
+    if(doAnim && !reduce){
+      /* arranca "enrollada" arriba: cae y se desenrolla como una cuerda */
+      pts = [];
+      for(let i = 0; i < R_N; i++) pts.push({ x: R_CX, y: i * 1.5, ox: R_CX + Math.sin(i * 0.7) * 2, oy: i * 1.5 });
+      animate();
+    } else {
+      pts = straightPts(H); render();
+    }
     if(!ro){ ro = new ResizeObserver(reposition); ro.observe(content); }
     window.addEventListener('resize', reposition);
   }
   function hide(){
     anchorId = null;
     ribbon.hidden = true;
-    ribbon.style.transform = '';
     if(raf){ cancelAnimationFrame(raf); raf = 0; }
     if(ro){ ro.disconnect(); ro = null; }
     window.removeEventListener('resize', reposition);
