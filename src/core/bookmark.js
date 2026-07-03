@@ -222,21 +222,36 @@ export function createRibbon(root){
     raf = requestAnimationFrame(loop);
   }
 
-  /* Muelle (rebote vertical): la PUNTA cae hasta el artículo, se pasa de largo y
-     rebota arriba/abajo como un peso colgando de un resorte, hasta pararse. No
-     hay balanceo lateral: la cinta sigue recta y solo cambia su longitud L, que
-     es un muelle amortiguado hacia H. El "salto" de caída se acota a ~220px, así
-     el rebote es parecido esté el marcador cerca o lejísimos (sin exagerar). */
-  const DROP = 220, BK = 0.09, BC = 0.14;   // salto de caída · rigidez · amortiguación
-  function animateBounce(){
-    let L = Math.max(0, H - Math.min(H, DROP));   // arranca la punta un poco por encima
-    let vel = 0;
+  /* Yo-yo / desenrollar: la cinta arranca ENROLLADA en espiral (caracol) arriba
+     y se desenrolla cayendo de arriba abajo, lento, hasta quedar recta. La parte
+     ya soltada (0..U) cuelga recta; el resto sigue enrollado en un caracol en la
+     punta que desciende, y se afloja conforme baja. */
+  function coilPts(U){
+    const coilLen = Math.max(0, H - U);              // longitud aún enrollada
+    const coilR = Math.min(24, coilLen * 0.5);       // radio del caracol (se encoge)
+    const turns = Math.min(1.2, coilLen / 140);      // vueltas ~ longitud enrollada
+    const out = [];
+    for(let i = 0; i < R_N; i++){
+      const s = (i / (R_N - 1)) * H;                 // arco-longitud del punto i
+      if(s <= U || coilLen < 1){
+        out.push({ x: R_CX, y: Math.min(s, U) });    // parte recta que cuelga
+      } else {
+        const frac = (s - U) / coilLen;              // 0..1 dentro del caracol
+        const ang = frac * turns * 2 * Math.PI;
+        const rad = coilR * (1 - frac);              // radio decreciente → espiral
+        out.push({ x: R_CX + Math.sin(ang) * rad, y: U + coilR - Math.cos(ang) * rad });
+      }
+    }
+    return out;
+  }
+  function animateUnroll(){
+    let p = 0;                                        // fracción desenrollada
+    pts = coilPts(0); render();                       // arranca todo enrollado arriba
     const loop = () => {
-      const target = H;                            // vivo (por si se hace scroll)
-      vel += (target - L) * BK - vel * BC; L += vel;
-      pts = straightPts(L); render();              // recta; el rebote es vertical
-      if(Math.abs(target - L) > 0.5 || Math.abs(vel) > 0.5){ raf = requestAnimationFrame(loop); }
-      else { pts = straightPts(H); render(); raf = 0; }   // asentada a la longitud justa
+      p += (1 - p) * 0.04;                            // ease-out lento (~2,2 s)
+      pts = coilPts(p * H); render();
+      if(p < 0.995){ raf = requestAnimationFrame(loop); }
+      else { pts = straightPts(H); render(); raf = 0; }
     };
     raf = requestAnimationFrame(loop);
   }
@@ -265,8 +280,8 @@ export function createRibbon(root){
     ribbon.style.transform = '';
     pts = straightPts(H); render();          // la cinta base siempre arranca recta
     if(doAnim && !reduce){
-      if(getBookmarkAnim() === 'muelle'){
-        animateBounce();
+      if(getBookmarkAnim() !== 'cuerda'){
+        animateUnroll();
       } else {
         /* cuerda: onda lateral inicial (1,5 λ que decae hacia la punta) +
            velocidad → ondula flexible; amplitud acotada (no latigazo de lejos). */
