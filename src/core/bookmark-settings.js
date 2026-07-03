@@ -8,7 +8,7 @@ let panel = null;
 
 const ANIMS = [
   { id: 'cuerda', ico: '🪢', title: 'Cuerda', desc: 'Cinta flexible que ondula y se dobla como tela al caer.' },
-  { id: 'muelle', ico: '🎯', title: 'Muelle', desc: 'Péndulo limpio: se balancea de lado y se asienta. Más sobrio y ligero.' }
+  { id: 'muelle', ico: '🪀', title: 'Muelle', desc: 'Rebote vertical: la cinta cae hasta el artículo y rebota arriba/abajo como un resorte, hasta pararse.' }
 ];
 
 function syncActive(){

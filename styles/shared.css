@@ -71,7 +71,6 @@ a.opts-item{text-decoration:none;}
    sigue las curvas de la cuerda. overflow:visible deja que la cinta ondule
    fuera de su caja sin recortarse. */
 .bookmark-ribbon{position:absolute;right:12px;width:56px;z-index:6;padding:0;border:none;background:none;cursor:pointer;
-  transform-origin:top center;will-change:transform;backface-visibility:hidden;
   filter:drop-shadow(0 3px 5px rgba(42,38,32,.32));transition:filter .18s ease;}
 .bookmark-ribbon[hidden]{display:none;}
 .bookmark-ribbon:hover{filter:drop-shadow(0 4px 8px rgba(42,38,32,.42)) brightness(1.04);}

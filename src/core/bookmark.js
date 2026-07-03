@@ -222,23 +222,21 @@ export function createRibbon(root){
     raf = requestAnimationFrame(loop);
   }
 
-  /* Muelle: la cinta (recta) gira/skewa alrededor del borde superior con un
-     péndulo amortiguado. El giro es asin(off/H) → la punta oscila lo MISMO sea
-     cual sea la longitud (acotado, sin latigazo de lejos). Solo `transform`
-     (compuesto en GPU); no re-renderiza el path. */
-  const A0 = 46, SK = 0.045, SC = 0.11, SK2 = 0.05, SC2 = 0.14;
-  function animateSpring(){
-    let off = A0, vel = 0, lag = A0, lagVel = 0;
+  /* Muelle (rebote vertical): la PUNTA cae hasta el artículo, se pasa de largo y
+     rebota arriba/abajo como un peso colgando de un resorte, hasta pararse. No
+     hay balanceo lateral: la cinta sigue recta y solo cambia su longitud L, que
+     es un muelle amortiguado hacia H. El "salto" de caída se acota a ~220px, así
+     el rebote es parecido esté el marcador cerca o lejísimos (sin exagerar). */
+  const DROP = 220, BK = 0.09, BC = 0.14;   // salto de caída · rigidez · amortiguación
+  function animateBounce(){
+    let L = Math.max(0, H - Math.min(H, DROP));   // arranca la punta un poco por encima
+    let vel = 0;
     const loop = () => {
-      vel += -SK * off - SC * vel; off += vel;
-      lagVel += -SK2 * (lag - off) - SC2 * lagVel; lag += lagVel;
-      const h = Math.max(60, H);
-      const ang = Math.asin(Math.max(-0.6, Math.min(0.6, off / h)));
-      const skew = Math.max(-0.11, Math.min(0.11, (off - lag) * 0.006));
-      const sy = 1 - 0.06 * (Math.abs(off) / A0);
-      ribbon.style.transform = 'rotate(' + ang.toFixed(4) + 'rad) skewX(' + skew.toFixed(4) + 'rad) scaleY(' + sy.toFixed(4) + ')';
-      if(Math.abs(off) > 0.15 || Math.abs(vel) > 0.15 || Math.abs(off - lag) > 0.3){ raf = requestAnimationFrame(loop); }
-      else { ribbon.style.transform = ''; raf = 0; }   // reposo: recta y vertical
+      const target = H;                            // vivo (por si se hace scroll)
+      vel += (target - L) * BK - vel * BC; L += vel;
+      pts = straightPts(L); render();              // recta; el rebote es vertical
+      if(Math.abs(target - L) > 0.5 || Math.abs(vel) > 0.5){ raf = requestAnimationFrame(loop); }
+      else { pts = straightPts(H); render(); raf = 0; }   // asentada a la longitud justa
     };
     raf = requestAnimationFrame(loop);
   }
@@ -268,7 +266,7 @@ export function createRibbon(root){
     pts = straightPts(H); render();          // la cinta base siempre arranca recta
     if(doAnim && !reduce){
       if(getBookmarkAnim() === 'muelle'){
-        animateSpring();
+        animateBounce();
       } else {
         /* cuerda: onda lateral inicial (1,5 λ que decae hacia la punta) +
            velocidad → ondula flexible; amplitud acotada (no latigazo de lejos). */
