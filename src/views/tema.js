@@ -27,11 +27,15 @@ function temasDropdownHtml(tema){
             <div class="opts-wrap">
               <button class="btn ghost" id="temasBtn" aria-haspopup="true" aria-expanded="false">Temas</button>
               <div class="opts-pop opts-pop-left" id="temasPop" role="menu" hidden>
-                ${allTemas().map((t, i) => `
+                ${allTemas().map((t, i) => {
+                  // número real del tema (de su `k`, p.ej. "Tema 2 · …"); si no, la posición
+                  const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
+                  return `
                 <a class="opts-item${t === tema ? ' on' : ''}" href="#/tema/${t.id}">
-                  <span class="ti-num">${i + 1}</span>
-                  <span class="ti-body"><span class="ti-title">Tema ${i + 1}</span><span class="ti-desc">${t.titulo}</span></span>
-                </a>`).join('')}
+                  <span class="ti-num">${n}</span>
+                  <span class="ti-body"><span class="ti-title">Tema ${n}</span><span class="ti-desc">${t.titulo}</span></span>
+                </a>`;
+                }).join('')}
               </div>
             </div>`;
 }

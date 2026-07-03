@@ -7,6 +7,13 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.7
+- **Fix**: el desplegable de temas del navbar numeraba por posición (`Tema 1`,
+  `Tema 2`…) en vez del número real del tema. Ahora toma el número de la `k` del
+  manifiesto (p.ej. `"Tema 2 · …"` → `Tema 2`) y cae a la posición solo si no lo
+  encuentra. Retrocompatible: apps con temas 1..N correlativos no cambian.
+  Necesario para asignaturas cuyos temas no empiezan en 1 (p.ej. TAI: temas 2 y 3).
+
 ## v0.1.6
 - **Fix**: destello de cinta recta antes de la animación del marcapáginas. El
   `ResizeObserver` disparaba `reposition()` al colocar y (herencia del rebote)
