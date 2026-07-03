@@ -263,9 +263,9 @@ export function createRibbon(root){
     const g = geom();
     if(!g){ hide(); return; }
     applyBox(g);
-    // muelle: la cinta base es recta siempre (la anima el transform) → re-render.
-    // cuerda: solo re-render en reposo (no pisar la animación de puntos).
-    if(getBookmarkAnim() === 'muelle' || !raf){ pts = straightPts(H); render(); }
+    // en reposo la cinta queda recta; durante la animación (raf activo) NO la
+    // pisamos (el bucle re-renderiza), para no cortar la caída con un frame recto.
+    if(!raf){ pts = straightPts(H); render(); }
   }
 
   ribbon.addEventListener('click', () => { if(anchorId) revealAnchor(anchorId); });
