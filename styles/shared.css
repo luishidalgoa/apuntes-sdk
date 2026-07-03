@@ -130,6 +130,39 @@ body.bookmark-placing #temaContent .art-block:hover{
 .tree::before{content:"";position:absolute;left:9px;top:0;bottom:30px;width:2px;background:linear-gradient(180deg,transparent,var(--rule) 8%,var(--rule) 92%,transparent);}
 .node{position:relative;margin:13px 0;}
 .node::before{content:"";position:absolute;left:-21px;top:36px;width:18px;height:2px;background:var(--rule);}
+
+/* Modo bloques: estilos de las secciones que genera renderSectionsInto /
+   renderArticleBlock. El color viene de --accent (lo fija el contenedor de la
+   app) con caída a --tema-accent para que nunca queden sin color. */
+.art-block{padding:10px 13px;border-bottom:1px solid var(--line);}
+.art-block:last-child{border-bottom:0;}
+.art-block:nth-child(even){background:color-mix(in srgb,var(--accent,var(--tema-accent)) 5%,transparent);}
+.art-block-head{display:flex;align-items:baseline;gap:9px;margin-bottom:6px;}
+.art-num{flex:none;font-family:"Fraunces",serif;font-weight:700;font-size:15px;color:var(--accent,var(--tema-accent));
+    background:none;border:none;padding:0;cursor:pointer;text-decoration-line:underline;text-decoration-style:dotted;
+    text-decoration-color:transparent;transition:text-decoration-color .15s;}
+.art-num:hover{text-decoration-color:var(--accent,var(--tema-accent));}
+.art-title{font-weight:700;font-size:13.5px;color:var(--ink);letter-spacing:-.01em;}
+.apartados{display:flex;flex-direction:column;gap:6px;}
+.apartado{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+.ap-n{flex:none;min-width:20px;text-align:right;font-family:"Fraunces",serif;font-weight:700;font-size:11.5px;color:var(--accent,var(--tema-accent));
+    background:none;border:none;padding:0;cursor:pointer;text-decoration-line:underline;text-decoration-style:dotted;
+    text-decoration-color:transparent;transition:text-decoration-color .15s;}
+.ap-n:hover{text-decoration-color:var(--accent,var(--tema-accent));}
+.ap-txt{flex:1;min-width:180px;}
+.art-block.no-ap .ap-n{display:none;}
+.art-block.no-ap .apartado{gap:0;}
+
+/* Chip de etiqueta especial (lo genera specialTagChip). Base neutra: color por
+   --tema-accent; la app puede recolorearlo por tipo (p.ej. .susp-tag ámbar). */
+.susp-tag{font-family:inherit;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
+    letter-spacing:.02em;border-radius:999px;cursor:pointer;margin-left:4px;vertical-align:middle;transition:.15s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,.08);padding:2px 8px 2px 6px;border:1px solid transparent;
+    color:#fff;background:var(--tema-accent);border-color:color-mix(in srgb,var(--tema-accent) 55%,#000);}
+.susp-tag:hover{filter:brightness(1.07);transform:translateY(-1px);}
+.susp-tag.active{outline:2px solid currentColor;outline-offset:1px;}
+.susp-tag .ico{font-size:10px;line-height:1;}
+.art-block.flash{animation:flashHighlight 1.6s ease;border-radius:8px;}
 .card{--accent:var(--ink-faint);position:relative;background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent);
     border-radius:15px;padding:16px 18px 16px 16px;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease;}
 .card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(42,38,32,.06),0 16px 34px -16px rgba(42,38,32,.28);}
@@ -253,10 +286,10 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--def);font
 .ref-tag{font-family:inherit;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
     letter-spacing:.02em;border-radius:999px;cursor:pointer;margin-left:4px;vertical-align:middle;transition:.15s ease;
     box-shadow:0 1px 2px rgba(0,0,0,.08);padding:1px 7px;border:1px solid transparent;
-    color:var(--cortes);background:color-mix(in srgb,var(--cortes) 12%,#fff);border-color:color-mix(in srgb,var(--cortes) 38%,#fff);}
-.ref-tag:hover{background:color-mix(in srgb,var(--cortes) 22%,#fff);transform:translateY(-1px);}
+    color:var(--tema-accent);background:color-mix(in srgb,var(--tema-accent) 12%,#fff);border-color:color-mix(in srgb,var(--tema-accent) 38%,#fff);}
+.ref-tag:hover{background:color-mix(in srgb,var(--tema-accent) 22%,#fff);transform:translateY(-1px);}
 .ref-tag.active{outline:2px solid currentColor;outline-offset:1px;}
-@keyframes flashHighlight{0%,100%{background:transparent;} 25%,60%{background:color-mix(in srgb,var(--accent,#cf5a52) 30%,transparent);}}
+@keyframes flashHighlight{0%,100%{background:transparent;} 25%,60%{background:color-mix(in srgb,var(--accent,var(--tema-accent)) 30%,transparent);}}
 .art.flash{animation:flashHighlight 1.6s ease;border-radius:8px;}
 #backBtn{position:fixed;right:20px;bottom:20px;z-index:70;background:var(--ink);color:var(--paper);border:none;
     padding:10px 16px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;box-shadow:var(--shadow);
@@ -268,14 +301,14 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--def);font
     box-shadow:var(--shadow),0 20px 40px -20px rgba(42,38,32,.35);padding:16px 18px;z-index:60;
     opacity:0;visibility:hidden;transform:translateX(10px);transition:opacity .18s ease,transform .18s ease,border-color .18s;
     max-height:min(70vh,540px);overflow-y:auto;overflow-x:hidden;}
-#infoPanel.mode-ext{border-color:var(--ext);}
+#infoPanel.mode-ext{border-color:var(--tema-accent);}
 #infoPanel.open{opacity:1;visibility:visible;transform:translateX(0);}
 #infoPanel::before{content:"";position:absolute;left:-8px;top:22px;width:14px;height:14px;background:#fff;
     border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);transform:rotate(45deg);}
-#infoPanel.mode-ext::before{border-color:var(--ext);}
+#infoPanel.mode-ext::before{border-color:var(--tema-accent);}
 #infoPanel .sp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;}
 #infoPanel .sp-title{font-family:"Fraunces",serif;font-weight:700;font-size:15px;color:var(--ink);}
-#infoPanel.mode-ext .sp-title{color:var(--ext);}
+#infoPanel.mode-ext .sp-title{color:var(--tema-accent);}
 #infoPanel .sp-close{cursor:pointer;border:none;background:none;font-size:15px;color:var(--ink-faint);line-height:1;padding:3px;flex:none;}
 #infoPanel .sp-close:hover{color:var(--ink);}
 #infoPanel .sp-body{font-size:13px;color:var(--ink-soft);line-height:1.5;}
@@ -283,7 +316,7 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--def);font
 #infoPanel .sp-row{margin-top:10px;}
 #infoPanel .sp-row:first-child{margin-top:0;}
 #infoPanel .sp-row p{margin:6px 0 0;}
-#infoPanel .sp-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:#f7f1e2;color:var(--ext);}
+#infoPanel .sp-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--tema-accent) 14%,#fff);color:var(--tema-accent);}
 @media (min-width:1301px){
   body.panel-open .wrap{margin-left:auto;margin-right:340px;transition:margin .22s ease;}
 }
