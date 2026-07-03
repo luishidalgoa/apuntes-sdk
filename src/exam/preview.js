@@ -1,0 +1,91 @@
+/* "Ver en el temario" del examen. En los HTML antiguos era un iframe que
+   cargaba el archivo del tema; ahora todo vive en la misma app, así que el
+   modal renderiza el artículo DIRECTAMENTE desde los datos del tema dueño,
+   con resolución cross-tema (p.ej. CE-62 → art. 62 del Tema 1) y degradación
+   clara para artículos fuera del temario (Título Preliminar). */
+import { allTemas } from '../registry.js';
+import { config, anchorId } from '../config.js';
+import { splitKey, buildPanelContent } from '../core/panels.js';
+import { registerLayer } from '../core/modal-stack.js';
+
+let overlay, titleEl, bodyEl, gotoBtn;
+let currentTarget = null;
+
+/* Busca qué tema puede resolver el `articulo` de una pregunta.
+   Devuelve {tema, key} o null si ningún tema lo cubre. */
+export function resolveQuestionRef(q){
+  if(!q.articulo) return null;
+  const key = String(q.articulo);
+  for(const t of allTemas()){
+    const [base] = splitKey(key, t.engine.keySplit);
+    if(t.engine.sections[base]) return { tema: t, key };
+  }
+  /* claves con prefijo de otro tema cuya sección vive en un tema con claves
+     sin prefijo (p.ej. CE-62 → '62' del Tema 1). Los prefijos los declara la app. */
+  for(const prefix of (config().externalPrefixes || [])){
+    if(key.indexOf(prefix) === 0){
+      const plain = key.slice(prefix.length);
+      for(const t of allTemas()){
+        const [base] = splitKey(plain, t.engine.keySplit);
+        if(t.engine.sections[base]) return { tema: t, key: plain };
+      }
+    }
+  }
+  return null;
+}
+
+function anchorFor(tema, key){
+  const [base, ap] = splitKey(key, tema.engine.keySplit);
+  return anchorId(base, ap);
+}
+
+export function openRefPreview(q){
+  const resolved = resolveQuestionRef(q);
+  if(resolved){
+    const { tema, key } = resolved;
+    const content = buildPanelContent(tema.engine, key);
+    const crossNote = (q.temaId && q.temaId !== tema.id)
+      ? '<p><span class="sp-pill">Contenido de ' + tema.titulo + '</span></p>' : '';
+    titleEl.textContent = content.title;
+    bodyEl.innerHTML = crossNote + content.body;
+    currentTarget = '#/tema/' + tema.id + '/' + anchorFor(tema, key);
+    gotoBtn.style.display = '';
+    gotoBtn.setAttribute('href', currentTarget);
+  } else {
+    titleEl.textContent = (q.articulo ? q.articulo + ' · ' : '') + 'fuera del temario actual';
+    bodyEl.innerHTML =
+      '<p><span class="sp-pill">Fuera del esquema</span></p>'
+      + '<p>Este contenido todavía no está desarrollado en ningún Tema del temario.</p>'
+      + (q.explicacion ? ('<p><b>Explicación de la pregunta:</b> ' + q.explicacion + '</p>') : '');
+    currentTarget = null;
+    gotoBtn.style.display = 'none';
+  }
+  overlay.classList.add('open');
+}
+
+export function closeRefPreview(){
+  overlay.classList.remove('open');
+  bodyEl.innerHTML = '';
+}
+
+export function mountRefPreview(shell){
+  shell.insertAdjacentHTML('beforeend', `
+<div id="refPreviewOverlay" role="dialog" aria-label="Vista previa del temario">
+  <div class="ref-preview-card">
+    <div class="ref-preview-head">
+      <span class="ref-preview-title" id="refPreviewTitle">Vista previa</span>
+      <a class="btn small" id="refPreviewGoto" href="#/">Ir al tema →</a>
+      <button class="ref-preview-close" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="ref-preview-body" id="refPreviewBody"></div>
+  </div>
+</div>`);
+  overlay = shell.querySelector('#refPreviewOverlay');
+  titleEl = overlay.querySelector('#refPreviewTitle');
+  bodyEl = overlay.querySelector('#refPreviewBody');
+  gotoBtn = overlay.querySelector('#refPreviewGoto');
+  overlay.querySelector('.ref-preview-close').addEventListener('click', closeRefPreview);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeRefPreview(); });
+  gotoBtn.addEventListener('click', () => closeRefPreview());
+  registerLayer({ isOpen: () => overlay.classList.contains('open'), close: closeRefPreview, priority: 40 });
+}

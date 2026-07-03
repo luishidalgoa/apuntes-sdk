@@ -1,0 +1,29 @@
+.view-hub .wrap{max-width:760px;padding:56px 22px 80px;}
+.view-hub h1{font-size:clamp(32px,5.5vw,50px);}
+.view-hub .lede{margin-bottom:40px;}
+
+/* Tarjeta "seguir donde lo dejaste" (marcador automático) */
+.resume-card{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;margin:-18px 0 26px;
+  padding:13px 16px;border:1px dashed var(--rule);border-radius:14px;background:rgba(255,255,255,.6);
+  transition:.18s ease;}
+.resume-card:hover{background:#fff;border-style:solid;transform:translateY(-1px);box-shadow:var(--shadow);}
+.rc-ico{flex:none;font-size:20px;color:var(--ink-faint);}
+.rc-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+.rc-k{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);}
+.rc-t{font-family:"Fraunces",serif;font-weight:600;font-size:15.5px;color:var(--ink);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rc-close{flex:none;border:none;background:none;font-size:13px;color:var(--ink-faint);cursor:pointer;
+  padding:6px 8px;border-radius:8px;}
+.rc-close:hover{background:var(--paper-2);color:var(--ink);}
+
+.temas{display:flex;flex-direction:column;gap:16px;}
+a.tema-card{display:flex;align-items:center;gap:20px;text-decoration:none;color:inherit;
+  background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:16px;
+  padding:22px 24px;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease;}
+a.tema-card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(42,38,32,.06),0 16px 34px -16px rgba(42,38,32,.28);}
+.tema-num{font-family:"Fraunces",serif;font-weight:700;font-size:34px;color:var(--accent);flex:none;min-width:52px;text-align:center;}
+.tema-body{flex:1;min-width:0;}
+.tema-k{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;}
+.tema-title{font-family:"Fraunces",serif;font-weight:600;font-size:19px;margin:2px 0 4px;}
+.tema-desc{font-size:13.5px;color:var(--ink-soft);line-height:1.5;}
+.tema-arrow{flex:none;font-size:20px;color:var(--ink-faint);}

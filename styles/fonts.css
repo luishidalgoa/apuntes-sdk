@@ -1,0 +1,18 @@
+/* Fuentes variables locales (subset latin, cubre el español). En el build
+   quedan inlinadas como data: URIs → el singleton funciona sin red, a
+   diferencia de los HTML antiguos que dependían del CDN de Google Fonts. */
+@font-face{
+  font-family:'Fraunces';
+  src:url('./fonts/Fraunces-variable.woff2') format('woff2');
+  font-style:normal;font-weight:100 900;font-display:swap;
+}
+@font-face{
+  font-family:'Fraunces';
+  src:url('./fonts/Fraunces-italic-variable.woff2') format('woff2');
+  font-style:italic;font-weight:100 900;font-display:swap;
+}
+@font-face{
+  font-family:'Hanken Grotesk';
+  src:url('./fonts/HankenGrotesk-variable.woff2') format('woff2');
+  font-style:normal;font-weight:100 900;font-display:swap;
+}

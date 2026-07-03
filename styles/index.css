@@ -1,0 +1,11 @@
+/* Punto de entrada de estilos del SDK de apuntes. La app hace:
+     import 'apuntes-sdk/styles';
+     import './palette.css';   // sus acentos de asignatura
+   El orden importa: fuentes + tokens base primero, luego base y componentes.
+   En el build singlefile, los url() de las fuentes quedan inlinados en base64. */
+@import './fonts.css';
+@import './tokens-base.css';
+@import './base.css';
+@import './shared.css';
+@import './exam.css';
+@import './hub.css';

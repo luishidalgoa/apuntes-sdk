@@ -1,0 +1,76 @@
+/* GENERADO del bloque <style> de Examen_TAI.html (vista Examen + preview). */
+.view-examen .wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:48px 22px 0;}
+.view-examen h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(30px,5.5vw,46px);line-height:1.05;margin:0;letter-spacing:-.01em;}
+.view-examen .lede{max-width:560px;margin:14px 0 22px;color:var(--ink-soft);font-size:15.5px;}
+.exam-nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.exam-card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);}
+.exam-body{padding:24px 24px 26px;}
+.exam-setup{text-align:center;}
+.exam-setup p{color:var(--ink-soft);font-size:14.5px;}
+.exam-setup .opts{display:flex;gap:10px;justify-content:center;margin:16px 0 4px;flex-wrap:wrap;}
+.exam-setup-label{font-weight:700;font-size:13px;color:var(--ink);margin:0 0 8px;text-align:left;}
+.exam-temas{display:flex;flex-direction:column;gap:2px;text-align:left;margin:0 auto 6px;max-width:460px;
+    max-height:220px;overflow-y:auto;overflow-x:hidden;padding:6px 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper);}
+.exam-tema-row{display:flex;align-items:center;gap:9px;font-size:13px;padding:5px 0;}
+.exam-tema-row.exam-tema-all{font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px;padding-bottom:8px;}
+.exam-tema-row input{accent-color:var(--ink);width:16px;height:16px;flex:none;cursor:pointer;}
+.exam-tema-row label{flex:1;cursor:pointer;}
+.exam-tema-count{color:var(--ink-faint);font-size:11.5px;flex:none;}
+.exam-setup-warn{color:#a13a33;font-size:12px;margin:0 0 10px;}
+.exam-progress{font-size:12.5px;color:var(--ink-faint);margin-bottom:12px;display:flex;justify-content:space-between;}
+.exam-q{font-family:"Fraunces",serif;font-weight:600;font-size:18px;margin-bottom:18px;line-height:1.35;}
+.exam-opts{display:flex;flex-direction:column;gap:9px;}
+.exam-opt{text-align:left;padding:13px 15px;border-radius:11px;border:1px solid var(--line);background:#fff;
+    cursor:pointer;font-family:inherit;font-size:14.5px;transition:.15s;}
+.exam-opt:hover:not(:disabled){background:var(--paper-2);}
+.exam-opt.correct{background:#e6f5ec;border-color:#7fc79a;color:#1f6b3d;font-weight:600;}
+.exam-opt.incorrect{background:#fdeceb;border-color:#e0938c;color:#a13a33;font-weight:600;}
+.exam-opt:disabled{cursor:default;}
+.exam-feedback{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
+.exam-result{font-family:"Fraunces",serif;font-weight:700;margin:0 0 8px;font-size:16px;}
+.exam-result.ok{color:#1f6b3d;}
+.exam-result.bad{color:#a13a33;}
+.exam-explain{font-size:14px;color:var(--ink-soft);margin:0 0 14px;line-height:1.55;}
+.exam-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+.exam-score{font-family:"Fraunces",serif;font-size:32px;font-weight:700;text-align:center;margin:8px 0 18px;}
+.exam-wrong-head{font-weight:700;font-size:13.5px;margin:0 0 8px;}
+.exam-wrong-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;}
+.exam-wrong-list li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px;padding:9px 12px;
+    border:1px solid var(--line);border-radius:9px;background:var(--paper);}
+.exam-wrong-list li b{color:var(--ink);}
+.exam-wrong-list li .btn{margin-left:auto;}
+.exam-results-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.exam-empty{text-align:center;padding:10px 0 4px;}
+.exam-empty p{color:var(--ink-soft);font-size:14.5px;line-height:1.6;}
+.exam-timer{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.exam-timer-track{flex:1;height:8px;border-radius:999px;background:var(--paper-2);overflow:hidden;}
+.exam-timer-fill{height:100%;border-radius:999px;background:var(--ink);width:100%;transition:width 1s linear,background .3s;}
+.exam-timer-fill.low{background:#a13a33;}
+.exam-timer-n{font-family:"Fraunces",serif;font-weight:700;font-size:13px;color:var(--ink-soft);flex:none;min-width:32px;text-align:right;}
+.exam-ai{margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);}
+.exam-ai-thread{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:280px;overflow-y:auto;overflow-x:hidden;}
+.exam-ai-msg{font-size:13.5px;padding:9px 12px;border-radius:11px;line-height:1.5;}
+.exam-ai-msg.user{background:var(--paper-2);align-self:flex-end;max-width:85%;}
+.exam-ai-msg.assistant{background:#eef5fd;border:1px solid #cfe0f2;max-width:92%;}
+.exam-ai-msg.error{background:#fdeceb;border:1px solid #e0938c;color:#a13a33;max-width:92%;}
+.exam-ai-input-row{display:flex;gap:8px;}
+.exam-ai-input-row input{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:13px;}
+#refPreviewOverlay{position:fixed;inset:0;z-index:70;background:rgba(42,38,32,.62);display:none;
+    align-items:center;justify-content:center;padding:20px;}
+#refPreviewOverlay.open{display:flex;}
+.ref-preview-card{background:var(--paper);border-radius:16px;width:min(96vw,920px);height:min(90vh,920px);
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.5);}
+.ref-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);
+    background:#fff;flex:none;}
+.ref-preview-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;flex:1;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ref-preview-close{border:none;background:none;font-size:17px;cursor:pointer;color:var(--ink-faint);padding:4px 6px;flex:none;}
+.ref-preview-close:hover{color:var(--ink);}
+.ref-preview-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 20px;background:var(--paper);
+    font-size:14px;line-height:1.6;color:var(--ink-soft);}
+.ref-preview-body b{color:var(--ink);}
+.ref-preview-body .sp-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:#f7f1e2;color:var(--ext);}
+.ref-preview-card{height:auto;max-height:min(90vh,920px);}
+@media (max-width:640px){
+  .ref-preview-card{width:100vw;max-height:100vh;border-radius:0;}
+}

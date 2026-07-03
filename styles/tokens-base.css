@@ -1,0 +1,14 @@
+/* Tokens base del SDK (comunes a cualquier asignatura): paper/ink/line/shadow.
+   Las paletas de acento (--t1, --gob, --cortes, …) NO viven aquí: cada app las
+   aporta en su propio palette.css. Así un cambio de color es cosa de la app y
+   un cambio estructural del diseño es cosa del SDK. */
+:root{
+  --paper:#FBF7EF; --paper-2:#F4EEE2;
+  --ink:#2A2620; --ink-soft:#5C564C; --ink-faint:#8B8475;
+  --line:#D9D1C0; --rule:#C7BDA8;
+  --shadow:0 1px 2px rgba(42,38,32,.05), 0 8px 24px -12px rgba(42,38,32,.18);
+
+  /* Acento por defecto: si una app no define paleta, el diseño no se rompe.
+     Las apps sobreescriben --tema-accent por tema (inline en .wrap). */
+  --tema-accent:#6b6459;
+}

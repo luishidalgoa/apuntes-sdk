@@ -1,0 +1,12 @@
+/* Paleta de acento de ESTA asignatura (la demo). El SDK aporta paper/ink/line;
+   aquí van los colores propios. Un tema fija su acento con `accent` en el
+   manifiesto y las tarjetas con la clase .a-<algo>{--accent:var(--x)}. */
+:root{
+  --astro:#e8a13a;   /* naranja sol */
+  --orbita:#3f8fd0;  /* azul planeta */
+}
+.a-astro{ --accent:var(--astro); }
+.a-orbita{ --accent:var(--orbita); }
+
+/* bandas de sección (opcional, mismo patrón que en legislación) */
+.band.b-astro{ border-color:#f0d7ac; background:linear-gradient(135deg,#fdf4e3,#fbf9f3); }
