@@ -82,10 +82,10 @@ export function buildPanelContent(c, key){
     const title = c.external.map[artNum] || ('artículo ' + artNum);
     const anchor = anchorId(artNum, apN);
     return {
-      title: 'Art. ' + num + ' · ' + c.external.label,
+      title: num + ' · ' + c.external.label,
       kind: 'ext',
       body: '<p><span class="sp-pill">Contenido de ' + c.external.label + '</span></p>'
-        + '<p><b>' + title + '</b> forma parte del Título I (' + c.external.label + '), no de este esquema.</p>'
+        + '<p><b>' + title + '</b> vive en ' + c.external.label + ', no en este tema.</p>'
         + '<p><a class="btn small on" href="#/tema/' + c.external.temaId + '/' + anchor + '">→ Abrir en ' + c.external.label + '</a></p>'
     };
   }

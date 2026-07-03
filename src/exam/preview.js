@@ -1,8 +1,7 @@
-/* "Ver en el temario" del examen. En los HTML antiguos era un iframe que
-   cargaba el archivo del tema; ahora todo vive en la misma app, así que el
-   modal renderiza el artículo DIRECTAMENTE desde los datos del tema dueño,
-   con resolución cross-tema (p.ej. CE-62 → art. 62 del Tema 1) y degradación
-   clara para artículos fuera del temario (Título Preliminar). */
+/* "Ver en el temario" del examen: el modal renderiza la sección DIRECTAMENTE
+   desde los datos del tema dueño, con resolución cross-tema vía externalPrefixes
+   (p.ej. una clave con prefijo cuyo contenido vive en otro tema) y degradación
+   clara para secciones fuera del temario. */
 import { allTemas } from '../registry.js';
 import { config, anchorId } from '../config.js';
 import { splitKey, buildPanelContent } from '../core/panels.js';
