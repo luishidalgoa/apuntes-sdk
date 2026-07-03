@@ -88,16 +88,41 @@ export function relTime(ts){
    ondula como una cuerda y se asienta recta; en reposo no hay bucle. */
 const R_W = 56, R_CX = 30, R_HW = 14, R_NOTCH = 15, R_N = 16;
 
-/* Contorno de la cinta a partir de los vértices: baja por el borde izquierdo,
-   hace la muesca (cola de milano) en la punta y sube por el derecho. */
+/* Tramo bézier suave (Catmull-Rom → cúbicas) que pasa por una lista de puntos.
+   Asume que el llamante ya hizo el `M` sobre pp[0]. Es lo que da el aspecto
+   FLEXIBLE: aunque los vértices se muevan poco, la curva se ve como tela, no
+   como una polilínea angular. */
+function bez(pp){
+  let d = '';
+  for(let i = 0; i < pp.length - 1; i++){
+    const p0 = pp[i - 1] || pp[i], p1 = pp[i], p2 = pp[i + 1], p3 = pp[i + 2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ' C ' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1)
+       + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
+  }
+  return d;
+}
+
+/* Contorno de la cinta como banda FLEXIBLE: desplaza cada vértice ±R_HW por la
+   perpendicular a la cuerda (así la banda sigue la curva), baja suave por el
+   borde izquierdo, hace la cola de milano en la punta y sube suave por el
+   derecho. Curvas bézier en ambos bordes → tela que se dobla, no palo. */
 function ribbonPath(pts){
-  const n = pts.length;
-  let d = 'M ' + (pts[0].x - R_HW).toFixed(1) + ' ' + pts[0].y.toFixed(1);
-  for(let i = 1; i < n; i++) d += ' L ' + (pts[i].x - R_HW).toFixed(1) + ' ' + pts[i].y.toFixed(1);
+  const n = pts.length, hw = R_HW, left = [], right = [];
+  for(let i = 0; i < n; i++){
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+    let tx = b.x - a.x, ty = b.y - a.y; const L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L;
+    const nx = -ty, ny = tx;                       // perpendicular unitaria
+    left.push({ x: pts[i].x + nx * hw, y: pts[i].y + ny * hw });
+    right.push({ x: pts[i].x - nx * hw, y: pts[i].y - ny * hw });
+  }
   const tip = pts[n - 1];
-  d += ' L ' + tip.x.toFixed(1) + ' ' + (tip.y - R_NOTCH).toFixed(1);
-  d += ' L ' + (tip.x + R_HW).toFixed(1) + ' ' + tip.y.toFixed(1);
-  for(let i = n - 2; i >= 0; i--) d += ' L ' + (pts[i].x + R_HW).toFixed(1) + ' ' + pts[i].y.toFixed(1);
+  let d = 'M ' + left[0].x.toFixed(1) + ' ' + left[0].y.toFixed(1);
+  d += bez(left);                                  // borde izquierdo (suave)
+  d += ' L ' + tip.x.toFixed(1) + ' ' + (tip.y - R_NOTCH).toFixed(1);   // muesca cola de milano
+  d += ' L ' + right[n - 1].x.toFixed(1) + ' ' + right[n - 1].y.toFixed(1);
+  d += bez(right.slice().reverse());               // borde derecho (suave, invertido)
   return d + ' Z';
 }
 
@@ -154,15 +179,15 @@ export function createRibbon(root){
      amortiguación → onda de "látigo" que se asienta. */
   function step(){
     const seg = H / (R_N - 1);
-    const grav = Math.min(18, Math.max(1, H / 240));
+    const grav = Math.min(11, Math.max(1, H / 300));
     for(let i = 1; i < R_N; i++){
       const p = pts[i];
-      const vx = (p.x - p.ox) * 0.92, vy = (p.y - p.oy) * 0.92;
+      const vx = (p.x - p.ox) * 0.94, vy = (p.y - p.oy) * 0.94;   // menos amortiguación → ondula más
       p.ox = p.x; p.oy = p.y;
       p.x += vx; p.y += vy + grav;
     }
     pts[0].x = R_CX; pts[0].y = 0;
-    for(let k = 0; k < 8; k++){
+    for(let k = 0; k < 4; k++){   // restricciones más flojas → cuerda más flexible, no palo
       for(let i = 0; i < R_N - 1; i++){
         const a = pts[i], b = pts[i + 1];
         let dx = b.x - a.x, dy = b.y - a.y;
@@ -206,9 +231,18 @@ export function createRibbon(root){
     applyBox(g);
     if(raf){ cancelAnimationFrame(raf); raf = 0; }
     if(doAnim && !reduce){
-      /* arranca "enrollada" arriba: cae y se desenrolla como una cuerda */
-      pts = [];
-      for(let i = 0; i < R_N; i++) pts.push({ x: R_CX, y: i * 1.5, ox: R_CX + Math.sin(i * 0.7) * 2, oy: i * 1.5 });
+      /* arranca colgando recta pero con una ONDA lateral (1,5 longitudes de onda
+         que decae hacia la punta) + velocidad inicial → al soltarla ondula y se
+         flexa como tela, en vez de quedarse tiesa. La amplitud se acota (no crece
+         sin límite con la longitud) para que de lejos no dé el latigazo brusco. */
+      pts = straightPts(H);
+      const amp = Math.min(46, H * 0.42);
+      for(let i = 0; i < R_N; i++){
+        const t = i / (R_N - 1);
+        const w = Math.sin(t * Math.PI * 1.5) * amp * (1 - 0.25 * t);
+        pts[i].x += w;
+        pts[i].ox = pts[i].x + w * 0.14;   // velocidad inicial lateral (la onda "viaja")
+      }
       animate();
     } else {
       pts = straightPts(H); render();
