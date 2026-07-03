@@ -54,6 +54,17 @@ export function getBookmark(){
 export function clearBookmark(){ try{ localStorage.removeItem(KEY); }catch(e){} }
 function save(b){ try{ localStorage.setItem(KEY, JSON.stringify(b)); }catch(e){} }
 
+/* Estilo de animación del marcapáginas (ajuste del usuario, persistido):
+   'cuerda' = verlet flexible (por defecto) · 'muelle' = péndulo por transform. */
+const ANIM_KEY = 'tai-bookmark-anim';
+export function getBookmarkAnim(){ try{ return localStorage.getItem(ANIM_KEY) || 'cuerda'; }catch(e){ return 'cuerda'; } }
+export function setBookmarkAnim(v){ try{ localStorage.setItem(ANIM_KEY, v); }catch(e){} }
+
+/* Referencia a la cinta activa (la crea la vista de tema) para que el panel de
+   ajustes pueda re-animarla como vista previa al cambiar de estilo. */
+let activeRibbon = null;
+export function previewBookmarkAnim(){ if(activeRibbon && activeRibbon.anchor) activeRibbon.show(activeRibbon.anchor, { animate: true }); }
+
 /* ancla '<prefix>113-2' o '<prefix>CE-159-3' → etiqueta legible ('Art. 113.2', '159.3') */
 export function anchorLabel(temaId, anchor){
   const prefix = config().anchorPrefix;
@@ -211,6 +222,27 @@ export function createRibbon(root){
     raf = requestAnimationFrame(loop);
   }
 
+  /* Muelle: la cinta (recta) gira/skewa alrededor del borde superior con un
+     péndulo amortiguado. El giro es asin(off/H) → la punta oscila lo MISMO sea
+     cual sea la longitud (acotado, sin latigazo de lejos). Solo `transform`
+     (compuesto en GPU); no re-renderiza el path. */
+  const A0 = 46, SK = 0.045, SC = 0.11, SK2 = 0.05, SC2 = 0.14;
+  function animateSpring(){
+    let off = A0, vel = 0, lag = A0, lagVel = 0;
+    const loop = () => {
+      vel += -SK * off - SC * vel; off += vel;
+      lagVel += -SK2 * (lag - off) - SC2 * lagVel; lag += lagVel;
+      const h = Math.max(60, H);
+      const ang = Math.asin(Math.max(-0.6, Math.min(0.6, off / h)));
+      const skew = Math.max(-0.11, Math.min(0.11, (off - lag) * 0.006));
+      const sy = 1 - 0.06 * (Math.abs(off) / A0);
+      ribbon.style.transform = 'rotate(' + ang.toFixed(4) + 'rad) skewX(' + skew.toFixed(4) + 'rad) scaleY(' + sy.toFixed(4) + ')';
+      if(Math.abs(off) > 0.15 || Math.abs(vel) > 0.15 || Math.abs(off - lag) > 0.3){ raf = requestAnimationFrame(loop); }
+      else { ribbon.style.transform = ''; raf = 0; }   // reposo: recta y vertical
+    };
+    raf = requestAnimationFrame(loop);
+  }
+
   /* Al hacer scroll/resize solo recolocamos la caja; en reposo la cinta queda
      recta (no re-anima). */
   function reposition(){
@@ -218,7 +250,9 @@ export function createRibbon(root){
     const g = geom();
     if(!g){ hide(); return; }
     applyBox(g);
-    if(!raf){ pts = straightPts(H); render(); }
+    // muelle: la cinta base es recta siempre (la anima el transform) → re-render.
+    // cuerda: solo re-render en reposo (no pisar la animación de puntos).
+    if(getBookmarkAnim() === 'muelle' || !raf){ pts = straightPts(H); render(); }
   }
 
   ribbon.addEventListener('click', () => { if(anchorId) revealAnchor(anchorId); });
@@ -230,22 +264,23 @@ export function createRibbon(root){
     if(!g){ hide(); return; }
     applyBox(g);
     if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    ribbon.style.transform = '';
+    pts = straightPts(H); render();          // la cinta base siempre arranca recta
     if(doAnim && !reduce){
-      /* arranca colgando recta pero con una ONDA lateral (1,5 longitudes de onda
-         que decae hacia la punta) + velocidad inicial → al soltarla ondula y se
-         flexa como tela, en vez de quedarse tiesa. La amplitud se acota (no crece
-         sin límite con la longitud) para que de lejos no dé el latigazo brusco. */
-      pts = straightPts(H);
-      const amp = Math.min(46, H * 0.42);
-      for(let i = 0; i < R_N; i++){
-        const t = i / (R_N - 1);
-        const w = Math.sin(t * Math.PI * 1.5) * amp * (1 - 0.25 * t);
-        pts[i].x += w;
-        pts[i].ox = pts[i].x + w * 0.14;   // velocidad inicial lateral (la onda "viaja")
+      if(getBookmarkAnim() === 'muelle'){
+        animateSpring();
+      } else {
+        /* cuerda: onda lateral inicial (1,5 λ que decae hacia la punta) +
+           velocidad → ondula flexible; amplitud acotada (no latigazo de lejos). */
+        const amp = Math.min(46, H * 0.42);
+        for(let i = 0; i < R_N; i++){
+          const t = i / (R_N - 1);
+          const w = Math.sin(t * Math.PI * 1.5) * amp * (1 - 0.25 * t);
+          pts[i].x += w;
+          pts[i].ox = pts[i].x + w * 0.14;
+        }
+        animate();
       }
-      animate();
-    } else {
-      pts = straightPts(H); render();
     }
     if(!ro){ ro = new ResizeObserver(reposition); ro.observe(content); }
     window.addEventListener('resize', reposition);
@@ -257,9 +292,11 @@ export function createRibbon(root){
     if(ro){ ro.disconnect(); ro = null; }
     window.removeEventListener('resize', reposition);
   }
-  function destroy(){ hide(); ribbon.remove(); }
+  function destroy(){ hide(); ribbon.remove(); activeRibbon = null; }
 
-  return { show, hide, destroy, get anchor(){ return anchorId; } };
+  const api = { show, hide, destroy, get anchor(){ return anchorId; } };
+  activeRibbon = api;
+  return api;
 }
 
 /* Fija el marcador en un artículo concreto (elegido por el usuario). */

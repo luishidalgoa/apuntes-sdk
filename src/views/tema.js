@@ -7,6 +7,7 @@ import { bindTabletButton } from '../core/tablet.js';
 import { openGames, closeGames } from '../games/engine.js';
 import { bindDropdown } from '../core/dropdown.js';
 import { createRibbon, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
+import { openBookmarkSettings } from '../core/bookmark-settings.js';
 import { registerLayer } from '../core/modal-stack.js';
 
 const ICONS = {
@@ -16,6 +17,7 @@ const ICONS = {
   exam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
   games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="12" rx="4"/><line x1="8" y1="11" x2="8" y2="15"/><line x1="6" y1="13" x2="10" y2="13"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="18" cy="14" r="1"/></svg>',
   tablet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/></svg>',
+  bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
 
@@ -80,6 +82,7 @@ export const temaViewFactory = {
                 <button class="opts-item" id="toggleAll">${ICONS.all} Desplegar todo</button>
                 <button class="opts-item" id="toggleRepaso">${ICONS.eye} Activar repaso</button>
                 <button class="opts-item" id="toggleTablet">${ICONS.tablet} Modo tablet</button>
+                <button class="opts-item" id="bookmarkSettingsBtn">${ICONS.bookmark} Marcapáginas…</button>
                 <div class="opts-div" aria-hidden="true"></div>
                 <button class="opts-item" id="startGamesBtn">${ICONS.games} Minijuegos</button>
               </div>
@@ -107,6 +110,11 @@ export const temaViewFactory = {
         root.querySelector('#startGamesBtn').addEventListener('click', () => {
           opts.close();
           openGames(tema.engine, tema.games);
+        }, { signal });
+
+        root.querySelector('#bookmarkSettingsBtn').addEventListener('click', () => {
+          opts.close();
+          openBookmarkSettings();
         }, { signal });
 
         /* Marcapáginas de tela: botón 🔖 fijo en la barra. Al pulsarlo se entra

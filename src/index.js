@@ -19,6 +19,7 @@ import { temarioView } from './views/temario.js';
 import { temaViewFactory } from './views/tema.js';
 import { examenViewFactory } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
+import { mountBookmarkSettings } from './core/bookmark-settings.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
 
@@ -34,6 +35,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
   mountPanels(app);
   mountGamesOverlay(app);
   mountRefPreview(app);
+  mountBookmarkSettings(app);
   installEscapeHandler();
   applyTabletMode();
 
@@ -49,3 +51,4 @@ export { esc, CRAYON_FILTERS } from './core/dom.js';
 export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsInto, renderArticleBlock, specialTagChip } from './core/render-tema.js';
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
+export { openBookmarkSettings } from './core/bookmark-settings.js';
