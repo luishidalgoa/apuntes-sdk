@@ -7,6 +7,14 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.8
+- **Nuevo**: "marcar como importante" bloques de contenido. Una estrella ★ en
+  cada tarjeta (`.card`), bloque de sección (`.art-block`) y banda/título
+  (`.band[id]`); al marcar, el bloque se resalta con el acento y el estado se
+  guarda por tema (localStorage `tai-marks`), reaplicándose al re-renderizar.
+  Genérico: en legislación son artículos, secciones o títulos. API:
+  `bindMarks(root, temaId)`, `markButton`, `isMarked`, `toggleMark`, `markedIds`.
+
 ## v0.1.7
 - **Fix**: el desplegable de temas del navbar numeraba por posición (`Tema 1`,
   `Tema 2`…) en vez del número real del tema. Ahora toma el número de la `k` del

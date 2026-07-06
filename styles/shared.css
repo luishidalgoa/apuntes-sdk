@@ -77,6 +77,22 @@ a.opts-item{text-decoration:none;}
 .br-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;}
 .br-shape{stroke:var(--tema-accent);stroke-width:2.4;stroke-linejoin:round;paint-order:stroke;}
 
+/* "Marcar como importante": estrella en cada bloque + resalte del bloque marcado */
+.mark-btn{border:none;background:none;cursor:pointer;padding:2px;margin:0 6px 0 -2px;line-height:0;flex:none;
+  color:var(--ink-faint);opacity:.4;transition:opacity .15s ease,color .15s ease,transform .12s ease;}
+.mark-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;display:block;}
+.mark-btn:hover{opacity:1;color:var(--tema-accent);transform:scale(1.15);}
+.mark-btn.on{opacity:1;color:var(--tema-accent);}
+.mark-btn.on svg{fill:currentColor;}
+/* estrella de banda/título: esquina superior derecha */
+.band{position:relative;}
+.band > .mark-btn{position:absolute;top:12px;right:14px;margin:0;}
+/* bloque marcado: anillo + tinte de acento */
+.card.marked{background:color-mix(in srgb,var(--tema-accent) 7%,#fff);
+  box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--tema-accent) 45%,transparent);}
+.art-block.marked{background:color-mix(in srgb,var(--tema-accent) 9%,transparent);border-radius:8px;}
+.band.marked{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--tema-accent) 50%,transparent);}
+
 /* Panel lateral derecho de ajustes del marcapáginas (abre desde Opciones →
    Marcapáginas). Cajón que entra desde la derecha. */
 .bks-panel{position:fixed;top:0;right:0;height:100%;width:min(340px,90vw);z-index:80;

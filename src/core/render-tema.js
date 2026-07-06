@@ -73,7 +73,8 @@ export function renderCard(ctx, card, cls){
   const detail = hasDetail
     ? '<button class="disclosure"><span class="chev">▸</span> ' + discLabel + '</button><div class="det"><div class="det-inner">' + card.artNums.map(k => renderArtRow(ctx, k)).join('') + '</div></div>'
     : '';
-  return '<div class="node reveal"><div class="card ' + cls + '">'
+  const markId = hasDetail ? card.artNums[0] : card.sig;   // id estable para "marcar importante"
+  return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '">'
     + '<div class="card-head"><div class="body">'
     + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span></div>'
     + '<p class="desc">' + card.desc + '</p>'
@@ -96,6 +97,7 @@ export function renderCardTreesInto(root, ctx, groups){
 /* ---- Interacción común de tarjetas (disclosure, repaso, desplegar todo) ---- */
 export function bindCardInteractions(root, { signal } = {}){
   root.addEventListener('click', (e) => {
+    if(e.target.closest('.mark-btn')) return;   // la estrella de "importante" no despliega/revela
     const d = e.target.closest('.disclosure');
     if(d){ e.stopPropagation(); d.closest('.card').classList.toggle('open'); return; }
     const head = e.target.closest('.card-head');

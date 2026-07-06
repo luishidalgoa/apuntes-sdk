@@ -8,6 +8,7 @@ import { openGames, closeGames } from '../games/engine.js';
 import { bindDropdown } from '../core/dropdown.js';
 import { createRibbon, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
 import { openBookmarkSettings } from '../core/bookmark-settings.js';
+import { bindMarks } from '../core/marks.js';
 import { registerLayer } from '../core/modal-stack.js';
 
 const ICONS = {
@@ -101,6 +102,7 @@ export const temaViewFactory = {
         setTemaContext(tema.engine);
 
         bindCardInteractions(root, { signal });
+        bindMarks(root.querySelector('#temaContent'), tema.id, { signal });   // ★ marcar importante
         bindToggleAll(root.querySelector('#toggleAll'), root, { signal });
         bindRepaso(root.querySelector('#toggleRepaso'), root, { signal });
         bindRefModeSegment(root.querySelector('.seg'), { signal });
@@ -173,6 +175,7 @@ export const temaViewFactory = {
         content.addEventListener('click', (e) => {
           if(!placing) return;
           if(e.target.closest('.disclosure')) return;   // dejar desplegar/plegar para navegar
+          if(e.target.closest('.mark-btn')) return;      // la estrella no coloca marcapáginas
           const anchor = anchorFromClick(e.target);
           if(!anchor) return;
           e.preventDefault();

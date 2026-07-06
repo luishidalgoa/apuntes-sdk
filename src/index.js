@@ -52,3 +52,4 @@ export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsI
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
 export { openBookmarkSettings } from './core/bookmark-settings.js';
+export { bindMarks, markButton, isMarked, toggleMark, markedIds } from './core/marks.js';
