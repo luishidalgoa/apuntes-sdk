@@ -7,6 +7,17 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.9
+- **Nuevo**: motor de **infografías de cierre** de título/sección, data-driven.
+  `renderInfographic(spec)` / `renderInfographicInto(el, spec)` montan un recap
+  visual (cabecera con ilustración SVG propia + bloques tipados: `attrs`,
+  `icons`, `steps`, `flows`, `banner`) teñido por `--info-accent` (cae a
+  `--tema-accent`). Catálogo de iconos de línea `INFO_ICONS` (ampliable con SVG
+  en crudo por ítem) y separador de `flows` configurable (`card.sep`, por
+  defecto `→`). CSS nuevo `styles/infographic.css`. En legislación se usa para
+  una infografía por título al final de cada tema (Título I, Corona, Cortes,
+  TC, Defensor, Gobierno y relaciones con las Cortes).
+
 ## v0.1.8
 - **Nuevo**: "marcar como importante" bloques de contenido. Una estrella ★ en
   cada tarjeta (`.card`), bloque de sección (`.art-block`) y banda/título

@@ -53,3 +53,4 @@ export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
 export { openBookmarkSettings } from './core/bookmark-settings.js';
 export { bindMarks, markButton, isMarked, toggleMark, markedIds } from './core/marks.js';
+export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';

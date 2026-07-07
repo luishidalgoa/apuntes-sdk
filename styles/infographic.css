@@ -1,0 +1,78 @@
+/* Infografía de cierre de título (data-driven, ver src/core/infographic.js).
+   Se tiñe con --info-accent (lo fija el spec inline en .info); si no viene,
+   cae a --tema-accent. Los tonos derivados salen por color-mix, así una sola
+   variable define todo el color de la ficha. */
+.info{
+  --acc:var(--info-accent, var(--tema-accent));
+  --acc-soft:color-mix(in srgb, var(--acc) 13%, var(--paper));
+  --acc-deep:color-mix(in srgb, var(--acc) 68%, #16092c);
+  max-width:860px; margin:40px auto 12px;
+  background:var(--paper); border:1px solid var(--rule); border-radius:16px;
+  box-shadow:var(--shadow); overflow:hidden; color:var(--ink);
+}
+.info-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.info-topbar{height:5px;background:linear-gradient(90deg, var(--acc), var(--acc-deep))}
+.info-pad{padding:28px 32px 32px}
+@media(max-width:560px){ .info-pad{padding:22px 18px 24px} }
+
+.info-head{text-align:center}
+.info-illus{margin:0 auto 6px;line-height:0}
+.info-illus svg{display:block;margin:0 auto}
+.info-eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc-deep);font-weight:700}
+.info-title{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(24px,4vw,31px);line-height:1.1;margin:5px 0 4px;letter-spacing:-.01em;color:var(--ink)}
+.info-sub{color:var(--ink-soft);font-size:13.5px}
+.info-sub b{color:var(--ink);font-weight:600}
+
+.info-rule{height:1px;background:var(--line);margin:20px 0}
+
+.info-sech{display:flex;align-items:baseline;gap:10px;margin:2px 0 13px}
+.info-sech .info-n{font-family:"Fraunces",serif;color:var(--acc);font-size:15px;font-weight:600}
+.info-sech h4{font-family:"Fraunces",serif;font-weight:600;font-size:18px;margin:0;letter-spacing:-.01em;color:var(--ink)}
+.info-sech .info-art{margin-left:auto;font-size:11.5px;color:var(--ink-faint);letter-spacing:.02em;white-space:nowrap}
+
+/* atributos (chips) */
+.info-attrs{display:flex;flex-wrap:wrap;gap:8px}
+.info-chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--ink-soft)}
+.info-chip b{color:var(--ink);font-weight:600}
+.info-chip.hi{background:var(--acc-soft);border-color:transparent;color:var(--acc-deep)}
+.info-chip.hi b{color:var(--acc-deep)}
+
+/* rejilla de funciones (icono + etiqueta) */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
+.info-tile{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.info-ico{flex:0 0 auto;width:34px;height:34px;display:grid;place-items:center;background:var(--acc-soft);border-radius:9px}
+.info-ico svg{width:20px;height:20px;fill:none;stroke:var(--acc-deep);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.info-tile>span:last-child{font-size:12.8px;line-height:1.25;color:var(--ink)}
+.info-tile sup{color:var(--acc);font-weight:700}
+.info-foot{font-size:11px;color:var(--ink-faint);margin-top:9px;line-height:1.5}
+.info-foot sup{color:var(--acc);font-weight:700}
+
+/* escalones numerados (orden/criterios) */
+.info-steps{display:flex;flex-wrap:wrap;gap:8px}
+.info-step{flex:1 1 130px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px;position:relative}
+.info-num{position:absolute;top:-9px;left:11px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.info-step-t{font-weight:600;font-size:12.8px;margin-top:3px;color:var(--ink)}
+.info-step-d{font-size:11px;color:var(--ink-faint);margin-top:2px}
+.info-heir{margin-top:11px;display:flex;align-items:center;gap:10px;background:var(--acc-soft);border-radius:11px;padding:10px 14px;font-size:12.8px;color:var(--acc-deep)}
+.info-heir svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--acc-deep);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.info-heir b{font-weight:700}
+
+/* flujos en dos fichas (regencia/tutela) */
+.info-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){ .info-two{grid-template-columns:1fr} }
+.info-mini{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.info-mh{display:flex;align-items:center;gap:8px;font-family:"Fraunces",serif;font-weight:600;font-size:15px;margin-bottom:7px;color:var(--ink)}
+.info-mh svg{width:18px;height:18px;fill:none;stroke:var(--acc-deep);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.info-flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px}
+.info-flow .info-b{background:var(--paper-2);border:1px solid var(--line);border-radius:7px;padding:3px 8px;color:var(--ink)}
+.info-flow .info-arr{color:var(--acc);font-weight:700}
+.info-mini p{margin:8px 0 0;font-size:11.5px;color:var(--ink-faint);line-height:1.45}
+
+/* banner de cierre (refrendo, aviso…) */
+.info-banner{margin-top:20px;display:flex;align-items:flex-start;gap:12px;background:var(--paper-2);border:1px dashed var(--rule);border-radius:12px;padding:13px 15px}
+.info-bk{flex:0 0 auto;width:30px;height:30px;display:grid;place-items:center;background:var(--acc);border-radius:8px}
+.info-bk svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.info-banner>div{font-size:12px;color:var(--ink-soft);line-height:1.45}
+.info-banner b{color:var(--ink);font-weight:600}
+
+.info-tag{margin-top:16px;text-align:center;font-size:11px;letter-spacing:.04em;color:var(--ink-faint)}
