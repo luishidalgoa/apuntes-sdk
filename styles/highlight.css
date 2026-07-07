@@ -1,0 +1,79 @@
+/* Subrayado de texto (ver src/core/highlight.js). El color de cada marca lo
+   inyecta highlight.js en <style id="hlColorStyles"> según la chuleta. */
+
+/* La marca de subrayado */
+mark.hl{
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 .06em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  background: #FFE066;   /* fallback; el real lo pone hlColorStyles por data-c */
+}
+body.hl-on mark.hl{ cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+
+/* Modo activo: el contenido invita a seleccionar texto */
+body.hl-on #temaContent{ cursor: text; }
+body.hl-on #temaContent button{ cursor: pointer; }
+
+/* Botón 🖍️ de la barra en estado activo */
+.btn.icon-btn.on{ background: var(--tema-accent, #6b6459); color: #fff; border-color: transparent; }
+
+/* ---------------- paleta flotante ("chuleta") ---------------- */
+.hl-palette{
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 60; display: flex; align-items: center; gap: 6px;
+  max-width: calc(100vw - 24px); overflow-x: auto;
+  padding: 7px 9px; border-radius: 999px;
+  background: var(--paper, #FBF7EF); border: 1px solid var(--rule, #C7BDA8);
+  box-shadow: 0 6px 24px -8px rgba(42,38,32,.4);
+  animation: hl-pop .16s ease-out;
+}
+@keyframes hl-pop{ from{ opacity: 0; transform: translate(-50%, 8px); } to{ opacity: 1; transform: translate(-50%, 0); } }
+.hl-palette .hl-cap{ font-size: 15px; padding: 0 2px; flex: none; }
+.hl-sw{
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  border: 1px solid var(--line, #D9D1C0); background: #fff; color: var(--ink, #2A2620);
+  border-radius: 999px; padding: 5px 11px 5px 7px; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: .12s;
+}
+.hl-sw .hl-dot{ width: 14px; height: 14px; border-radius: 50%; background: #FFE066; border: 1px solid rgba(0,0,0,.14); flex: none; }
+.hl-sw:hover{ border-color: var(--rule, #C7BDA8); }
+.hl-sw.on{ border-color: var(--ink, #2A2620); box-shadow: 0 0 0 2px rgba(42,38,32,.12); }
+.hl-eico{ font-size: 14px; line-height: 1; }
+.hl-eraser .hl-eico{ filter: grayscale(.15); }
+body.hl-erase #temaContent{ cursor: crosshair; }
+.hl-sep{ width: 1px; align-self: stretch; background: var(--line, #D9D1C0); margin: 2px 2px; flex: none; }
+.hl-act{
+  flex: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line, #D9D1C0); background: #fff; color: var(--ink-soft, #5C564C);
+  font-size: 14px; line-height: 1; display: grid; place-items: center; transition: .12s;
+}
+.hl-act:hover{ border-color: var(--rule, #C7BDA8); color: var(--ink, #2A2620); }
+
+@media (max-width: 560px){
+  .hl-palette{ justify-content: flex-start; }
+  .hl-sw .hl-lbl{ display: none; }      /* en móvil, solo el punto de color */
+  .hl-sw{ padding: 6px; }
+}
+
+/* ---------------- editor de la chuleta (dentro del panel .bks-panel) ---------------- */
+.hl-set-list{ display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.hl-set-row{ display: flex; align-items: center; gap: 8px; }
+.hl-set-color{
+  flex: none; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line, #D9D1C0);
+  border-radius: 8px; background: none; cursor: pointer;
+}
+.hl-set-color::-webkit-color-swatch-wrapper{ padding: 2px; }
+.hl-set-color::-webkit-color-swatch{ border: none; border-radius: 6px; }
+.hl-set-label{
+  flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line, #D9D1C0);
+  border-radius: 8px; font-family: inherit; font-size: 13.5px; color: var(--ink, #2A2620); background: #fff;
+}
+.hl-set-label:focus{ outline: none; border-color: var(--tema-accent, #6b6459); }
+.hl-set-del{
+  flex: none; width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line, #D9D1C0); background: #fff; color: var(--ink-faint, #8B8475); font-size: 13px;
+}
+.hl-set-del:hover{ color: #c0392b; border-color: #e5b3ac; }
+.hl-set-actions{ display: flex; gap: 8px; }

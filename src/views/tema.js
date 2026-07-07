@@ -9,6 +9,8 @@ import { bindDropdown } from '../core/dropdown.js';
 import { createRibbon, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
 import { openBookmarkSettings } from '../core/bookmark-settings.js';
 import { bindMarks } from '../core/marks.js';
+import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
+import { exportBackup, importBackup } from '../core/backup.js';
 import { registerLayer } from '../core/modal-stack.js';
 
 const ICONS = {
@@ -19,7 +21,9 @@ const ICONS = {
   games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="12" rx="4"/><line x1="8" y1="11" x2="8" y2="15"/><line x1="6" y1="13" x2="10" y2="13"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="18" cy="14" r="1"/></svg>',
   tablet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
-  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>'
 };
 
 /* Navegación: enlace al hub + desplegable de temas (sin flechas). */
@@ -74,6 +78,7 @@ export const temaViewFactory = {
           <div class="nav-right">
             <a class="btn action" href="#/examen/${tema.id}">${ICONS.exam} Examen</a>
             <button class="btn icon-btn" id="bookmarkBtn" type="button" title="Marcar aquí" aria-label="Marcar aquí">🔖</button>
+            <button class="btn icon-btn" id="highlightBtn" type="button" title="Subrayar" aria-label="Subrayar" aria-pressed="false">🖍️</button>
             <div class="opts-wrap">
               <button class="btn" id="optsBtn" aria-haspopup="true" aria-expanded="false">${ICONS.gear} Opciones</button>
               <div class="opts-pop" id="optsPop" role="menu" hidden>
@@ -90,6 +95,9 @@ export const temaViewFactory = {
                 <button class="opts-item" id="bookmarkSettingsBtn">${ICONS.bookmark} Marcapáginas…</button>
                 <div class="opts-div" aria-hidden="true"></div>
                 <button class="opts-item" id="startGamesBtn">${ICONS.games} Minijuegos</button>
+                <div class="opts-div" aria-hidden="true"></div>
+                <button class="opts-item" id="exportBackupBtn">${ICONS.download} Exportar copia</button>
+                <button class="opts-item" id="importBackupBtn">${ICONS.upload} Importar copia</button>
               </div>
             </div>
           </div>
@@ -103,6 +111,14 @@ export const temaViewFactory = {
 
         bindCardInteractions(root, { signal });
         bindMarks(root.querySelector('#temaContent'), tema.id, { signal });   // ★ marcar importante
+
+        /* 🖍️ subrayado: reaplica los guardados, engancha selección/quitar y el botón */
+        const hlRoot = root.querySelector('#temaContent');
+        applyHighlightsInto(hlRoot, tema.id);
+        bindHighlighting(hlRoot, tema.id, { signal });
+        const highlightBtn = root.querySelector('#highlightBtn');
+        registerHighlightButton(highlightBtn);
+        highlightBtn.addEventListener('click', () => toggleHighlight(), { signal });
         bindToggleAll(root.querySelector('#toggleAll'), root, { signal });
         bindRepaso(root.querySelector('#toggleRepaso'), root, { signal });
         bindRefModeSegment(root.querySelector('.seg'), { signal });
@@ -121,6 +137,15 @@ export const temaViewFactory = {
         root.querySelector('#bookmarkSettingsBtn').addEventListener('click', () => {
           opts.close();
           openBookmarkSettings();
+        }, { signal });
+
+        root.querySelector('#exportBackupBtn').addEventListener('click', () => {
+          opts.close();
+          exportBackup();
+        }, { signal });
+        root.querySelector('#importBackupBtn').addEventListener('click', () => {
+          opts.close();
+          importBackup({ onDone: () => location.reload() });
         }, { signal });
 
         /* Marcapáginas de tela: botón 🔖 fijo en la barra. Al pulsarlo se entra

@@ -7,6 +7,23 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.11
+- **Nuevo**: herramienta de **subrayado** de texto (🖍️ en la barra del tema).
+  Paleta flotante ("chuleta") con colores y su **significado configurable**;
+  selección **orgánica** (el texto se tiñe del color activo al arrastrar,
+  reemplaza el azul del navegador); **goma** de borrar (arrastrar o clic sobre un
+  subrayado lo quita); recolorear con un clic; ✕/🖍️/Esc para desactivar.
+  Persiste por tema (`tai-highlights`), anclando al `id`/`data-mark-id` más
+  cercano + offsets de carácter (con fallback al contenedor del tema), y se
+  reaplica tras cada render. API: `bindHighlighting`, `applyHighlightsInto`,
+  `toggleHighlight`, `registerHighlightButton`, `getHighlightColors`/`set…`.
+  CSS `highlight.css`.
+- **Nuevo**: **copia de seguridad** de anotaciones (Opciones → Exportar /
+  Importar copia). Vuelca TODAS las claves de localStorage a un JSON que el
+  usuario guarda y restaura en cualquier navegador/dispositivo (sin backend);
+  red de seguridad frente a la fragilidad de localStorage. API: `exportBackup`,
+  `importBackup`, `buildBackup`, `applyBackup`.
+
 ## v0.1.10
 - **Nuevo**: el **examen se elige por TEMA**, no por bloque suelto. El setup
   agrupa los bloques bajo cada tema (checkbox de tema que marca/desmarca todos
