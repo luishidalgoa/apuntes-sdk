@@ -7,6 +7,11 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.12
+- **Fix**: la paleta de subrayado no se cerraba con ✕ / 🖍️ / Esc. Sí se llamaba
+  a desactivar (ponía el atributo `hidden`), pero `.hl-palette{display:flex}`
+  pisaba el `display:none` del atributo. Añadido `.hl-palette[hidden]{display:none}`.
+
 ## v0.1.11
 - **Nuevo**: herramienta de **subrayado** de texto (🖍️ en la barra del tema).
   Paleta flotante ("chuleta") con colores y su **significado configurable**;
