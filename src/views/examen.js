@@ -17,39 +17,94 @@ export const examenViewFactory = {
     /* Agregación (se calcula al montar, cuando el registry ya está poblado):
        cada pregunta conoce su tema de origen. */
     let QUESTIONS = [];
-    let BLOQUE_ORDER = [];
+    let TEMA_GROUPS = [];   // [{ id, label, bloques:[...] }] — solo bloques con preguntas
 
     function clearExamTimer(){ if(examTimer){ clearInterval(examTimer); examTimer = null; } }
 
-    function showExamSetup(){
+    /* initialTema: si viene de la página de un tema (#/examen/<id>), se
+       preseleccionan solo los bloques de ese tema (los demás quedan sin marcar,
+       pero se pueden expandir y añadir). Sin él → todo marcado. */
+    function showExamSetup(initialTema){
       clearExamTimer();
-      const bloques = BLOQUE_ORDER.filter(b => QUESTIONS.some(q => q.bloque === b));
-      const countFor = (b) => QUESTIONS.filter(q => q.bloque === b).length;
+      const esc = s => String(s).replace(/"/g, '&quot;');
+      const countBloque = (b) => QUESTIONS.filter(q => q.bloque === b).length;
+      const countTema = (g) => g.bloques.reduce((s, b) => s + countBloque(b), 0);
+      const hasInitial = initialTema && TEMA_GROUPS.some(g => g.id === initialTema);
+      const total = QUESTIONS.length;
+
+      let idx = 0;
+      const groupsHtml = TEMA_GROUPS.map(g => {
+        const on = !hasInitial || g.id === initialTema;
+        const rows = g.bloques.map(b => {
+          const id = 'exb' + (idx++);
+          return '<div class="exam-bloque-row"><input type="checkbox" class="exam-bloque-cb" id="' + id + '" data-tema="' + esc(g.id) + '" data-bloque="' + esc(b) + '"' + (on ? ' checked' : '') + '/>'
+            + '<label for="' + id + '">' + b + '</label><span class="exam-tema-count">' + countBloque(b) + '</span></div>';
+        }).join('');
+        return '<div class="exam-tema-group" data-tema="' + esc(g.id) + '">'
+          + '<div class="exam-tema-row exam-tema-head">'
+          +   '<input type="checkbox" class="exam-tema-cb" data-tema="' + esc(g.id) + '"' + (on ? ' checked' : '') + '/>'
+          +   '<label>' + g.label + '</label>'
+          +   '<span class="exam-tema-count">' + countTema(g) + '</span>'
+          +   '<button class="exam-tema-toggle" type="button" aria-expanded="false" aria-label="Ver bloques del tema">▸</button>'
+          + '</div>'
+          + '<div class="exam-bloques" hidden>' + rows + '</div>'
+          + '</div>';
+      }).join('');
+      const selCount = hasInitial ? countTema(TEMA_GROUPS.find(g => g.id === initialTema)) : total;
+
       examBody.innerHTML =
         '<div class="exam-setup">'
-        + '<p class="exam-setup-label">¿Qué bloques quieres incluir?</p>'
+        + '<p class="exam-setup-label">¿De qué temas quieres examinarte?</p>'
         + '<div class="exam-temas">'
-        + '<div class="exam-tema-row exam-tema-all"><input type="checkbox" id="examTemaAll" checked/><label for="examTemaAll">Todos los bloques</label></div>'
-        + bloques.map((b, i) =>
-            '<div class="exam-tema-row"><input type="checkbox" class="exam-tema-cb" id="examTema' + i + '" data-bloque="' + b.replace(/"/g, '&quot;') + '" checked/>'
-            + '<label for="examTema' + i + '">' + b + '</label><span class="exam-tema-count">' + countFor(b) + '</span></div>'
-          ).join('')
+        + '<div class="exam-tema-row exam-tema-all"><input type="checkbox" id="examTemaAll"' + (!hasInitial ? ' checked' : '') + '/><label for="examTemaAll">Todos los temas</label><span class="exam-tema-count">' + total + '</span></div>'
+        + groupsHtml
         + '</div>'
         + '<p class="exam-setup-warn" id="examSetupWarn" style="display:none">Selecciona al menos un bloque.</p>'
         + '<p class="exam-setup-label">¿Con temporizador?</p>'
         + '<div class="opts exam-time-opts"><button class="btn" data-timed="0">Sin temporizador</button><button class="btn" data-timed="1">⏱ Con temporizador (45s/pregunta)</button></div>'
         + '<p class="exam-setup-label">¿Cuántas preguntas?</p>'
-        + '<div class="opts"><button class="btn" data-n="10">10</button><button class="btn" data-n="20">20</button><button class="btn" data-n="0">Todas (<span id="examPoolCount">' + QUESTIONS.length + '</span>)</button></div>'
+        + '<div class="opts"><button class="btn" data-n="10">10</button><button class="btn" data-n="20">20</button><button class="btn" data-n="0">Todas (<span id="examPoolCount">' + selCount + '</span>)</button></div>'
         + '</div>';
+
       const allCb = examBody.querySelector('#examTemaAll');
       const temaCbs = [...examBody.querySelectorAll('.exam-tema-cb')];
+      const bloqueCbs = [...examBody.querySelectorAll('.exam-bloque-cb')];
       const poolCountEl = examBody.querySelector('#examPoolCount');
       const warnEl = examBody.querySelector('#examSetupWarn');
       let timedChoice = false;
-      function seleccionados(){ return temaCbs.filter(cb => cb.checked).map(cb => cb.getAttribute('data-bloque')); }
-      function updatePoolCount(){ poolCountEl.textContent = QUESTIONS.filter(q => seleccionados().includes(q.bloque)).length; }
-      allCb.addEventListener('change', () => { temaCbs.forEach(cb => cb.checked = allCb.checked); updatePoolCount(); });
-      temaCbs.forEach(cb => cb.addEventListener('change', () => { allCb.checked = temaCbs.every(c => c.checked); updatePoolCount(); }));
+
+      const seleccionados = () => bloqueCbs.filter(c => c.checked).map(c => c.getAttribute('data-bloque'));
+      const bloquesOf = (id) => bloqueCbs.filter(c => c.getAttribute('data-tema') === id);
+      function syncTema(id){
+        const cbs = bloquesOf(id), t = temaCbs.find(c => c.getAttribute('data-tema') === id);
+        const on = cbs.filter(c => c.checked).length;
+        t.checked = on === cbs.length; t.indeterminate = on > 0 && on < cbs.length;
+      }
+      function syncAll(){
+        const on = bloqueCbs.filter(c => c.checked).length;
+        allCb.checked = on === bloqueCbs.length; allCb.indeterminate = on > 0 && on < bloqueCbs.length;
+      }
+      function updatePoolCount(){ const sel = seleccionados(); poolCountEl.textContent = QUESTIONS.filter(q => sel.includes(q.bloque)).length; }
+
+      TEMA_GROUPS.forEach(g => syncTema(g.id)); syncAll();
+      allCb.addEventListener('change', () => {
+        bloqueCbs.forEach(c => c.checked = allCb.checked);
+        temaCbs.forEach(c => { c.checked = allCb.checked; c.indeterminate = false; });
+        updatePoolCount();
+      });
+      temaCbs.forEach(t => t.addEventListener('change', () => {
+        bloquesOf(t.getAttribute('data-tema')).forEach(c => c.checked = t.checked);
+        t.indeterminate = false; syncAll(); updatePoolCount();
+      }));
+      bloqueCbs.forEach(c => c.addEventListener('change', () => { syncTema(c.getAttribute('data-tema')); syncAll(); updatePoolCount(); }));
+      examBody.querySelectorAll('.exam-tema-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const box = btn.closest('.exam-tema-group').querySelector('.exam-bloques');
+          const open = box.hidden; box.hidden = !open;
+          btn.setAttribute('aria-expanded', String(open)); btn.classList.toggle('open', open);
+        });
+      });
+
       const timeBtns = [...examBody.querySelectorAll('.exam-time-opts button')];
       timeBtns[0].classList.add('on');
       timeBtns.forEach(b => b.addEventListener('click', () => {
@@ -154,25 +209,29 @@ export const examenViewFactory = {
               ).join('') + '</ul>'
             : '<p>¡Sin fallos!</p>')
         + '<div class="exam-results-actions"><button class="btn on" id="examRestartBtn">Repetir examen</button></div></div>';
-      examBody.querySelector('#examRestartBtn').addEventListener('click', showExamSetup);
+      examBody.querySelector('#examRestartBtn').addEventListener('click', () => showExamSetup());
       examBody.querySelectorAll('[data-wrong-idx]').forEach(btn => {
         btn.addEventListener('click', () => openRefPreview(wrongList[parseInt(btn.getAttribute('data-wrong-idx'), 10)]));
       });
     }
 
     return {
-      mount(root){
+      mount(root, route){
         ac = new AbortController();
         QUESTIONS = allTemas().flatMap(t => t.questions.map(q => ({ ...q, temaId: t.id })));
-        BLOQUE_ORDER = allTemas().flatMap(t => t.bloques);
+        TEMA_GROUPS = allTemas().map(t => {
+          const num = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1];
+          return { id: t.id, label: num ? ('Tema ' + num + ' · ' + t.titulo) : (t.titulo || t.id),
+            bloques: (t.bloques || []).filter(b => QUESTIONS.some(q => q.bloque === b)) };
+        }).filter(g => g.bloques.length);
         root.innerHTML = `
       <div class="wrap">
         <p class="eyebrow">${config().eyebrow || ''}</p>
         <h1>Examen</h1>
-        <p class="lede">${config().examLede || 'Banco único con las preguntas de todos los temas. Elige qué bloques entran, con o sin temporizador.'}</p>
+        <p class="lede">${config().examLede || 'Banco único con las preguntas de todos los temas. Elige de qué temas o bloques examinarte, con o sin temporizador.'}</p>
         <div class="exam-nav">
           <a class="btn" href="#/">📚 Temario</a>
-          ${allTemas().map((t, i) => `<a class="btn" href="#/tema/${t.id}">Tema ${i + 1}</a>`).join('\n          ')}
+          ${allTemas().map((t, i) => { const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1); return `<a class="btn" href="#/tema/${t.id}">Tema ${n}</a>`; }).join('\n          ')}
         </div>
         <div class="exam-card">
           <div class="exam-body" id="examBody"></div>
@@ -180,7 +239,7 @@ export const examenViewFactory = {
         <footer>Preguntas de simulacros reales, filtradas por bloque — se van sumando conforme llegan más simulacros.</footer>
       </div>`;
         examBody = root.querySelector('#examBody');
-        showExamSetup();
+        showExamSetup(route && route.temaId);
         return () => {
           clearExamTimer();
           ac.abort();

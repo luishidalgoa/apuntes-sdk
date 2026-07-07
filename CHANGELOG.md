@@ -7,6 +7,17 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.10
+- **Nuevo**: el **examen se elige por TEMA**, no por bloque suelto. El setup
+  agrupa los bloques bajo cada tema (checkbox de tema que marca/desmarca todos
+  sus bloques, con estado *indeterminado* si hay selección parcial) y cada tema
+  es **expandible** para elegir bloques concretos. Además, al entrar al examen
+  desde la página de un tema (`#/examen/<temaId>`) se **preselecciona solo ese
+  tema** (los demás quedan sin marcar pero se pueden añadir). Router: `#/examen`
+  admite `/<temaId>`; el enlace "Examen" de la barra del tema lo incluye. La
+  etiqueta de tema usa su número real (de la `k`). Genérico (agrupa por los
+  `bloques` de cada tema del registry).
+
 ## v0.1.9
 - **Nuevo**: motor de **infografías de cierre** de título/sección, data-driven.
   `renderInfographic(spec)` / `renderInfographicInto(el, spec)` montan un recap

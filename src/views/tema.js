@@ -72,7 +72,7 @@ export const temaViewFactory = {
             ${temasDropdownHtml(tema)}
           </div>
           <div class="nav-right">
-            <a class="btn action" href="#/examen">${ICONS.exam} Examen</a>
+            <a class="btn action" href="#/examen/${tema.id}">${ICONS.exam} Examen</a>
             <button class="btn icon-btn" id="bookmarkBtn" type="button" title="Marcar aquí" aria-label="Marcar aquí">🔖</button>
             <div class="opts-wrap">
               <button class="btn" id="optsBtn" aria-haspopup="true" aria-expanded="false">${ICONS.gear} Opciones</button>
