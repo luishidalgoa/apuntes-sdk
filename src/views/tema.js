@@ -12,7 +12,7 @@ import { bindMarks } from '../core/marks.js';
 import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
 import { exportBackup, importBackup } from '../core/backup.js';
 import { registerLayer } from '../core/modal-stack.js';
-import { openSearch } from '../core/search-ui.js';
+import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 
 const ICONS = {
   all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
@@ -76,8 +76,12 @@ export const temaViewFactory = {
             <a class="btn ghost" href="#/">📚 Temario</a>
             ${temasDropdownHtml(tema)}
           </div>
+          <button class="nav-search search-trigger" id="searchBtn" type="button" title="Buscar en el temario (⌘K / /)" aria-label="Buscar en el temario">
+            <span class="hs-ico">${SEARCH_ICON}</span>
+            <span class="hs-txt">Buscar en el temario…</span>
+            <span class="st-key">⌘K</span>
+          </button>
           <div class="nav-right">
-            <button class="btn icon-btn" id="searchBtn" type="button" title="Buscar en el temario (⌘K / /)" aria-label="Buscar en el temario">🔍</button>
             <a class="btn action" href="#/examen/${tema.id}">${ICONS.exam} Examen</a>
             <button class="btn icon-btn" id="bookmarkBtn" type="button" title="Marcar aquí" aria-label="Marcar aquí">🔖</button>
             <button class="btn icon-btn" id="highlightBtn" type="button" title="Subrayar" aria-label="Subrayar" aria-pressed="false">🖍️</button>

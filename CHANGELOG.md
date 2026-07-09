@@ -7,6 +7,15 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.15
+- **Cambio (UI)**: el acceso al buscador en la **barra del tema** pasa de un
+  icono 🔍 suelto a una **barra de búsqueda** (caja tipo input con lupa,
+  «Buscar en el temario…» y atajo `⌘K`), **centrada** entre los dos grupos de
+  navegación (izquierda: Temario/Temas · derecha: Examen/marcar/subrayar/
+  Opciones), que reparten peso a partes iguales. Sigue abriendo el mismo overlay.
+  En pantallas estrechas la barra baja a una **fila propia** a lo ancho. Coherente
+  con la barra de búsqueda del hub. Cambios en `views/tema.js` y `styles/search.css`.
+
 ## v0.1.14
 - **Fix (rendimiento)**: el **precalentado del índice** del buscador ya no
   bloquea el hilo principal al arrancar. Antes se construía el índice entero de
