@@ -21,6 +21,7 @@ import { examenViewFactory } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountBookmarkSettings } from './core/bookmark-settings.js';
 import { mountHighlight } from './core/highlight.js';
+import { mountSearch } from './core/search-ui.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
 
@@ -38,6 +39,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
   mountRefPreview(app);
   mountBookmarkSettings(app);
   mountHighlight(app);
+  mountSearch(app);
   installEscapeHandler();
   applyTabletMode();
 
@@ -59,3 +61,5 @@ export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/inf
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';
 export { exportBackup, importBackup, buildBackup, applyBackup } from './core/backup.js';
+export { mountSearch, openSearch, closeSearch, SEARCH_ICON } from './core/search-ui.js';
+export { buildIndex, invalidateIndex, searchContent } from './core/content-index.js';

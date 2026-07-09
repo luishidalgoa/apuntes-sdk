@@ -7,6 +7,24 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.13
+- **Nuevo**: **buscador global** genérico (🔍 en la barra del tema y en el hub,
+  atajo `⌘/Ctrl+K` y `/`). Aprovecha la **estructura de contenido común** del
+  SDK (bandas `.band`, tarjetas `.node/.card` con `.name`/`.desc`) que producen
+  todas las apps: renderiza cada tema en un contenedor **desmontado** (sin cargar
+  imágenes ni forzar layout) y saca un índice de "puntos" buscables con su tema,
+  número de esquema y ancla para deep-link. 100% agnóstico de la asignatura, así
+  que Legislación (u otras) lo heredan sin tocar contenido.
+  - Búsqueda por **concepto** (título y cuerpo), por **número de punto** (5.9,
+    4.3…) y con **tolerancia a erratas** (Jaro-Winkler: «djistrak»→Dijkstra).
+  - Overlay tipo paleta de comandos: resultados rankeados con Tema · nº · título
+    · migaja · fragmento; teclado ↑↓/↵/Esc; clic o ↵ salta al punto
+    (`#/tema/<id>/<ancla>`, abre el desplegable si el ancla está dentro).
+  - El índice se **precalienta** en inactividad tras cargar la app → 1ª búsqueda
+    instantánea. API: `openSearch`, `searchContent`, `buildIndex`, `invalidateIndex`.
+- **Módulos**: `core/content-index.js` (índice+scorer), `core/search-ui.js`
+  (overlay), `styles/search.css`. Montado en `createApp` (`mountSearch`).
+
 ## v0.1.12
 - **Fix**: la paleta de subrayado no se cerraba con ✕ / 🖍️ / Esc. Sí se llamaba
   a desactivar (ponía el atributo `hidden`), pero `.hl-palette{display:flex}`

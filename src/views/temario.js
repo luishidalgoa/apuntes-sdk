@@ -2,6 +2,7 @@ import { allTemas, temaById } from '../registry.js';
 import { esc } from '../core/dom.js';
 import { config } from '../config.js';
 import { getBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
+import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 
 /* Hub: lista de temas generada del registry + acceso al examen + tarjeta
    "seguir donde lo dejaste" (marcador de lectura). Textos desde appConfig. */
@@ -31,6 +32,11 @@ export const temarioView = {
         <p class="eyebrow">${cfg.eyebrow || ''}</p>
         <h1>${cfg.title || 'Temario'}</h1>
         <p class="lede">${cfg.lede || 'Un esquema navegable por cada tema: tarjetas, referencias cruzadas, examen y minijuegos.'}</p>
+        <button class="hub-search search-trigger" id="hubSearchBtn" type="button">
+          <span class="hs-ico">${SEARCH_ICON}</span>
+          <span class="hs-txt">Buscar un concepto o un punto del temario…</span>
+          <span class="st-key">⌘K</span>
+        </button>
         ${resumeCardHtml()}
         <div class="temas">
           ${allTemas().map((t, i) => `
@@ -56,6 +62,8 @@ export const temarioView = {
         </div>
         ${cfg.footer ? `<footer>${cfg.footer}</footer>` : ''}
       </div>`;
+
+    root.querySelector('#hubSearchBtn').addEventListener('click', openSearch);
 
     const dismiss = root.querySelector('#resumeDismiss');
     if(dismiss){
