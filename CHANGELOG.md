@@ -7,6 +7,14 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.16
+- **Mejora (UI)**: el **desplegable de Temas** muestra cada tema como
+  «Tema N — Título» y, debajo, sus **bloques/secciones** (las labels de sus
+  `chips`) separados por «·» y con **ellipsis** si no caben. Antes solo se veía
+  el título («Estructura de datos») aunque el tema tuviera varios bloques.
+  Cambio en `views/tema.js` (genérico: usa los chips del manifiesto; si un tema
+  no tiene chips, cae a su `descripcion`).
+
 ## v0.1.15
 - **Cambio (UI)**: el acceso al buscador en la **barra del tema** pasa de un
   icono 🔍 suelto a una **barra de búsqueda** (caja tipo input con lupa,
