@@ -236,6 +236,15 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
 @media (max-width:560px){
   .controls{position:static;}
   .band .rom{font-size:30px;min-width:42px;}
+  /* Ergonomía táctil: objetivos de pulsación más cómodos en móvil (≈44px) */
+  button.btn,a.btn{min-height:42px;}
+  .btn.icon-btn{min-width:44px;padding:10px 11px;font-size:18px;}
+  .mark-btn{padding:8px;margin:0 4px 0 -4px;}
+  .mark-btn svg{width:20px;height:20px;}
+  .band > .mark-btn{top:8px;right:8px;}
+  .chip{padding:9px 15px;font-size:13px;}
+  .section-jump{gap:8px 7px;}
+  .wrap{padding-left:16px;padding-right:16px;}
 }
 @media (max-width:430px){
   .illus{display:none;}

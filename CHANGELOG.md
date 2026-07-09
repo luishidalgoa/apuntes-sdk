@@ -7,6 +7,15 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.17
+- **Mejora (móvil)**: ergonomía táctil en pantallas ≤560px. Los objetivos de
+  pulsación pequeños suben a un tamaño cómodo (≈44px): botones de icono de la
+  barra (🔖🖍️🔍), la estrella de «marcar importante» (`.mark-btn`, SVG 17→20px +
+  padding), los `.btn` en general (min-height 42px) y los chips de salto de
+  sección (`.chip`, más padding). Padding lateral del `.wrap` a 16px en móvil
+  para ganar ancho. Solo CSS en `styles/shared.css` (media query existente);
+  cero cambios de markup, lo heredan todas las apps.
+
 ## v0.1.16
 - **Mejora (UI)**: el **desplegable de Temas** muestra cada tema como
   «Tema N — Título» y, debajo, sus **bloques/secciones** (las labels de sus
