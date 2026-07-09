@@ -3,7 +3,7 @@
    cualquier app del núcleo (TAI, Legislación…) lo hereda sin tocar contenido.
    Se abre con el botón 🔍 de la barra/hub, con ⌘/Ctrl+K o con «/». */
 import { registerLayer } from './modal-stack.js';
-import { searchContent, normalize, buildIndex } from './content-index.js';
+import { searchContent, normalize, warmIndex } from './content-index.js';
 import { esc } from './dom.js';
 import { navigate } from '../router.js';
 
@@ -52,9 +52,10 @@ export function mountSearch(app){
     if(e.key === '/' && overlay.hidden && !isTyping(e.target)){ e.preventDefault(); openSearch(); }
   });
 
-  /* Precalentar el índice en tiempo de inactividad (renderiza los temas en DOM
-     desmontado una sola vez), para que la 1ª búsqueda del usuario sea instantánea. */
-  const warm = () => { try { buildIndex(); } catch(e){} };
+  /* Precalentar el índice en tiempo de inactividad, INCREMENTAL (un tema por
+     hueco de inactividad, cediendo el hilo entre temas): la 1ª búsqueda es
+     instantánea sin congelar el arranque aunque algún tema sea pesado. */
+  const warm = () => { try { warmIndex(); } catch(e){} };
   if('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 3000 });
   else setTimeout(warm, 1500);
 }

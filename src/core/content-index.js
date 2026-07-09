@@ -24,49 +24,44 @@ function temaNumber(t, i){
 
 let INDEX = null;
 
-/* Construye (y cachea) el índice recorriendo la estructura de cada tema. */
-export function buildIndex(){
-  if(INDEX) return INDEX;
+/* Indexa UN tema: lo renderiza en un contenedor DESMONTADO (nunca se añade al
+   documento — el JS de renderContent funciona igual sobre DOM desconectado, pero
+   así NO se cargan imágenes, NO se lanzan animaciones ni se fuerza layout) y
+   recorre la estructura común devolviendo sus entradas ya normalizadas. */
+function indexTema(tema, ti){
+  const num = temaNumber(tema, ti);
   const entries = [];
+  const box = document.createElement('div');
+  try { tema.renderContent(box); } catch(e){ return entries; }   // un tema que falle no rompe el resto
 
-  allTemas().forEach((tema, ti) => {
-    const num = temaNumber(tema, ti);
-    /* Contenedor DESMONTADO (nunca se añade al documento): el JS de
-       renderContent (innerHTML, numeración, ids, mounts) funciona igual sobre
-       DOM desconectado, pero así NO se cargan imágenes, NO se lanzan animaciones
-       ni se fuerza layout → indexar es barato y no bloquea. */
-    const box = document.createElement('div');
-    try { tema.renderContent(box); } catch(e){ /* un tema que falle no rompe el resto */ }
-
-    let bandTitle = '';
-    box.querySelectorAll('.band, .node').forEach((el) => {
-      if(el.classList.contains('band')){
-        bandTitle = clean((el.querySelector('h2') || {}).textContent);
-        const kicker = clean((el.querySelector('.k') || {}).textContent);   // suele traer la ref oficial (4.1, 4.2…)
-        entries.push({
-          temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'band',
-          num: clean((el.querySelector('.rom') || {}).textContent),
-          title: bandTitle,
-          text: clean([kicker, (el.querySelector('.sub') || {}).textContent].filter(Boolean).join(' · ')),
-          anchor: el.id || '',
-          path: 'Tema ' + num
-        });
-        return;
-      }
-      const nameEl = el.querySelector('.name');
-      if(!nameEl) return;
-      const numEl = nameEl.querySelector('.secn') || el.querySelector('.sig') || el.querySelector('.anum');
-      const secn = clean(numEl && numEl.textContent);
-      const title = clean(nameEl.textContent).replace(/^\s*\d+(?:\.\d+)*\s*/, '').trim() || clean(nameEl.textContent);
-      const desc = el.querySelector('.desc');
-      const det = el.querySelector('.det');
-      const text = clean([desc && desc.textContent, det && det.textContent].filter(Boolean).join(' ')).slice(0, 700);
-      const anchor = el.id || (el.querySelector('[id]') || {}).id || '';
+  let bandTitle = '';
+  box.querySelectorAll('.band, .node').forEach((el) => {
+    if(el.classList.contains('band')){
+      bandTitle = clean((el.querySelector('h2') || {}).textContent);
+      const kicker = clean((el.querySelector('.k') || {}).textContent);   // suele traer la ref oficial (4.1, 4.2…)
       entries.push({
-        temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'card',
-        num: secn, title, text, anchor,
-        path: 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
+        temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'band',
+        num: clean((el.querySelector('.rom') || {}).textContent),
+        title: bandTitle,
+        text: clean([kicker, (el.querySelector('.sub') || {}).textContent].filter(Boolean).join(' · ')),
+        anchor: el.id || '',
+        path: 'Tema ' + num
       });
+      return;
+    }
+    const nameEl = el.querySelector('.name');
+    if(!nameEl) return;
+    const numEl = nameEl.querySelector('.secn') || el.querySelector('.sig') || el.querySelector('.anum');
+    const secn = clean(numEl && numEl.textContent);
+    const title = clean(nameEl.textContent).replace(/^\s*\d+(?:\.\d+)*\s*/, '').trim() || clean(nameEl.textContent);
+    const desc = el.querySelector('.desc');
+    const det = el.querySelector('.det');
+    const text = clean([desc && desc.textContent, det && det.textContent].filter(Boolean).join(' ')).slice(0, 700);
+    const anchor = el.id || (el.querySelector('[id]') || {}).id || '';
+    entries.push({
+      temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'card',
+      num: secn, title, text, anchor,
+      path: 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
     });
   });
 
@@ -74,11 +69,52 @@ export function buildIndex(){
     e._t = normalize(e.title); e._x = normalize(e.text); e._n = normalize(e.num); e._k = normalize(e.temaK);
     e._tw = wordsOf(e._t); e._xw = wordsOf(e._x); e._kw = wordsOf(e._k);
   });
+  return entries;
+}
+
+/* Construye (y cachea) el índice completo de forma SÍNCRONA. Es el camino de
+   respaldo: si el usuario busca antes de que termine el precalentado, se
+   completa aquí de una vez (a costa de un instante). Normalmente el índice ya
+   está listo por `warmIndex`. */
+export function buildIndex(){
+  if(INDEX) return INDEX;
+  const temas = allTemas();
+  const entries = [];
+  for(let i = 0; i < temas.length; i++){
+    const part = indexTema(temas[i], i);
+    for(const e of part) entries.push(e);
+  }
   INDEX = entries;
   return INDEX;
 }
 
-export function invalidateIndex(){ INDEX = null; }
+/* Precalentado NO bloqueante: indexa UN tema por hueco de inactividad, cediendo
+   el hilo entre temas. Así la app nunca se congela al arrancar aunque algún
+   tema renderice contenido pesado (evita bloquear ~segundos de golpe). Si una
+   búsqueda dispara `buildIndex` a mitad, este se para (ya hay índice completo). */
+let warming = false;
+const scheduleIdle = (fn) => ('requestIdleCallback' in window)
+  ? requestIdleCallback(fn, { timeout: 1200 })
+  : setTimeout(fn, 32);
+
+export function warmIndex(){
+  if(INDEX || warming) return;
+  warming = true;
+  const temas = allTemas();
+  const acc = [];
+  let i = 0;
+  const step = () => {
+    if(INDEX){ warming = false; return; }          // una búsqueda ya construyó el índice entero
+    if(i >= temas.length){ INDEX = acc; warming = false; return; }
+    const part = indexTema(temas[i], i);
+    for(const e of part) acc.push(e);
+    i++;
+    scheduleIdle(step);
+  };
+  scheduleIdle(step);
+}
+
+export function invalidateIndex(){ INDEX = null; warming = false; }
 
 /* ---------- scorer: substring + prefijo + fuzzy (Jaro-Winkler) + nº de punto ----------
    Jaro-Winkler tolera erratas y transposiciones (djistrak≈dijkstra ≈0.88) y

@@ -7,6 +7,19 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.14
+- **Fix (rendimiento)**: el **precalentado del índice** del buscador ya no
+  bloquea el hilo principal al arrancar. Antes se construía el índice entero de
+  golpe en un único hueco de inactividad (renderizaba los N temas seguidos), lo
+  que en apps con temas de contenido pesado (p. ej. Legislación) podía congelar
+  la UI varios segundos. Ahora es **incremental**: `warmIndex()` indexa **un
+  tema por hueco de inactividad**, cediendo el hilo entre temas, así que ningún
+  bloqueo supera el coste de renderizar un solo tema.
+  - `buildIndex()` se conserva como camino **síncrono de respaldo** (si el
+    usuario busca antes de terminar el precalentado, se completa de una vez); en
+    cuanto está el índice, `warmIndex` se detiene. Nueva API: `warmIndex`.
+  - El overlay (`search-ui.js`) llama a `warmIndex` en vez de `buildIndex`.
+
 ## v0.1.13
 - **Nuevo**: **buscador global** genérico (🔍 en la barra del tema y en el hub,
   atajo `⌘/Ctrl+K` y `/`). Aprovecha la **estructura de contenido común** del

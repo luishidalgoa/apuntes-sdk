@@ -62,4 +62,4 @@ export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlig
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';
 export { exportBackup, importBackup, buildBackup, applyBackup } from './core/backup.js';
 export { mountSearch, openSearch, closeSearch, SEARCH_ICON } from './core/search-ui.js';
-export { buildIndex, invalidateIndex, searchContent } from './core/content-index.js';
+export { buildIndex, warmIndex, invalidateIndex, searchContent } from './core/content-index.js';
