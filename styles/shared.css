@@ -246,6 +246,13 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
   .chip{padding:9px 15px;font-size:13px;}
   .section-jump{gap:8px 7px;}
   .wrap{padding-left:16px;padding-right:16px;}
+  /* Marcapáginas: en móvil la cinta ancha tapaba el texto. La estrechamos y la
+     pegamos al canto derecho (queda como una cinta fina en el borde, casi sin
+     solaparse). Con preserveAspectRatio=none solo se comprime en horizontal, así
+     que la caída/ondulación siguen igual. Se aparta al abrir un panel lateral. */
+  .bookmark-ribbon{right:-4px;width:22px;}
+  .bookmark-ribbon .br-shape{stroke-width:4;}
+  body.panel-open .bookmark-ribbon,body.fulltext-open .bookmark-ribbon{opacity:0;pointer-events:none;transition:opacity .18s;}
 }
 @media (max-width:430px){
   .illus{display:none;}

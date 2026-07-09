@@ -7,6 +7,18 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.19
+- **Fix (móvil)**: el **marcapáginas de tela** (la cinta vertical) tapaba el
+  texto en el móvil, donde el contenido va a todo el ancho (la cinta de 56px
+  caía sobre la columna de lectura). Ahora en ≤560px la cinta se **estrecha a
+  22px y se pega al canto derecho** (`right:-4px`), quedando en el margen sin
+  solaparse con el texto de las tarjetas. Se hace con `preserveAspectRatio=none`
+  en el SVG: la cinta solo se **comprime en horizontal**, conserva su altura
+  (baja hasta la tarjeta marcada) y **la animación verlet de caída/ondulación
+  sigue intacta**. Además se desvanece al abrir un panel lateral. El clic sigue
+  saltando al marcador. En tablet/escritorio, sin cambios (56px). Solo
+  `core/bookmark.js` (atributo del SVG) + `styles/shared.css`.
+
 ## v0.1.18
 - **Fix (móvil)**: el desplegable de **Opciones** dejaba ver los chips de «En
   esta página» por encima. Causa: en ≤560px `.controls` pasaba a

@@ -148,7 +148,9 @@ export function createRibbon(root){
   ribbon.className = 'bookmark-ribbon';
   ribbon.setAttribute('aria-label', 'Ir a tu marcador');
   ribbon.hidden = true;
-  ribbon.innerHTML = '<svg class="br-svg" xmlns="http://www.w3.org/2000/svg"><defs>' + WEAVE_DEFS + '</defs>'
+  /* preserveAspectRatio=none: en móvil la cinta se estrecha por CSS (width) sin
+     encoger su altura ni cortar la animación — solo se comprime en horizontal. */
+  ribbon.innerHTML = '<svg class="br-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><defs>' + WEAVE_DEFS + '</defs>'
     + '<path class="br-shape" fill="url(#brStraw)"/></svg>';
   wrap.appendChild(ribbon);
   const svg = ribbon.querySelector('.br-svg');
