@@ -234,8 +234,9 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
   .illus svg{height:78px;}
 }
 @media (max-width:560px){
-  .controls{position:static;}
+  .controls{position:relative;}   /* no sticky en móvil, pero conserva el contexto z-index (que el popup de Opciones tape los chips) */
   .band .rom{font-size:30px;min-width:42px;}
+  #toggleTablet{display:none;}     /* el modo tablet no aplica en teléfono */
   /* Ergonomía táctil: objetivos de pulsación más cómodos en móvil (≈44px) */
   button.btn,a.btn{min-height:42px;}
   .btn.icon-btn{min-width:44px;padding:10px 11px;font-size:18px;}

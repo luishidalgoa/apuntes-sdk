@@ -7,6 +7,21 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.18
+- **Fix (móvil)**: el desplegable de **Opciones** dejaba ver los chips de «En
+  esta página» por encima. Causa: en ≤560px `.controls` pasaba a
+  `position:static`, que destruía su contexto de apilamiento (z-index:30) y el
+  popup (z-index:40, dentro) dejaba de dominar a los chips (que quedan detrás en
+  el DOM). Ahora `.controls` usa `position:relative` en móvil (sigue sin ser
+  sticky, pero conserva el contexto), así el popup los tapa.
+- **Fix (móvil)**: el **modo tablet** ya no se activa en teléfonos. El modo
+  agranda tipografías/layout (pensado para tablets); en un teléfono la
+  preferencia guardada (`ce-tablet-mode=1`) lo dejaba oversized. Ahora
+  `applyTabletMode`/`bindTabletButton` sólo aplican la clase `tablet-mode` si el
+  ancho es >600px (reevaluado al redimensionar/rotar), y el botón «Modo tablet»
+  se oculta/deshabilita en teléfono. La preferencia se conserva para cuando se
+  abra en una tablet o escritorio.
+
 ## v0.1.17
 - **Mejora (móvil)**: ergonomía táctil en pantallas ≤560px. Los objetivos de
   pulsación pequeños suben a un tamaño cómodo (≈44px): botones de icono de la
