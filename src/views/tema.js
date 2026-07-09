@@ -36,10 +36,12 @@ function temasDropdownHtml(tema){
                 ${allTemas().map((t, i) => {
                   // número real del tema (de su `k`, p.ej. "Tema 2 · …"); si no, la posición
                   const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
+                  // los bloques/secciones del tema (sus chips de salto), separados y con ellipsis
+                  const blq = (t.chips || []).map(c => c.label).join(' · ');
                   return `
                 <a class="opts-item${t === tema ? ' on' : ''}" href="#/tema/${t.id}">
                   <span class="ti-num">${n}</span>
-                  <span class="ti-body"><span class="ti-title">Tema ${n}</span><span class="ti-desc">${t.titulo}</span></span>
+                  <span class="ti-body"><span class="ti-title">Tema ${n} — ${t.titulo}</span>${blq ? `<span class="ti-desc">${blq}</span>` : `<span class="ti-desc">${t.descripcion || ''}</span>`}</span>
                 </a>`;
                 }).join('')}
               </div>
