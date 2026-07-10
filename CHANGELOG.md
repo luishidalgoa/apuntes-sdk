@@ -7,6 +7,15 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.29
+
+- **Fix marcapáginas · no se podía colocar en tarjetas del layout de árbol**
+  (p.ej. "Capítulo II" de leg-tema1): en ese layout las anclas (`innernote#art-14`)
+  son HERMANAS de la `.card` dentro del `.node`, no hijas, y `anchorFromClick`
+  solo miraba dentro de la tarjeta clicada → el clic no colocaba nada. Ahora,
+  si la tarjeta no tiene anclas dentro, se busca en el `.node` contenedor. La
+  pestañita cuelga del nodo y el tallo se estira hasta el ancla hermana.
+
 ## v0.1.28
 
 - **Marcapáginas · rediseño completo** (sutil, elegante y por fin visible en

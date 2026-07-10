@@ -216,6 +216,14 @@ export function anchorFromClick(target){
   if(card){
     const first = card.querySelector(sel);
     if(first) return first.id;
+    /* Layout de árbol: la tarjeta puede tener sus anclas como HERMANAS dentro
+       del .node contenedor (p.ej. card "Capítulo II" + innernote#art-14 al
+       lado). Si dentro de la tarjeta no hay nada, buscamos en el nodo. */
+    const node = card.closest('.node');
+    if(node && node !== card){
+      const near = node.querySelector(sel);
+      if(near) return near.id;
+    }
   }
   return null;
 }
