@@ -1,9 +1,10 @@
 import { bindScrollReveal } from './core/scroll-reveal.js';
 
 /* Router por location.hash — NUNCA pushState (lanza SecurityError en file://).
-   Rutas:  #/            → hub
-           #/tema/<id>   → tema (con ancla opcional: #/tema/tema1/art-13-4)
-           #/examen      → examen
+   Rutas:  #/               → hub
+           #/materia/<id>   → hub de materia
+           #/tema/<id>      → tema (con ancla opcional: #/tema/tema1/art-13-4)
+   (El examen ya NO es una ruta: es un overlay SPA, ver openExam.)
    Cada vista es { mount(root, params, ctx) → cleanup? , update?(params) }.
    Si cambia solo el ancla dentro del mismo tema, se llama update() en vez de
    desmontar/montar (así el salto no pierde el estado de la página). */
@@ -13,7 +14,8 @@ export function parseHash(){
   if(seg.length === 0) return { name: 'hub' };
   if(seg[0] === 'materia' && seg[1]) return { name: 'materia', materiaId: seg[1] };
   if(seg[0] === 'tema' && seg[1]) return { name: 'tema', temaId: seg[1], anchor: seg.slice(2).join('/') || null };
-  if(seg[0] === 'examen') return { name: 'examen', temaId: seg[1] || null };
+  /* 'examen' ya NO es una ruta: el examen es un overlay (openExam). Un enlace
+     antiguo #/examen cae en la portada sin romper. */
   return { name: 'hub' };
 }
 
@@ -21,7 +23,6 @@ export function href(route){
   if(route.name === 'hub') return '#/';
   if(route.name === 'materia') return '#/materia/' + route.materiaId;
   if(route.name === 'tema') return '#/tema/' + route.temaId + (route.anchor ? '/' + route.anchor : '');
-  if(route.name === 'examen') return '#/examen' + (route.temaId ? '/' + route.temaId : '');
   return '#/';
 }
 

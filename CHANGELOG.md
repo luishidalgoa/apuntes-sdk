@@ -7,6 +7,26 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.35
+
+- **Examen ahora es un OVERLAY (SPA), ya no una ruta**. Antes `#/examen`
+  reemplazaba la vista y perdías dónde ibas. Ahora los botones "Examen" llaman a
+  `openExam({materiaId, temaId})`: abre encima de la vista actual **sin cambiar de
+  hash ni de scroll**, y al cerrar (X · Esc · arrastrar la hoja · toque fuera)
+  vuelves EXACTAMENTE donde estabas. Patrón como el overlay de minijuegos.
+  Escritorio: modal centrado alto. Móvil: bottom-sheet (92vh) con grip arrastrable.
+- **Reanuda donde lo dejaste**: si cierras a mitad de examen y reabres (misma
+  materia), continúas en la misma pregunta y marcador. Botón "Nuevo examen" para
+  reiniciar; se oculta cuando no hay examen en curso.
+- **Contexto de MATERIA**: al abrir el examen desde una materia (o un tema suyo),
+  el banco se acota a esa materia y el setup NO repite su cabecera; desde la
+  portada global, banco completo. Título "Examen · <Materia>".
+- **Se retira el `exam-nav`** (fila Temario · Tema 1 · Tema 2…): redundante y te
+  sacaba del examen. En el overlay con contexto ya no aplica.
+- API nueva: `openExam`, `closeExam`, `mountExamOverlay` (sustituye a
+  `examenViewFactory`; `#/examen` ya no es ruta — un enlace antiguo cae en la
+  portada sin romper).
+
 ## v0.1.34
 
 - **Examen · las opciones ya salen en orden ALEATORIO**. El contenido trae la

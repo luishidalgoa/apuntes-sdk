@@ -17,7 +17,7 @@ import { installEscapeHandler } from './core/modal-stack.js';
 import { applyTabletMode } from './core/tablet.js';
 import { temarioView, materiaView } from './views/temario.js';
 import { temaViewFactory } from './views/tema.js';
-import { examenViewFactory } from './views/examen.js';
+import { mountExamOverlay } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountHighlight } from './core/highlight.js';
 import { mountSearch } from './core/search-ui.js';
@@ -50,6 +50,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
   app.appendChild(viewRoot);
   mountPanels(app);
   mountGamesOverlay(app);
+  mountExamOverlay(app);   // examen como overlay (SPA), no como ruta
   mountRefPreview(app);
   mountHighlight(app);
   mountSearch(app);
@@ -58,7 +59,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
 
   createRouter({
     root: viewRoot,
-    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory, examen: examenViewFactory },
+    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory },
     ctx: {}
   });
 }
@@ -73,6 +74,7 @@ export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/inf
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';
 export { exportBackup, importBackup, buildBackup, applyBackup } from './core/backup.js';
+export { openExam, closeExam } from './views/examen.js';
 export { mountSearch, openSearch, closeSearch, SEARCH_ICON } from './core/search-ui.js';
 export { buildIndex, warmIndex, invalidateIndex, searchContent } from './core/content-index.js';
 export { bindScrollReveal, unbindScrollReveal } from './core/scroll-reveal.js';

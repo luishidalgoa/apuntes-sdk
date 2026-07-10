@@ -1,8 +1,38 @@
 /* GENERADO del bloque <style> de Examen_TAI.html (vista Examen + preview). */
-.view-examen .wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:48px 22px 0;}
-.view-examen h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(30px,5.5vw,46px);line-height:1.05;margin:0;letter-spacing:-.01em;}
-.view-examen .lede{max-width:560px;margin:14px 0 22px;color:var(--ink-soft);font-size:15.5px;}
-.exam-nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+
+/* ===== Examen como OVERLAY (SPA) =====
+   Escritorio: modal centrado alto. Móvil: bottom-sheet arrastrable. Abre encima
+   de la vista actual sin cambiar de ruta → al cerrar vuelves donde ibas. */
+#examOverlay{position:fixed;inset:0;z-index:58;display:none;background:rgba(42,38,32,.5);
+    align-items:center;justify-content:center;padding:20px;}
+#examOverlay.open{display:flex;}
+.exam-sheet{background:var(--paper);border-radius:18px;width:100%;max-width:740px;max-height:88vh;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 70px -22px rgba(0,0,0,.5);
+    animation:examIn .26s cubic-bezier(.2,.7,.2,1);}
+@keyframes examIn{from{opacity:0;transform:translateY(12px) scale(.99);} to{opacity:1;transform:none;}}
+.exam-sheet-grip{display:none;}   /* solo móvil */
+.exam-sheet-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);
+    background:#fff;flex:none;}
+.exam-sheet-title{font-family:"Fraunces",serif;font-weight:700;font-size:17px;color:var(--ink);flex:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.exam-new{flex:none;}
+.exam-new[hidden]{display:none;}   /* el atributo hidden debe ganar a .btn */
+.exam-sheet-close{border:none;background:none;font-size:18px;cursor:pointer;color:var(--ink-faint);padding:4px 6px;flex:none;line-height:1;}
+.exam-sheet-close:hover{color:var(--ink);}
+.exam-sheet .exam-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:22px 22px 26px;}
+
+@media (max-width:760px){
+  #examOverlay{padding:0;align-items:flex-end;}
+  .exam-sheet{max-width:none;width:100%;height:92vh;max-height:92vh;border-radius:20px 20px 0 0;
+    transform:translateY(100%);animation:none;transition:transform .3s cubic-bezier(.2,.7,.2,1);}
+  #examOverlay.open .exam-sheet{transform:translateY(0);}
+  .exam-sheet-grip{display:block;flex:none;width:100%;border:none;background:none;cursor:grab;padding:9px 0 4px;touch-action:none;}
+  .exam-sheet-grip::before{content:"";display:block;width:40px;height:5px;margin:0 auto;border-radius:99px;background:var(--line);}
+  .exam-sheet-grip:active{cursor:grabbing;}
+  .exam-sheet-head{padding-top:4px;}
+}
+@media (prefers-reduced-motion:reduce){ .exam-sheet{animation:none;transition:none;} }
+
 .exam-card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);}
 .exam-body{padding:24px 24px 26px;}
 .exam-setup{text-align:center;}

@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { getLatestBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { bindMateriaCards } from '../core/materia-cards.js';
+import { openExam } from './examen.js';
 
 /* Portada y hubs. Con `appConfig.materias`, la portada (#/) es un SELECTOR de
    materias (tarjetas) y cada materia tiene su propio hub (#/materia/<id>) con sus
@@ -73,14 +74,17 @@ function materiaCardHtml(m){
               <div class="tema-arrow" data-depth="34">→</div>
             </a>`;
 }
-function examCardHtml(cfg){
+/* Tarjeta que ABRE el overlay de examen (no navega). Con materiaId, el examen
+   se acota a esa materia; sin él, banco global. */
+function examCardHtml(cfg, materiaId){
+  const kicker = materiaId ? 'Solo esta materia' : 'Banco único · todos los temas';
   return `
-            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#/examen">
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#" role="button" data-exam data-materia="${esc(materiaId || '')}">
               <div class="mc-icon" data-icon="exam" data-depth="46"></div>
               <div class="tema-body" data-depth="22">
-                <div class="tema-k">Banco único · todos los temas</div>
+                <div class="tema-k">${kicker}</div>
                 <div class="tema-title">Examen</div>
-                <div class="tema-desc">${cfg.examLede || 'Preguntas filtrables por bloque, con temporizador opcional y asistente de dudas.'}</div>
+                <div class="tema-desc">${cfg.examLede || 'Preguntas filtrables por apartado, con temporizador opcional y asistente de dudas.'}</div>
               </div>
               <div class="tema-arrow" data-depth="34">→</div>
             </a>`;
@@ -110,6 +114,11 @@ function temaCardsHtml(temas){
 function wireHub(root){
   const sb = root.querySelector('#hubSearchBtn');
   if(sb) sb.addEventListener('click', openSearch);
+  const examLink = root.querySelector('[data-exam]');
+  if(examLink) examLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    openExam({ materiaId: examLink.getAttribute('data-materia') || null });
+  });
   const dismiss = root.querySelector('#resumeDismiss');
   if(dismiss){
     dismiss.addEventListener('click', (e) => {
@@ -158,7 +167,7 @@ export const materiaView = {
         <p class="lede">${esc(m.descripcion || '')}</p>
         ${searchBarHtml()}
         ${temaCardsHtml(m.temas)}
-        <div class="temas">${examCardHtml(cfg)}</div>
+        <div class="temas">${examCardHtml(cfg, m.id)}</div>
       </div>`;
     wireHub(root);
   }

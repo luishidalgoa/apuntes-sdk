@@ -13,6 +13,7 @@ import { exportBackup, importBackup } from '../core/backup.js';
 import { registerLayer, registerExclusive } from '../core/modal-stack.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { mountResponsiveNav } from '../core/navbar.js';
+import { openExam } from './examen.js';
 
 const ICONS = {
   all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
@@ -115,7 +116,7 @@ export const temaViewFactory = {
             <span class="nav-lab">Buscar</span>
           </button>
           <div class="nav-right">
-            <a class="btn action" href="#/examen/${tema.id}">${ICONS.exam}<span class="nav-lab">Examen</span></a>
+            <button class="btn action" type="button" id="examBtn">${ICONS.exam}<span class="nav-lab">Examen</span></button>
             <button class="btn icon-btn" id="bookmarkBtn" type="button" title="Marcar aquí" aria-label="Marcar aquí">${ICONS.bookmark}<span class="nav-lab">Marcapáginas</span></button>
             <button class="btn icon-btn" id="highlightBtn" type="button" title="Subrayar" aria-label="Subrayar" aria-pressed="false">${ICONS.marker}<span class="nav-lab">Subrayar</span></button>
             <div class="opts-wrap">
@@ -148,6 +149,12 @@ export const temaViewFactory = {
         setTemaContext(tema.engine);
 
         root.querySelector('#searchBtn').addEventListener('click', openSearch, { signal });
+        /* Examen SPA: abre el overlay con contexto de la materia del tema (o
+           global si el tema no pertenece a ninguna), preseleccionando este tema.
+           No navega → al cerrar vuelves aquí, al mismo scroll. */
+        root.querySelector('#examBtn').addEventListener('click', () => {
+          openExam({ materiaId: (materiaOf(tema) || {}).id || null, temaId: tema.id });
+        }, { signal });
 
         bindCardInteractions(root, { signal });
         bindMarks(root.querySelector('#temaContent'), tema.id, { signal });   // ★ marcar importante
