@@ -1,4 +1,4 @@
-import { allTemas, temaById } from '../registry.js';
+import { allTemas, temaById, groupedTemas, hasBloques } from '../registry.js';
 import { esc } from '../core/dom.js';
 import { config } from '../config.js';
 import { getBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
@@ -24,6 +24,43 @@ function resumeCardHtml(){
       </a>`;
 }
 
+function temaCardHtml(t){
+  return `
+            <a class="tema-card" style="--accent:${t.accent}" href="#/tema/${t.id}">
+              <div class="tema-num">${esc(t.numeral)}</div>
+              <div class="tema-body">
+                <div class="tema-k">${esc(t.k)}</div>
+                <div class="tema-title">${esc(t.titulo)}</div>
+                <div class="tema-desc">${esc(t.descripcion)}</div>
+              </div>
+              <div class="tema-arrow">→</div>
+            </a>`;
+}
+function examCardHtml(cfg){
+  return `
+            <a class="tema-card" style="--accent:var(--ink)" href="#/examen">
+              <div class="tema-num">📝</div>
+              <div class="tema-body">
+                <div class="tema-k">Banco único · todos los temas</div>
+                <div class="tema-title">Examen</div>
+                <div class="tema-desc">${cfg.examLede || 'Preguntas filtrables por bloque, con temporizador opcional y asistente de dudas.'}</div>
+              </div>
+              <div class="tema-arrow">→</div>
+            </a>`;
+}
+/* Lista de temas del hub. Si los temas declaran `bloque`, se agrupan bajo
+   cabeceras de bloque (capa genérica del registry); si no, lista plana. */
+function temasSectionHtml(cfg){
+  if(hasBloques()){
+    return groupedTemas().map(g =>
+        (g.label ? `<h2 class="bloque-head">${esc(g.label)}</h2>` : '')
+        + `<div class="temas">${g.temas.map(temaCardHtml).join('')}</div>`
+      ).join('')
+      + `<div class="temas">${examCardHtml(cfg)}</div>`;
+  }
+  return `<div class="temas">${allTemas().map(temaCardHtml).join('')}${examCardHtml(cfg)}</div>`;
+}
+
 export const temarioView = {
   mount(root){
     const cfg = config();
@@ -38,28 +75,7 @@ export const temarioView = {
           <span class="st-key">⌘K</span>
         </button>
         ${resumeCardHtml()}
-        <div class="temas">
-          ${allTemas().map((t, i) => `
-            <a class="tema-card" style="--accent:${t.accent}" href="#/tema/${t.id}">
-              <div class="tema-num">${esc(t.numeral)}</div>
-              <div class="tema-body">
-                <div class="tema-k">${esc(t.k)}</div>
-                <div class="tema-title">${esc(t.titulo)}</div>
-                <div class="tema-desc">${esc(t.descripcion)}</div>
-              </div>
-              <div class="tema-arrow">→</div>
-            </a>`).join('')}
-
-          <a class="tema-card" style="--accent:var(--ink)" href="#/examen">
-            <div class="tema-num">📝</div>
-            <div class="tema-body">
-              <div class="tema-k">Banco único · todos los temas</div>
-              <div class="tema-title">Examen</div>
-              <div class="tema-desc">${cfg.examLede || 'Preguntas filtrables por bloque, con temporizador opcional y asistente de dudas.'}</div>
-            </div>
-            <div class="tema-arrow">→</div>
-          </a>
-        </div>
+        ${temasSectionHtml(cfg)}
         ${cfg.footer ? `<footer>${cfg.footer}</footer>` : ''}
       </div>`;
 

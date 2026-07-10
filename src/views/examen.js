@@ -1,7 +1,7 @@
 /* Vista Examen: banco único agregado de TODOS los temas del registry,
    filtrable por bloque (título de la CE), con temporizador opcional,
    asistente IA y vista previa del temario sin salir del examen. */
-import { allTemas } from '../registry.js';
+import { allTemas, bloqueOf, hasBloques } from '../registry.js';
 import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
 import { openRefPreview } from '../exam/preview.js';
@@ -33,7 +33,7 @@ export const examenViewFactory = {
       const total = QUESTIONS.length;
 
       let idx = 0;
-      const groupsHtml = TEMA_GROUPS.map(g => {
+      const temaGroupHtml = (g) => {
         const on = !hasInitial || g.id === initialTema;
         const rows = g.bloques.map(b => {
           const id = 'exb' + (idx++);
@@ -49,7 +49,37 @@ export const examenViewFactory = {
           + '</div>'
           + '<div class="exam-bloques" hidden>' + rows + '</div>'
           + '</div>';
-      }).join('');
+      };
+
+      /* Si los temas declaran `bloque`, se agrupan bajo una cabecera de bloque
+         (con checkbox que marca/desmarca todos sus temas). Genérico: si no hay
+         bloques, se listan los temas directamente (como antes). */
+      let groupsHtml;
+      if(hasBloques()){
+        const blocks = []; const byId = new Map();
+        TEMA_GROUPS.forEach(g => {
+          const key = g.bloque ? g.bloque.id : ' ';
+          let bg = byId.get(key);
+          if(!bg){ bg = { id: g.bloque ? g.bloque.id : null, label: g.bloque ? g.bloque.label : null, temas: [] }; byId.set(key, bg); blocks.push(bg); }
+          bg.temas.push(g);
+        });
+        groupsHtml = blocks.map(bg => {
+          const inner = bg.temas.map(temaGroupHtml).join('');
+          if(!bg.label) return inner;   // temas sin bloque: sin cabecera
+          const on = !hasInitial || bg.temas.some(g => g.id === initialTema);
+          const cnt = bg.temas.reduce((s, g) => s + countTema(g), 0);
+          return '<div class="exam-bloque-group" data-bloque-id="' + esc(bg.id) + '">'
+            + '<div class="exam-tema-row exam-bloque-head">'
+            +   '<input type="checkbox" class="exam-bloqueg-cb" data-bloque-id="' + esc(bg.id) + '"' + (on ? ' checked' : '') + '/>'
+            +   '<label>' + bg.label + '</label>'
+            +   '<span class="exam-tema-count">' + cnt + '</span>'
+            + '</div>'
+            + inner
+            + '</div>';
+        }).join('');
+      } else {
+        groupsHtml = TEMA_GROUPS.map(temaGroupHtml).join('');
+      }
       const selCount = hasInitial ? countTema(TEMA_GROUPS.find(g => g.id === initialTema)) : total;
 
       examBody.innerHTML =
@@ -69,16 +99,30 @@ export const examenViewFactory = {
       const allCb = examBody.querySelector('#examTemaAll');
       const temaCbs = [...examBody.querySelectorAll('.exam-tema-cb')];
       const bloqueCbs = [...examBody.querySelectorAll('.exam-bloque-cb')];
+      const bloquegCbs = [...examBody.querySelectorAll('.exam-bloqueg-cb')];   // checkboxes de nivel "bloque"
       const poolCountEl = examBody.querySelector('#examPoolCount');
       const warnEl = examBody.querySelector('#examSetupWarn');
       let timedChoice = false;
 
       const seleccionados = () => bloqueCbs.filter(c => c.checked).map(c => c.getAttribute('data-bloque'));
       const bloquesOf = (id) => bloqueCbs.filter(c => c.getAttribute('data-tema') === id);
+      // Capa "bloque": mapear tema→bloque y sus checkboxes, para sincronizar el nivel superior.
+      const bloqueGOf = (temaId) => { const g = TEMA_GROUPS.find(x => x.id === temaId); return g && g.bloque ? g.bloque.id : null; };
+      const temaIdsOfBloqueG = (bid) => TEMA_GROUPS.filter(g => (g.bloque ? g.bloque.id : null) === bid).map(g => g.id);
+      const temaCbsOfBloqueG = (bid) => { const ids = temaIdsOfBloqueG(bid); return temaCbs.filter(c => ids.includes(c.getAttribute('data-tema'))); };
+      const bloqueCbsOfBloqueG = (bid) => { const ids = temaIdsOfBloqueG(bid); return bloqueCbs.filter(c => ids.includes(c.getAttribute('data-tema'))); };
+      function syncBloqueG(bid){
+        if(bid == null) return;
+        const bg = bloquegCbs.find(c => c.getAttribute('data-bloque-id') === bid);
+        if(!bg) return;
+        const cbs = bloqueCbsOfBloqueG(bid), on = cbs.filter(c => c.checked).length;
+        bg.checked = on === cbs.length; bg.indeterminate = on > 0 && on < cbs.length;
+      }
       function syncTema(id){
         const cbs = bloquesOf(id), t = temaCbs.find(c => c.getAttribute('data-tema') === id);
         const on = cbs.filter(c => c.checked).length;
         t.checked = on === cbs.length; t.indeterminate = on > 0 && on < cbs.length;
+        syncBloqueG(bloqueGOf(id));
       }
       function syncAll(){
         const on = bloqueCbs.filter(c => c.checked).length;
@@ -90,11 +134,18 @@ export const examenViewFactory = {
       allCb.addEventListener('change', () => {
         bloqueCbs.forEach(c => c.checked = allCb.checked);
         temaCbs.forEach(c => { c.checked = allCb.checked; c.indeterminate = false; });
+        bloquegCbs.forEach(c => { c.checked = allCb.checked; c.indeterminate = false; });
         updatePoolCount();
       });
+      bloquegCbs.forEach(bg => bg.addEventListener('change', () => {
+        const bid = bg.getAttribute('data-bloque-id');
+        bloqueCbsOfBloqueG(bid).forEach(c => c.checked = bg.checked);
+        temaCbsOfBloqueG(bid).forEach(c => { c.checked = bg.checked; c.indeterminate = false; });
+        bg.indeterminate = false; syncAll(); updatePoolCount();
+      }));
       temaCbs.forEach(t => t.addEventListener('change', () => {
         bloquesOf(t.getAttribute('data-tema')).forEach(c => c.checked = t.checked);
-        t.indeterminate = false; syncAll(); updatePoolCount();
+        t.indeterminate = false; syncBloqueG(bloqueGOf(t.getAttribute('data-tema'))); syncAll(); updatePoolCount();
       }));
       bloqueCbs.forEach(c => c.addEventListener('change', () => { syncTema(c.getAttribute('data-tema')); syncAll(); updatePoolCount(); }));
       examBody.querySelectorAll('.exam-tema-toggle').forEach(btn => {
@@ -222,6 +273,7 @@ export const examenViewFactory = {
         TEMA_GROUPS = allTemas().map(t => {
           const num = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1];
           return { id: t.id, label: num ? ('Tema ' + num + ' · ' + t.titulo) : (t.titulo || t.id),
+            bloque: bloqueOf(t),   // capa opcional "bloque" (agnóstica) por encima del tema
             bloques: (t.bloques || []).filter(b => QUESTIONS.some(q => q.bloque === b)) };
         }).filter(g => g.bloques.length);
         root.innerHTML = `

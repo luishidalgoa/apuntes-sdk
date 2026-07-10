@@ -10,7 +10,7 @@
    Es 100% agnóstico de la asignatura: no sabe nada de legislación ni de TAI,
    solo del sistema de diseño compartido. El índice se construye una sola vez
    (perezoso, la 1ª búsqueda) y se cachea. */
-import { allTemas } from '../registry.js';
+import { allTemas, bloqueOf } from '../registry.js';
 
 export function normalize(s){
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -30,6 +30,9 @@ let INDEX = null;
    recorre la estructura común devolviendo sus entradas ya normalizadas. */
 function indexTema(tema, ti){
   const num = temaNumber(tema, ti);
+  const bl = bloqueOf(tema);                 // capa opcional "bloque" (agnóstica)
+  const blLabel = bl ? bl.label : '';
+  const crumb = blLabel ? blLabel + ' › ' : '';   // migas: "Bloque 1 › Tema 4 › …"
   const entries = [];
   const box = document.createElement('div');
   try { tema.renderContent(box); } catch(e){ return entries; }   // un tema que falle no rompe el resto
@@ -40,12 +43,12 @@ function indexTema(tema, ti){
       bandTitle = clean((el.querySelector('h2') || {}).textContent);
       const kicker = clean((el.querySelector('.k') || {}).textContent);   // suele traer la ref oficial (4.1, 4.2…)
       entries.push({
-        temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'band',
+        temaId: tema.id, temaNum: num, temaK: tema.k, bloque: blLabel, kind: 'band',
         num: clean((el.querySelector('.rom') || {}).textContent),
         title: bandTitle,
         text: clean([kicker, (el.querySelector('.sub') || {}).textContent].filter(Boolean).join(' · ')),
         anchor: el.id || '',
-        path: 'Tema ' + num
+        path: crumb + 'Tema ' + num
       });
       return;
     }
@@ -59,14 +62,15 @@ function indexTema(tema, ti){
     const text = clean([desc && desc.textContent, det && det.textContent].filter(Boolean).join(' ')).slice(0, 700);
     const anchor = el.id || (el.querySelector('[id]') || {}).id || '';
     entries.push({
-      temaId: tema.id, temaNum: num, temaK: tema.k, kind: 'card',
+      temaId: tema.id, temaNum: num, temaK: tema.k, bloque: blLabel, kind: 'card',
       num: secn, title, text, anchor,
-      path: 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
+      path: crumb + 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
     });
   });
 
   entries.forEach(e => {
-    e._t = normalize(e.title); e._x = normalize(e.text); e._n = normalize(e.num); e._k = normalize(e.temaK);
+    e._t = normalize(e.title); e._x = normalize(e.text); e._n = normalize(e.num);
+    e._k = normalize((blLabel ? blLabel + ' ' : '') + e.temaK);   // el bloque también es buscable (con el nombre del tema)
     e._tw = wordsOf(e._t); e._xw = wordsOf(e._x); e._kw = wordsOf(e._k);
   });
   return entries;

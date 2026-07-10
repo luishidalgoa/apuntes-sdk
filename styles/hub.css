@@ -17,6 +17,13 @@
 .rc-close:hover{background:var(--paper-2);color:var(--ink);}
 
 .temas{display:flex;flex-direction:column;gap:16px;}
+/* Cabecera de bloque (capa por encima del tema): separa los grupos de temas. */
+.bloque-head{font-family:"Hanken Grotesk",system-ui,sans-serif;font-weight:800;font-size:12.5px;
+    letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
+    margin:32px 0 14px;display:flex;align-items:center;gap:12px;}
+.bloque-head::after{content:"";flex:1 1 auto;height:1px;background:var(--line);}
+.bloque-head:first-of-type{margin-top:10px;}
+.temas + .temas{margin-top:16px;}
 a.tema-card{display:flex;align-items:center;gap:20px;text-decoration:none;color:inherit;
   background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:16px;
   padding:22px 24px;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease;}

@@ -1,6 +1,6 @@
 /* Vista genérica de tema: cabecera + barra de controles uniforme + contenido
    del manifiesto (template estático de T1 o tarjetas data-driven de T2). */
-import { allTemas, temaById } from '../registry.js';
+import { allTemas, temaById, groupedTemas, hasBloques } from '../registry.js';
 import { setTemaContext, bindRefModeSegment, revealAnchor, closePanel, closeFullText } from '../core/panels.js';
 import { bindCardInteractions, bindToggleAll, bindRepaso } from '../core/render-tema.js';
 import { bindTabletButton } from '../core/tablet.js';
@@ -28,22 +28,32 @@ const ICONS = {
 };
 
 /* Navegación: enlace al hub + desplegable de temas (sin flechas). */
+function temaItemHtml(t, current){
+  const i = allTemas().indexOf(t);
+  // número real del tema (de su `k`, p.ej. "Tema 2 · …"); si no, la posición
+  const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
+  // los bloques/secciones del tema (sus chips de salto), separados y con ellipsis
+  const blq = (t.chips || []).map(c => c.label).join(' · ');
+  return `
+                <a class="opts-item${t === current ? ' on' : ''}" href="#/tema/${t.id}">
+                  <span class="ti-num">${n}</span>
+                  <span class="ti-body"><span class="ti-title">Tema ${n} — ${t.titulo}</span>${blq ? `<span class="ti-desc">${blq}</span>` : `<span class="ti-desc">${t.descripcion || ''}</span>`}</span>
+                </a>`;
+}
 function temasDropdownHtml(tema){
+  // Si los temas declaran `bloque`, se listan bajo cabeceras de bloque; si no,
+  // lista plana (retrocompatible). Genérico: usa la agrupación del registry.
+  const inner = hasBloques()
+    ? groupedTemas().map(g =>
+        (g.label ? `<div class="ti-bloque-head" role="presentation">${g.label}</div>` : '')
+        + g.temas.map(t => temaItemHtml(t, tema)).join('')
+      ).join('')
+    : allTemas().map(t => temaItemHtml(t, tema)).join('');
   return `
             <div class="opts-wrap">
               <button class="btn ghost" id="temasBtn" aria-haspopup="true" aria-expanded="false">Temas</button>
               <div class="opts-pop opts-pop-left" id="temasPop" role="menu" hidden>
-                ${allTemas().map((t, i) => {
-                  // número real del tema (de su `k`, p.ej. "Tema 2 · …"); si no, la posición
-                  const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
-                  // los bloques/secciones del tema (sus chips de salto), separados y con ellipsis
-                  const blq = (t.chips || []).map(c => c.label).join(' · ');
-                  return `
-                <a class="opts-item${t === tema ? ' on' : ''}" href="#/tema/${t.id}">
-                  <span class="ti-num">${n}</span>
-                  <span class="ti-body"><span class="ti-title">Tema ${n} — ${t.titulo}</span>${blq ? `<span class="ti-desc">${blq}</span>` : `<span class="ti-desc">${t.descripcion || ''}</span>`}</span>
-                </a>`;
-                }).join('')}
+                ${inner}
               </div>
             </div>`;
 }

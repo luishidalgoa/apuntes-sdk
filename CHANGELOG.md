@@ -7,6 +7,22 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.20
+- **Nuevo (estructura)**: capa opcional **«bloque»** por encima del tema, para
+  agrupar temas (p. ej. «Bloque 1», «Bloque 2»…). Contrato agnóstico: un tema
+  declara `bloque` (una etiqueta `'Bloque 1'` o `{ id, label }`) y el SDK agrupa
+  y etiqueta por él, **sin hardcodear nada**; si ningún tema trae `bloque`, no hay
+  agrupación (100% retrocompatible). Aparece en las **cuatro superficies**:
+  - **Hub**: los temas se agrupan bajo cabeceras de bloque.
+  - **Buscador**: las migas incluyen el bloque («Bloque 1 › Tema 4 › …») y el
+    nombre del bloque es **buscable** (encuentra los temas de ese bloque).
+  - **Examen**: cabecera de bloque con **checkbox** que marca/desmarca todos sus
+    temas (con estado indeterminado), por encima de la agrupación por tema.
+  - **Desplegable de Temas**: los temas se listan bajo su bloque.
+  - Helpers nuevos en el registry: `bloqueOf(tema)`, `hasBloques()`,
+    `groupedTemas()`. Cambios en `registry.js`, `core/content-index.js`,
+    `views/{temario,tema,examen}.js` y `styles/{hub,exam,shared}.css`.
+
 ## v0.1.19
 - **Fix (móvil)**: el **marcapáginas de tela** (la cinta vertical) tapaba el
   texto en el móvil, donde el contenido va a todo el ancho (la cinta de 56px

@@ -47,6 +47,10 @@ a.opts-item{text-decoration:none;}
 .ti-body{display:flex;flex-direction:column;min-width:0;}
 .ti-title{font-size:13.5px;font-weight:700;}
 .ti-desc{font-size:11.5px;font-weight:500;color:var(--ink-faint);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
+/* Cabecera de bloque dentro del desplegable de Temas (capa por encima del tema). */
+.ti-bloque-head{font:800 10px/1 "Hanken Grotesk",system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);padding:9px 12px 5px;}
+.ti-bloque-head:not(:first-child){border-top:1px solid var(--line);margin-top:3px;}
 .opts-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px 8px;}
 .opts-label{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);}
 .opts-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;font-size:14px;font-weight:600;
