@@ -10,8 +10,13 @@
    texto en <mark> no cambia el nº de caracteres, los offsets son estables entre
    el DOM "marcado" (al guardar) y el DOM limpio (al reaplicar tras un render).
    Storage por tema en localStorage; se reaplica en cada render. */
-import { registerLayer } from './modal-stack.js';
+import { registerLayer, registerExclusive } from './modal-stack.js';
 import { esc } from './dom.js';
+
+/* Iconos SVG (sustituyen a los emojis 🖍️/🧼, genéricos): rotulador para la
+   herramienta y goma para borrar. Heredan color por currentColor. */
+const SVG_MARKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4a2 2 0 0 1 2.8 0l5.2 5.2a2 2 0 0 1 0 2.8Z"/></svg>';
+const SVG_ERASER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4L14 6l6 6-9 9Z"/><path d="M22 21H8"/><path d="m15 5 4 4"/></svg>';
 
 const LS_COLORS = 'tai-hl-colors';
 const LS_MARKS  = 'tai-highlights';
@@ -217,29 +222,43 @@ export function registerHighlightButton(btn){ btnRef = btn; syncButton(); }
 function syncButton(){ if(btnRef){ btnRef.classList.toggle('on', on); btnRef.setAttribute('aria-pressed', on ? 'true' : 'false'); } }
 
 export function activateHighlight(){
+  if(hlExclusive) hlExclusive.activate();   // cierra el modo "colocar marcapáginas" si estaba
   on = true; document.body.classList.add('hl-on');
   updateSelStyle();
-  if(palette){ palette.hidden = false; renderPalette(); }
+  if(palette){ palette.classList.remove('bar-out'); palette.hidden = false; renderPalette(); }   // barIn (CSS)
   syncButton();
 }
 export function deactivateHighlight(){
   on = false; eraseMode = false;
   document.body.classList.remove('hl-on', 'hl-erase');
-  if(palette) palette.hidden = true;
   closeHlSettings();
   syncButton();
+  /* salida animada: desliza hacia abajo y luego se oculta (a menos que se
+     reactive durante la animación). */
+  if(palette && !palette.hidden){
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(reduce){ palette.hidden = true; return; }
+    palette.classList.add('bar-out');
+    const done = () => {
+      palette.removeEventListener('animationend', done);
+      palette.classList.remove('bar-out');
+      if(!on) palette.hidden = true;
+    };
+    palette.addEventListener('animationend', done);
+  }
 }
 export function toggleHighlight(){ on ? deactivateHighlight() : activateHighlight(); }
 
 /* ---------------- paleta flotante ("chuleta") ---------------- */
 let palette = null;
+let hlExclusive = null;
 function renderPalette(){
   if(!palette) return;
   const colors = getColors();
   palette.innerHTML =
-    '<span class="hl-cap">🖍️</span>'
+    '<span class="hl-cap" aria-hidden="true">' + SVG_MARKER + '</span>'
     + colors.map(c => `<button class="hl-sw${!eraseMode && c.key === activeColor ? ' on' : ''}" type="button" data-key="${c.key}" title="${esc(c.label)}"><span class="hl-dot"></span><span class="hl-lbl">${esc(c.label)}</span></button>`).join('')
-    + `<button class="hl-sw hl-eraser${eraseMode ? ' on' : ''}" type="button" data-act="erase" title="Goma de borrar"><span class="hl-eico" aria-hidden="true">🧼</span><span class="hl-lbl">Borrar</span></button>`
+    + `<button class="hl-sw hl-eraser${eraseMode ? ' on' : ''}" type="button" data-act="erase" title="Goma de borrar"><span class="hl-eico" aria-hidden="true">${SVG_ERASER}</span><span class="hl-lbl">Borrar</span></button>`
     + '<span class="hl-sep"></span>'
     + '<button class="hl-act" type="button" data-act="settings" title="Configurar colores">⚙</button>'
     + '<button class="hl-act" type="button" data-act="off" title="Desactivar (Esc)">✕</button>';
@@ -267,6 +286,7 @@ export function mountHighlight(shell){
   });
   mountHlSettings(shell);
   registerLayer({ isOpen: () => on, close: deactivateHighlight, priority: 20 });
+  hlExclusive = registerExclusive({ isOpen: () => on, close: deactivateHighlight });
 }
 
 /* ---------------- panel de ajustes (editar la chuleta) ---------------- */

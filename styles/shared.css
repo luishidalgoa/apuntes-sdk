@@ -163,12 +163,29 @@ body.bookmark-placing #temaContent .art-block:hover{
   box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--tema-accent) 55%, #fff);}
 .bm-hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;
   padding:9px 12px 9px 16px;background:var(--ink);color:var(--paper);border-radius:999px;
-  box-shadow:0 12px 30px -8px rgba(42,38,32,.5);max-width:calc(100vw - 32px);}
+  box-shadow:0 12px 30px -8px rgba(42,38,32,.5);max-width:calc(100vw - 20px);
+  animation:bmBarIn .24s cubic-bezier(.2,.7,.2,1);}
 .bm-hint[hidden]{display:none;}
-.bm-hint-txt{font-size:13.5px;font-weight:600;}
-.bm-hint .btn.small{padding:6px 12px;font-size:12.5px;background:rgba(255,255,255,.12);color:var(--paper);border-color:rgba(255,255,255,.28);}
+.bm-hint.bar-out{animation:bmBarOut .2s cubic-bezier(.4,0,1,1) forwards;}
+/* una sola línea: nunca crece a lo alto. El texto encoge con ellipsis como
+   red de seguridad; los botones no se comprimen. */
+.bm-hint-txt{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.bm-hint .btn.small{flex:none;padding:6px 12px;font-size:12.5px;background:rgba(255,255,255,.12);color:var(--paper);border-color:rgba(255,255,255,.28);}
 .bm-hint .btn.small:hover{background:rgba(255,255,255,.2);}
-@media (max-width:520px){ .bm-hint-txt{font-size:12.5px;} }
+.bm-hint-short{display:none;}
+@media (max-width:560px){
+  .bm-hint{gap:7px;padding:8px 10px 8px 13px;}
+  .bm-hint-txt{font-size:12.5px;}
+  .bm-hint-full{display:none;}      /* texto corto: cabe sin wrap */
+  .bm-hint-short{display:inline;}
+}
+/* deslizamiento vertical compartido por las barras de fondo (hint + subrayado);
+   conservan su centrado translateX(-50%). */
+@keyframes bmBarIn{from{opacity:0;transform:translate(-50%,140%);} to{opacity:1;transform:translate(-50%,0);}}
+@keyframes bmBarOut{from{opacity:1;transform:translate(-50%,0);} to{opacity:0;transform:translate(-50%,140%);}}
+@media (prefers-reduced-motion:reduce){
+  .bm-hint,.bm-hint.bar-out{animation:none;}
+}
 
 /* Fila de saltos de sección dentro de la página */
 .section-jump{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 22px;padding:0 4px;}

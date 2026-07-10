@@ -10,6 +10,18 @@ export function registerLayer({ isOpen, close, priority = 0 }){
   layers.sort((a, b) => b.priority - a.priority);
 }
 
+/* Barras flotantes de fondo mutuamente excluyentes (marcapáginas "colocar" y
+   la barra de subrayado): ambas viven pegadas abajo y se solaparían. Cada una
+   se registra; al activar una, se cierran las demás abiertas. */
+const exclusives = [];
+export function registerExclusive(entry){
+  exclusives.push(entry);   // { isOpen, close }
+  return {
+    activate(){ exclusives.forEach(e => { if(e !== entry && e.isOpen && e.isOpen()) e.close(); }); },
+    dispose(){ const i = exclusives.indexOf(entry); if(i >= 0) exclusives.splice(i, 1); }
+  };
+}
+
 let installed = false;
 export function installEscapeHandler(){
   if(installed) return;

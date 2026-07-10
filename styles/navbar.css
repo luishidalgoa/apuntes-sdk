@@ -94,9 +94,9 @@
   }
   /* contenido no tapado por el dock */
   body.nav-docked #view > .wrap{padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px));}
-  /* chip del marcapáginas y hint por encima del dock */
+  /* chip del marcapáginas, hint y barra de subrayado por encima del dock */
   body.nav-docked .bm-chip{bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
-  body.nav-docked .bm-hint{bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
+  body.nav-docked .bm-hint,body.nav-docked .hl-palette{bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
 
   /* -- variante Safari iOS: dock ARRIBA (su barra de URL vive abajo) -- */
   body.nav-top .controls{
@@ -108,6 +108,7 @@
   body.nav-top #view > .wrap{padding-bottom:80px;padding-top:76px;}
   body.nav-top .bm-chip{bottom:calc(18px + env(safe-area-inset-bottom, 0px));}
   body.nav-top .bm-hint{bottom:22px;}
+  body.nav-top .hl-palette{bottom:18px;}
 }
 
 /* ---- hoja "Más" (móvil) ---- */

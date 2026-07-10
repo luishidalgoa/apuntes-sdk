@@ -7,6 +7,23 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.32
+
+- **Barras de fondo mutuamente excluyentes**: el modo «colocar marcapáginas» y
+  la barra de subrayado (ambas pegadas abajo) ya no se superponen — al abrir una
+  se cierra la otra. Nuevo `registerExclusive()` en `modal-stack.js`; la vista
+  de tema dispone su registro al desmontarse.
+- **Animación de entrada/salida** de ambas barras: entran deslizando de abajo
+  arriba y salen de arriba abajo (keyframes `bmBarIn`/`bmBarOut` compartidos;
+  la salida difiere el `hidden` hasta el `animationend`). Respeta
+  `prefers-reduced-motion`.
+- **Hint del marcapáginas en móvil**: ya no hace wrap ni engorda a lo alto —
+  `white-space:nowrap` + texto corto («Toca dónde marcar») por media query, con
+  ellipsis como red de seguridad.
+- **Iconos SVG** en la barra de subrayado: el rotulador (`.hl-cap`) y la goma
+  (`.hl-eraser`) sustituyen a los emojis 🖍️/🧼.
+- La barra de subrayado también se eleva por encima del dock móvil.
+
 ## v0.1.31
 
 - **Navbar responsive moderno** (inspiración Aceternity UI; un solo DOM de

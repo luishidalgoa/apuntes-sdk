@@ -27,11 +27,13 @@ body.hl-on #temaContent button{ cursor: pointer; }
   padding: 7px 9px; border-radius: 999px;
   background: var(--paper, #FBF7EF); border: 1px solid var(--rule, #C7BDA8);
   box-shadow: 0 6px 24px -8px rgba(42,38,32,.4);
-  animation: hl-pop .16s ease-out;
+  animation: bmBarIn .22s cubic-bezier(.2,.7,.2,1);   /* entra de abajo arriba */
 }
 .hl-palette[hidden]{ display: none; }   /* el atributo hidden debe ganar al display:flex de arriba */
-@keyframes hl-pop{ from{ opacity: 0; transform: translate(-50%, 8px); } to{ opacity: 1; transform: translate(-50%, 0); } }
-.hl-palette .hl-cap{ font-size: 15px; padding: 0 2px; flex: none; }
+.hl-palette.bar-out{ animation: bmBarOut .2s cubic-bezier(.4,0,1,1) forwards; }   /* sale de arriba abajo */
+.hl-palette .hl-cap{ flex: none; display: grid; place-items: center; color: var(--ink-soft, #5C564C); }
+.hl-palette .hl-cap svg{ width: 18px; height: 18px; display: block; }
+.hl-eico svg{ width: 16px; height: 16px; display: block; }
 .hl-sw{
   display: inline-flex; align-items: center; gap: 6px; flex: none;
   border: 1px solid var(--line, #D9D1C0); background: #fff; color: var(--ink, #2A2620);
@@ -41,8 +43,7 @@ body.hl-on #temaContent button{ cursor: pointer; }
 .hl-sw .hl-dot{ width: 14px; height: 14px; border-radius: 50%; background: #FFE066; border: 1px solid rgba(0,0,0,.14); flex: none; }
 .hl-sw:hover{ border-color: var(--rule, #C7BDA8); }
 .hl-sw.on{ border-color: var(--ink, #2A2620); box-shadow: 0 0 0 2px rgba(42,38,32,.12); }
-.hl-eico{ font-size: 14px; line-height: 1; }
-.hl-eraser .hl-eico{ filter: grayscale(.15); }
+.hl-eico{ display: grid; place-items: center; line-height: 0; }
 body.hl-erase #temaContent{ cursor: crosshair; }
 .hl-sep{ width: 1px; align-self: stretch; background: var(--line, #D9D1C0); margin: 2px 2px; flex: none; }
 .hl-act{

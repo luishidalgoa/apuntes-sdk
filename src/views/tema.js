@@ -10,7 +10,7 @@ import { createBookmarkUI, markAnchor, anchorFromClick, clearBookmark, getBookma
 import { bindMarks } from '../core/marks.js';
 import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
 import { exportBackup, importBackup } from '../core/backup.js';
-import { registerLayer } from '../core/modal-stack.js';
+import { registerLayer, registerExclusive } from '../core/modal-stack.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { mountResponsiveNav } from '../core/navbar.js';
 
@@ -199,13 +199,20 @@ export const temaViewFactory = {
         const hint = document.createElement('div');
         hint.className = 'bm-hint';
         hint.hidden = true;
-        hint.innerHTML = '<span class="bm-hint-txt"><span class="bm-hint-ico">' + ICONS.bookmark + '</span> Toca el artículo donde quieres el marcapáginas</span>'
+        /* Texto largo en desktop, corto en móvil (evita el wrap que engordaba
+           el hint a lo alto): el CSS muestra uno u otro por media query. */
+        hint.innerHTML = '<span class="bm-hint-txt"><span class="bm-hint-ico">' + ICONS.bookmark + '</span>'
+          + '<span class="bm-hint-full">Toca el artículo donde quieres el marcapáginas</span>'
+          + '<span class="bm-hint-short">Toca dónde marcar</span></span>'
           + '<button class="btn small" id="bmRemove" type="button" hidden>Quitar</button>'
           + '<button class="btn small" id="bmCancel" type="button">Cancelar</button>';
         root.querySelector('.wrap').appendChild(hint);
 
         let placing = false;
         const bookmarkUI = createBookmarkUI(root, tema.id, { onTabClick: () => { if(!placing) enterPlacing(); } });
+        /* Barra excluyente: si estaba la de subrayado abierta, se cierra al
+           entrar en "colocar" (y viceversa). */
+        const bmExclusive = registerExclusive({ isOpen: () => placing, close: exitPlacing });
         function refreshBookmarkUI(){
           const marked = !!getBookmark(tema.id);
           bookmarkBtn.classList.toggle('on', marked);
@@ -213,17 +220,25 @@ export const temaViewFactory = {
           bookmarkBtn.title = label;
           bookmarkBtn.setAttribute('aria-label', label);
         }
+        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
         function enterPlacing(){
+          bmExclusive.activate();          // cierra la barra de subrayado si estaba
           placing = true;
           document.body.classList.add('bookmark-placing');
           hint.querySelector('#bmRemove').hidden = !getBookmark(tema.id);
-          hint.hidden = false;
+          hint.classList.remove('bar-out');
+          hint.hidden = false;             // bmBarIn (CSS)
           bookmarkBtn.classList.add('on');
         }
         function exitPlacing(){
           placing = false;
           document.body.classList.remove('bookmark-placing');
-          hint.hidden = true;
+          if(reduceMotion){ hint.hidden = true; }
+          else if(!hint.hidden){
+            hint.classList.add('bar-out');   // desliza hacia abajo, luego se oculta
+            const done = () => { hint.removeEventListener('animationend', done); hint.classList.remove('bar-out'); if(!placing) hint.hidden = true; };
+            hint.addEventListener('animationend', done);
+          }
           refreshBookmarkUI();
         }
 
@@ -272,6 +287,7 @@ export const temaViewFactory = {
           closeGames();
           if(bookmarkUI) bookmarkUI.destroy();
           if(respNav) respNav.destroy();
+          bmExclusive.dispose();
           document.body.classList.remove('repaso', 'panel-open', 'fulltext-open', 'bookmark-placing');
         };
       },
