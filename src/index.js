@@ -15,7 +15,7 @@ import { mountPanels } from './core/panels.js';
 import { mountGamesOverlay } from './games/engine.js';
 import { installEscapeHandler } from './core/modal-stack.js';
 import { applyTabletMode } from './core/tablet.js';
-import { temarioView } from './views/temario.js';
+import { temarioView, materiaView } from './views/temario.js';
 import { temaViewFactory } from './views/tema.js';
 import { examenViewFactory } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
@@ -45,7 +45,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
 
   createRouter({
     root: viewRoot,
-    views: { hub: temarioView, tema: temaViewFactory, examen: examenViewFactory },
+    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory, examen: examenViewFactory },
     ctx: {}
   });
 }

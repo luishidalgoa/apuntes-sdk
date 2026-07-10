@@ -1,6 +1,10 @@
-.view-hub .wrap{max-width:760px;padding:56px 22px 80px;}
-.view-hub h1{font-size:clamp(32px,5.5vw,50px);}
-.view-hub .lede{margin-bottom:40px;}
+.view-hub .wrap,.view-materia .wrap{max-width:760px;padding:56px 22px 80px;}
+.view-hub h1,.view-materia h1{font-size:clamp(32px,5.5vw,50px);}
+.view-hub .lede,.view-materia .lede{margin-bottom:40px;}
+/* Materia como puerta de navegación: enlace de vuelta + tarjeta de materia. */
+.hub-back{display:inline-flex;margin-bottom:18px;}
+.materia-card .tema-num{font-size:26px;}
+.view-materia .lede:empty{margin-bottom:24px;}
 
 /* Tarjeta "seguir donde lo dejaste" (marcador automático) */
 .resume-card{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;margin:-18px 0 26px;

@@ -7,6 +7,27 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.22
+- **Nuevo (navegación)**: capa **«materia»**, una puerta de navegación de primer
+  nivel por encima del tema (p. ej. «Legislación» y «TAI técnica» en una misma
+  app). Contrato: `appConfig.materias = [{ id, label, descripcion?, accent?,
+  numeral? }]` y cada tema declara `materia:'<id>'`. **Opcional y retrocompatible**:
+  si no hay materias, la portada es directamente la lista de temas (una sola
+  materia), como hasta ahora.
+  - **Portada** (`#/`): selector con una **tarjeta por materia**; al entrar,
+    **hub de la materia** (`#/materia/<id>`) con sus temas.
+  - La **barra del tema** vuelve al hub de su materia («← Materia») y el
+    desplegable de Temas se acota a los temas de esa materia.
+  - **Buscador**: las migas incluyen la materia («Legislación › Tema 2 › …») y el
+    nombre de la materia es buscable.
+  - **Examen**: el setup agrupa los temas por **materia** (cabecera + checkbox que
+    marca/desmarca sus temas); si no hay materias, cae a la agrupación por bloque.
+  - La agrupación por `bloque` sigue actuando **DENTRO** de cada materia (materia
+    NO reemplaza a bloque). Helpers nuevos en el registry: `hasMaterias`,
+    `materiaOf`, `temasOfMateria`, `materiasWithTemas`. Cambios en `config.js`,
+    `registry.js`, `router.js`, `index.js`, `core/content-index.js`,
+    `views/{temario,tema,examen}.js`, `styles/hub.css`.
+
 ## v0.1.21
 - **Nuevo**: el **buscador entiende lenguaje natural + IA** (mini-RAG genérico).
   Al escribir una pregunta, en vez de solo casar palabras, el buscador:

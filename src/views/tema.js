@@ -1,6 +1,6 @@
 /* Vista genérica de tema: cabecera + barra de controles uniforme + contenido
    del manifiesto (template estático de T1 o tarjetas data-driven de T2). */
-import { allTemas, temaById, groupedTemas, hasBloques } from '../registry.js';
+import { allTemas, temaById, bloqueOf, hasMaterias, materiaOf, temasOfMateria } from '../registry.js';
 import { setTemaContext, bindRefModeSegment, revealAnchor, closePanel, closeFullText } from '../core/panels.js';
 import { bindCardInteractions, bindToggleAll, bindRepaso } from '../core/render-tema.js';
 import { bindTabletButton } from '../core/tablet.js';
@@ -41,14 +41,27 @@ function temaItemHtml(t, current){
                 </a>`;
 }
 function temasDropdownHtml(tema){
-  // Si los temas declaran `bloque`, se listan bajo cabeceras de bloque; si no,
-  // lista plana (retrocompatible). Genérico: usa la agrupación del registry.
-  const inner = hasBloques()
-    ? groupedTemas().map(g =>
-        (g.label ? `<div class="ti-bloque-head" role="presentation">${g.label}</div>` : '')
-        + g.temas.map(t => temaItemHtml(t, tema)).join('')
-      ).join('')
-    : allTemas().map(t => temaItemHtml(t, tema)).join('');
+  // Con materias, el desplegable se acota a los temas de la materia actual
+  // (navegas dentro de tu materia). Dentro, si hay `bloque`, se agrupan; si no,
+  // lista plana. Sin materias, lista todos los temas (retrocompatible).
+  const mat = hasMaterias() ? materiaOf(tema) : null;
+  const temas = mat ? temasOfMateria(mat.id) : allTemas();
+  let inner;
+  if(temas.some(t => t.bloque)){
+    const groups = [], byId = new Map();
+    temas.forEach(t => {
+      const b = bloqueOf(t), key = b ? b.id : ' ';
+      let g = byId.get(key);
+      if(!g){ g = { label: b ? b.label : null, temas: [] }; byId.set(key, g); groups.push(g); }
+      g.temas.push(t);
+    });
+    inner = groups.map(g =>
+      (g.label ? `<div class="ti-bloque-head" role="presentation">${g.label}</div>` : '')
+      + g.temas.map(t => temaItemHtml(t, tema)).join('')
+    ).join('');
+  } else {
+    inner = temas.map(t => temaItemHtml(t, tema)).join('');
+  }
   return `
             <div class="opts-wrap">
               <button class="btn ghost" id="temasBtn" aria-haspopup="true" aria-expanded="false">Temas</button>
@@ -80,12 +93,17 @@ export const temaViewFactory = {
         ac = new AbortController();
         const { signal } = ac;
 
+        // Con materias, "volver" lleva al hub de la materia del tema; si no, a la portada.
+        const mat = hasMaterias() ? materiaOf(tema) : null;
+        const backHref = mat ? '#/materia/' + mat.id : '#/';
+        const backLabel = mat ? '← ' + mat.label : '📚 Temario';
+
         root.innerHTML = `
       <div class="wrap" style="--tema-accent:${tema.accent}">
         <header class="top reveal">${tema.headerHtml}</header>
         <nav class="controls reveal" style="animation-delay:.05s" aria-label="Navegación del tema">
           <div class="nav-left">
-            <a class="btn ghost" href="#/">📚 Temario</a>
+            <a class="btn ghost" href="${backHref}">${backLabel}</a>
             ${temasDropdownHtml(tema)}
           </div>
           <button class="nav-search search-trigger" id="searchBtn" type="button" title="Buscar en el temario (⌘K / /)" aria-label="Buscar en el temario">

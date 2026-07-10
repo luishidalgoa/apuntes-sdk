@@ -10,7 +10,7 @@
    Es 100% agnóstico de la asignatura: no sabe nada de legislación ni de TAI,
    solo del sistema de diseño compartido. El índice se construye una sola vez
    (perezoso, la 1ª búsqueda) y se cachea. */
-import { allTemas, bloqueOf } from '../registry.js';
+import { allTemas, bloqueOf, materiaOf } from '../registry.js';
 
 export function normalize(s){
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -30,9 +30,11 @@ let INDEX = null;
    recorre la estructura común devolviendo sus entradas ya normalizadas. */
 function indexTema(tema, ti){
   const num = temaNumber(tema, ti);
-  const bl = bloqueOf(tema);                 // capa opcional "bloque" (agnóstica)
+  const mat = materiaOf(tema);               // capa de navegación "materia" (opcional)
+  const matLabel = mat ? mat.label : '';
+  const bl = bloqueOf(tema);                 // agrupación "bloque" DENTRO de la materia (opcional)
   const blLabel = bl ? bl.label : '';
-  const crumb = blLabel ? blLabel + ' › ' : '';   // migas: "Bloque 1 › Tema 4 › …"
+  const crumb = [matLabel, blLabel].filter(Boolean).map(s => s + ' › ').join('');   // "Legislación › Bloque 1 › Tema 4 › …"
   const entries = [];
   const box = document.createElement('div');
   try { tema.renderContent(box); } catch(e){ return entries; }   // un tema que falle no rompe el resto
@@ -70,7 +72,7 @@ function indexTema(tema, ti){
 
   entries.forEach(e => {
     e._t = normalize(e.title); e._x = normalize(e.text); e._n = normalize(e.num);
-    e._k = normalize((blLabel ? blLabel + ' ' : '') + e.temaK);   // el bloque también es buscable (con el nombre del tema)
+    e._k = normalize([matLabel, blLabel, e.temaK].filter(Boolean).join(' '));   // materia y bloque también buscables (con el nombre del tema)
     e._tw = wordsOf(e._t); e._xw = wordsOf(e._x); e._kw = wordsOf(e._k);
   });
   return entries;

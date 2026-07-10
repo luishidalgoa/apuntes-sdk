@@ -9,6 +9,7 @@
 export function parseHash(){
   const seg = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   if(seg.length === 0) return { name: 'hub' };
+  if(seg[0] === 'materia' && seg[1]) return { name: 'materia', materiaId: seg[1] };
   if(seg[0] === 'tema' && seg[1]) return { name: 'tema', temaId: seg[1], anchor: seg.slice(2).join('/') || null };
   if(seg[0] === 'examen') return { name: 'examen', temaId: seg[1] || null };
   return { name: 'hub' };
@@ -16,6 +17,7 @@ export function parseHash(){
 
 export function href(route){
   if(route.name === 'hub') return '#/';
+  if(route.name === 'materia') return '#/materia/' + route.materiaId;
   if(route.name === 'tema') return '#/tema/' + route.temaId + (route.anchor ? '/' + route.anchor : '');
   if(route.name === 'examen') return '#/examen' + (route.temaId ? '/' + route.temaId : '');
   return '#/';
