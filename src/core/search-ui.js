@@ -1,15 +1,19 @@
 /* Buscador global (overlay). Genérico del SDK: usa el índice de contenido
    (content-index.js) que recorre la estructura común de temas/puntos, así que
    cualquier app del núcleo (TAI, Legislación…) lo hereda sin tocar contenido.
-   Se abre con el botón 🔍 de la barra/hub, con ⌘/Ctrl+K o con «/». */
+   Se abre con el botón 🔍 de la barra/hub, con ⌘/Ctrl+K o con «/».
+   Si la consulta parece una PREGUNTA en lenguaje natural, ofrece responder con
+   IA (mini-RAG: recupera los puntos relevantes y la IA responde citándolos). */
 import { registerLayer } from './modal-stack.js';
 import { searchContent, normalize, warmIndex } from './content-index.js';
+import { isQuestion, keyTerms, askTemario } from './search-ask.js';
 import { esc } from './dom.js';
 import { navigate } from '../router.js';
 
 export const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 
 let overlay, input, resultsEl, results = [], activeIdx = -1;
+let lastQuery = '', citedRefs = [], asking = false;
 
 export function mountSearch(app){
   const wrap = document.createElement('div');
@@ -20,7 +24,7 @@ export function mountSearch(app){
           <span class="search-ico">${SEARCH_ICON}</span>
           <input id="searchInput" class="search-input" type="text" autocomplete="off" autocapitalize="off"
                  spellcheck="false" role="searchbox" aria-controls="searchResults"
-                 placeholder="Busca un concepto o un punto (p. ej. Dijkstra, 4.3.1, montículo)…">
+                 placeholder="Busca un concepto, un punto, o pregunta (p. ej. ¿qué hace único a un AVL?)">
           <button class="search-esc" id="searchClose" type="button" aria-label="Cerrar">Esc</button>
         </div>
         <div class="search-results" id="searchResults" role="listbox"></div>
@@ -41,6 +45,9 @@ export function mountSearch(app){
     if(it){ activeIdx = +it.dataset.i; paintActive(); }
   });
   resultsEl.addEventListener('click', (e) => {
+    if(e.target.closest('[data-ask]')){ doAsk(lastQuery); return; }
+    const ref = e.target.closest('[data-goref]');
+    if(ref){ gotoRef(+ref.dataset.goref); return; }
     const it = e.target.closest('.sr-item');
     if(it) select(+it.dataset.i);
   });
@@ -52,9 +59,7 @@ export function mountSearch(app){
     if(e.key === '/' && overlay.hidden && !isTyping(e.target)){ e.preventDefault(); openSearch(); }
   });
 
-  /* Precalentar el índice en tiempo de inactividad, INCREMENTAL (un tema por
-     hueco de inactividad, cediendo el hilo entre temas): la 1ª búsqueda es
-     instantánea sin congelar el arranque aunque algún tema sea pesado. */
+  /* Precalentar el índice en tiempo de inactividad, INCREMENTAL. */
   const warm = () => { try { warmIndex(); } catch(e){} };
   if('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 3000 });
   else setTimeout(warm, 1500);
@@ -95,17 +100,21 @@ function paintActive(scroll){
     if(on && scroll) it.scrollIntoView({ block: 'nearest' });
   });
 }
-function select(i){
-  const e = results[i];
+function goto(e){
   if(!e) return;
   closeSearch();
   navigate({ name: 'tema', temaId: e.temaId, anchor: e.anchor || null });
 }
+function select(i){ goto(results[i]); }
+function gotoRef(i){ goto(citedRefs[i]); }
 
 function runQuery(q){
-  results = q.trim().length >= 2 ? searchContent(q) : [];
+  lastQuery = q;
+  const question = q.trim().length >= 2 && isQuestion(q);
+  const rq = question ? (keyTerms(q).join(' ') || q) : q;   // en preguntas, recupera por los términos clave
+  results = q.trim().length >= 2 ? searchContent(rq) : [];
   activeIdx = results.length ? 0 : -1;
-  render(q);
+  render(q, question);
 }
 
 /* resalta los términos (best-effort, sobre el texto ya escapado) */
@@ -127,20 +136,66 @@ function snippet(text, terms){
   return s;
 }
 
-function render(q){
-  const terms = q.trim().length >= 2 ? normalize(q).split(/\s+/).filter(Boolean) : [];
+function askBarHtml(q){
+  const terms = keyTerms(q).slice(0, 6);
+  const chips = terms.map(t => `<span class="sr-ask-term">${esc(t)}</span>`).join('');
+  return `<div class="sr-ask">
+      <div class="sr-ask-l"><span class="sr-ask-spark">✨</span><span class="sr-ask-txt">Parece una pregunta.${terms.length ? ' Detecté: ' + chips : ''}</span></div>
+      <button class="sr-ask-btn" data-ask type="button">Responder con IA</button>
+    </div>
+    <div class="sr-answer-slot" id="srAnswer"></div>`;
+}
+
+function answerHtml(answer, cited){
+  const clean = (answer || '')
+    .replace(/\n?\s*Puntos?\s*:.*$/i, '')     // quita la línea "Puntos: [n]" (ya la mostramos como botones)
+    .replace(/\s*\[\d{1,2}\]/g, '')            // quita los marcadores [n] del texto
+    .trim();
+  citedRefs = cited || [];
+  const refs = citedRefs.map((e, i) =>
+    `<button class="sr-ref" data-goref="${i}" type="button"><span class="sr-badge">T${esc(e.temaNum)}</span>${e.num ? `<span class="sr-num">${esc(e.num)}</span>` : ''}<span class="sr-ref-t">${esc(e.title)}</span><span class="sr-go">↵</span></button>`
+  ).join('');
+  return `<div class="sr-answer">
+      <div class="sr-answer-h">✨ Respuesta</div>
+      <div class="sr-answer-body">${esc(clean).replace(/\n/g, '<br>')}</div>
+      ${refs ? `<div class="sr-answer-refs"><span class="sr-refs-l">Ir a la explicación:</span>${refs}</div>` : ''}
+    </div>`;
+}
+
+async function doAsk(q){
+  if(asking || !q || q.trim().length < 2) return;
+  asking = true;
+  const slot = resultsEl.querySelector('#srAnswer');
+  const btn = resultsEl.querySelector('[data-ask]');
+  if(btn){ btn.disabled = true; btn.textContent = 'Pensando…'; }
+  if(slot) slot.innerHTML = '<div class="sr-answer sr-answer-loading">✨ Pensando…</div>';
+  try{
+    const { answer, cited } = await askTemario(q);
+    if(slot) slot.innerHTML = answer ? answerHtml(answer, cited)
+      : '<div class="sr-answer sr-answer-err">No encontré nada en el temario para esa pregunta.</div>';
+  }catch(err){
+    if(slot) slot.innerHTML = `<div class="sr-answer sr-answer-err">La IA no está disponible ahora mismo (${esc(err.message)}). Mientras, tienes abajo los puntos detectados del temario.</div>`;
+  }finally{
+    asking = false;
+    if(btn){ btn.disabled = false; btn.textContent = 'Responder con IA'; }
+  }
+}
+
+function render(q, question){
+  const kterms = question ? keyTerms(q) : (q.trim().length >= 2 ? normalize(q).split(/\s+/).filter(Boolean) : []);
   const rawTerms = q.trim().split(/\s+/).filter(Boolean);
   if(q.trim().length < 2){
-    resultsEl.innerHTML = '<div class="sr-empty">Escribe al menos 2 letras. Busca por <b>concepto</b> (Dijkstra, montículo, RAID) o por <b>número de punto</b> (4.3.1, 2.5).</div>';
+    resultsEl.innerHTML = '<div class="sr-empty">Escribe al menos 2 letras. Busca por <b>concepto</b> (Dijkstra, montículo), por <b>número de punto</b> (4.3.1) o haz una <b>pregunta</b> y deja que la IA te lleve al punto.</div>';
     return;
   }
+  const ask = question ? askBarHtml(q) : '';
   if(!results.length){
-    resultsEl.innerHTML = `<div class="sr-empty">Sin resultados para «${esc(q)}».</div>`;
+    resultsEl.innerHTML = ask + `<div class="sr-empty">Sin resultados para «${esc(q)}».</div>`;
     return;
   }
-  resultsEl.innerHTML = results.map((e, i) => {
-    const title = highlight(esc(e.title), rawTerms);
-    const snip = e.text ? highlight(esc(snippet(e.text, terms)), rawTerms) : '';
+  const items = results.map((e, i) => {
+    const title = highlight(esc(e.title), question ? kterms : rawTerms);
+    const snip = e.text ? highlight(esc(snippet(e.text, kterms)), question ? kterms : rawTerms) : '';
     return `<button class="sr-item${i === activeIdx ? ' on' : ''}" data-i="${i}" type="button" role="option" aria-selected="${i === activeIdx}">
       <span class="sr-badge">T${esc(e.temaNum)}</span>
       ${e.num ? `<span class="sr-num">${esc(e.num)}</span>` : '<span class="sr-num sr-num-none">·</span>'}
@@ -152,4 +207,5 @@ function render(q){
       <span class="sr-go">↵</span>
     </button>`;
   }).join('');
+  resultsEl.innerHTML = ask + items;
 }
