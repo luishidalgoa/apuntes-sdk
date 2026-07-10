@@ -7,6 +7,19 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.33
+
+- **Navbar en escritorio/tablet ya no envuelve a 2 filas**: en el rango estrecho
+  (~780px, isla) el `.nav-left` heredaba `flex-wrap:wrap` del móvil antiguo y la
+  barra se volvía un pegote alto con radio 999px. Ahora `>760px` es una barra de
+  una sola fila garantizada: 3 zonas fijas (izquierda · buscador · derecha) con
+  el buscador elástico en medio (crece hasta 460px, encoge sin envolver).
+- **Marcapáginas · el tallo ya no sobresale de la card**: el ancla puede caer
+  unos px fuera de su tarjeta (p.ej. la lista de artículos de una card plegada),
+  y el tallo se pasaba de largo por debajo. Ahora se **clampa a la caja de la
+  tarjeta** (`min(raw, cardH - top - 6)`): con la card plegada el tallo termina
+  justo dentro del borde; con la card abierta llega al ancla exacta como antes.
+
 ## v0.1.32
 
 - **Barras de fondo mutuamente excluyentes**: el modo «colocar marcapáginas» y

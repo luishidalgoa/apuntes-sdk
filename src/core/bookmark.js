@@ -140,7 +140,13 @@ export function createBookmarkUI(root, temaId, { onTabClick } = {}){
     const cardBox = cardEl.getBoundingClientRect();
     const elBox = el.getBoundingClientRect();
     const top = parseFloat(getComputedStyle(stem).top) || 0;
-    const target = Math.max(0, (elBox.top - cardBox.top) + Math.min(18, elBox.height / 2) - top);
+    /* distancia desde el arranque del tallo hasta el centro (acotado) del ancla,
+       CLAMPADA a la caja de la tarjeta: el tallo nunca sobresale por debajo del
+       borde de la card a la que apunta (el ancla puede caer unos px fuera, p.ej.
+       la lista de artículos de una tarjeta plegada). */
+    const raw = (elBox.top - cardBox.top) + Math.min(18, elBox.height / 2) - top;
+    const maxLen = cardBox.height - top - 6;   // deja respirar la bolita del final
+    const target = Math.max(0, Math.min(raw, maxLen));
     stem.style.height = target.toFixed(0) + 'px';
     stem.classList.toggle('bm-none', target < 6);
   }

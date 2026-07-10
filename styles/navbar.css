@@ -30,6 +30,19 @@
 /* "Más" solo existe en móvil (especificidad > button.btn) */
 .controls button.nav-more{display:none;}
 
+/* ---- tablet + desktop (>760px): barra de UNA sola fila ----
+   El .nav-left heredaba flex-wrap:wrap del móvil antiguo; ahora el móvil usa el
+   dock, así que envolver ya no sirve para nada y en el rango estrecho (~780px)
+   volvía la barra un pegote de 2 filas con radio 999px. Layout 3 zonas fijas +
+   buscador elástico en medio: nunca crece a lo alto. */
+@media (min-width:761px){
+  .controls{flex-wrap:nowrap;}
+  .controls .nav-left{flex:0 0 auto;flex-wrap:nowrap;}
+  .controls .nav-left > .btn{white-space:nowrap;}
+  .controls .nav-right{flex:0 0 auto;}
+  .controls .nav-search{flex:1 1 auto;min-width:0;max-width:460px;}
+}
+
 /* ---- tablet 761–1100px: isla flotante ---- */
 @media (min-width:761px) and (max-width:1100px){
   .controls{
