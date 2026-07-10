@@ -149,7 +149,7 @@ export function createBookmarkUI(root, temaId, { onTabClick } = {}){
   function chipLabel(rect){
     const below = rect ? rect.top > innerHeight / 2 : true;
     const label = anchorLabel(temaId, anchorId) || 'tu marcador';
-    chip.innerHTML = '<span class="bm-chip-ico">🔖</span> ' + label + ' <span class="bm-chip-dir">' + (below ? '↓' : '↑') + '</span>';
+    chip.innerHTML = '<span class="bm-chip-ico">' + TAB_SVG + '</span> ' + label + ' <span class="bm-chip-dir">' + (below ? '↓' : '↑') + '</span>';
   }
 
   function show(id, { animate = false } = {}){
@@ -157,7 +157,12 @@ export function createBookmarkUI(root, temaId, { onTabClick } = {}){
     anchorId = id;
     const el = document.getElementById(id);
     if(!el) return;
-    cardEl = el.closest('.card, .node') || el;
+    /* Anfitrión de la pestañita: el bloque visual MÁS CERCANO al ancla, de
+       menor a mayor. Caer directamente al .node era el bug del "tallo que
+       cruza tarjetas": en el layout de árbol el nodo envuelve varios bloques
+       (Capítulo I + nota art-14 + …) y la pestañita quedaba colgada arriba
+       del todo con el tallo atravesando las tarjetas intermedias. */
+    cardEl = el.closest('.card') || el.closest('.innernote, .art-block') || el.closest('.node') || el;
     watchAC = new AbortController();
     cardEl.classList.add('bm-host');
     cardEl.appendChild(stem);
@@ -224,6 +229,16 @@ export function anchorFromClick(target){
       const near = node.querySelector(sel);
       if(near) return near.id;
     }
+  }
+  /* Genérico: temas cuyo contenido no usa el anchorPrefix configurado (p.ej.
+     TAI técnica con ids `sec-*`/`fundamentos`): cualquier elemento con id
+     dentro del contenido vale como ancla (getElementById + revealAnchor
+     funcionan igual; la etiqueta del chip cae al genérico "tu marcador"). */
+  const anyDirect = target.closest('#temaContent [id]');
+  if(anyDirect && anyDirect.id !== 'temaContent') return anyDirect.id;
+  if(card){
+    const anyFirst = card.querySelector('[id]');
+    if(anyFirst) return anyFirst.id;
   }
   return null;
 }

@@ -74,7 +74,10 @@ a.opts-item{text-decoration:none;}
    apunta a un subpunto interno, el TALLO (.bm-stem) se estira por el borde
    derecho hasta su altura exacta (el JS fija la height). El CHIP (.bm-chip)
    flota abajo-derecha SOLO cuando la marca está fuera de pantalla. */
-.bm-host{overflow:visible;}
+/* El anfitrión puede ser .card/.node (ya relative) o .innernote/.art-block
+   (estáticos): position:relative garantiza que pestañita y tallo se midan
+   contra el bloque marcado, no contra un ancestro. */
+.bm-host{position:relative;overflow:visible;}
 .bm-tab{position:absolute;top:-4px;right:22px;width:26px;height:34px;z-index:7;padding:0;border:none;background:none;cursor:pointer;
   color:var(--tema-accent);filter:drop-shadow(0 2px 3px rgba(42,38,32,.28));transition:filter .15s ease,transform .15s ease;}
 .bm-tab svg{display:block;width:100%;height:100%;}
@@ -96,6 +99,9 @@ a.opts-item{text-decoration:none;}
 .bm-chip[hidden]{display:none;}
 .bm-chip:hover{background:color-mix(in srgb,var(--tema-accent) 16%,#fff);}
 .bm-chip-dir{opacity:.65;font-weight:700;}
+.bm-chip-ico svg{width:12px;height:16px;display:block;}
+.bm-hint-ico svg{width:15px;height:15px;display:inline-block;vertical-align:-3px;}
+.btn.icon-btn svg{display:block;}
 @keyframes bmChipIn{from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){
   .bm-tab.bm-drop{animation:none;}

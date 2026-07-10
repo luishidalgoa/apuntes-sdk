@@ -7,6 +7,22 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.30
+
+- **Fix marcapáginas · el tallo cruzaba tarjetas enteras** cuando el ancla no
+  tenía `.card` contenedora (p.ej. la nota `innernote#art-14`): el anfitrión
+  caía directamente al `.node`, que en el layout de árbol envuelve varios
+  bloques, y la pestañita quedaba colgada arriba del todo con el tallo
+  atravesando las tarjetas intermedias. Ahora el anfitrión es el bloque visual
+  MÁS CERCANO (`.card` → `.innernote`/`.art-block` → `.node`), con
+  `position:relative` garantizado vía `.bm-host`.
+- **Marcapáginas en temas sin `anchorPrefix`** (p.ej. TAI técnica con ids
+  `sec-*`): `anchorFromClick` acepta como ancla cualquier elemento con id
+  dentro de `#temaContent` si no encuentra nada con el prefijo. La etiqueta del
+  chip cae al genérico «tu marcador».
+- **Iconos SVG en vez de emojis** en los botones de la barra (🔖 → banderín,
+  🖍️ → rotulador), en el chip de retorno y en el hint del modo colocar.
+
 ## v0.1.29
 
 - **Fix marcapáginas · no se podía colocar en tarjetas del layout de árbol**
