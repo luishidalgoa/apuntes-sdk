@@ -14,8 +14,9 @@ inlinados y la app funciona por `file://` sin red.
 ## Instalar en una app
 
 ```jsonc
-// package.json de la app
-"dependencies": { "apuntes-sdk": "github:luishidalgoa/apuntes-sdk#v0.1.0" }
+// package.json de la app — fíjala a un tag y en formato git+https
+// (el lockfile NO debe quedar en git+ssh, o el `npm ci` de Vercel falla)
+"dependencies": { "apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#v0.1.20" }
 ```
 
 ```js
@@ -37,15 +38,20 @@ createApp({
 
 ## Crear una asignatura nueva
 
-Clona `examples/starter` (una asignatura mínima que NO es de legislación). Cada
-tema es una carpeta `src/temas/temaN/` con un manifiesto:
+**Guía completa paso a paso: [`docs/crear-temario.md`](docs/crear-temario.md).**
+
+En resumen: clona `examples/starter` (una asignatura mínima que NO es de
+legislación) y sustituye el contenido. Cada tema es una carpeta
+`src/temas/temaN/` con un manifiesto:
 
 ```js
 export default {
-  id, numeral, k, titulo, descripcion, accent, headerHtml, chips?,
+  id, numeral, k, titulo, descripcion, accent, headerHtml, chips?, hintHtml?,
+  bloque?,             // (OPCIONAL) capa que agrupa temas ('Bloque 1' o {id,label});
+                       // si ningún tema la declara, no hay agrupación (retrocompatible)
   engine: {
     sections,          // { clave: { title, text | apartados:[{n,text,refs?,tags?}] } }
-    source,            // { clave: { title, paragraphs:[{n,text}] } }  (texto fuente)
+    source?,           // { clave: { title, paragraphs:[{n,text}] } }  (texto fuente)
     labelFor(key),     // clave → etiqueta ('Art. 97', 'El Sol', …)
     keySplit,          // 'first' | 'last' (por qué punto se parte la clave)
     sourceDigitFallback?, specialTags?, external?
@@ -55,8 +61,10 @@ export default {
 };
 ```
 
-El hub, el examen (bloques y recuentos), las flashcards y los deep-links se
-generan solos a partir de `TEMAS`.
+El hub, el examen (bloques y recuentos), las flashcards, el buscador y los
+deep-links se generan solos a partir de `TEMAS`. Ojo con el nombre: `bloque`
+(singular, agrupa **temas**) y `bloques` (plural, sub-bloques de **examen** de un
+tema) son cosas distintas.
 
 ## Propagar un cambio de diseño a todas las apps
 
