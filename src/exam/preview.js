@@ -62,8 +62,10 @@ export function openRefPreview(q){
   overlay.classList.add('open');
 }
 
+let cardEl = null;
 export function closeRefPreview(){
   overlay.classList.remove('open');
+  if(cardEl){ cardEl.style.transform = ''; }
   bodyEl.innerHTML = '';
 }
 
@@ -71,6 +73,7 @@ export function mountRefPreview(shell){
   shell.insertAdjacentHTML('beforeend', `
 <div id="refPreviewOverlay" role="dialog" aria-label="Vista previa del temario">
   <div class="ref-preview-card">
+    <button class="ref-preview-grip" type="button" aria-label="Arrastra para ajustar o cerrar"></button>
     <div class="ref-preview-head">
       <span class="ref-preview-title" id="refPreviewTitle">Vista previa</span>
       <a class="btn small" id="refPreviewGoto" href="#/">Ir al tema →</a>
@@ -80,6 +83,7 @@ export function mountRefPreview(shell){
   </div>
 </div>`);
   overlay = shell.querySelector('#refPreviewOverlay');
+  cardEl = overlay.querySelector('.ref-preview-card');
   titleEl = overlay.querySelector('#refPreviewTitle');
   bodyEl = overlay.querySelector('#refPreviewBody');
   gotoBtn = overlay.querySelector('#refPreviewGoto');
@@ -87,4 +91,40 @@ export function mountRefPreview(shell){
   overlay.addEventListener('click', (e) => { if(e.target === overlay) closeRefPreview(); });
   gotoBtn.addEventListener('click', () => closeRefPreview());
   registerLayer({ isOpen: () => overlay.classList.contains('open'), close: closeRefPreview, priority: 40 });
+  installSheetDrag(overlay.querySelector('.ref-preview-grip'), cardEl);
+}
+
+/* Arrastre del bottom-sheet (solo móvil): tirar del "grip" y soltar tras un
+   desplazamiento vertical (en cualquier sentido) suficiente CIERRA la hoja;
+   si no, vuelve a su sitio. Feedback en vivo siguiendo el dedo. En escritorio el
+   grip está oculto (drawer lateral) y esto no interfiere. Pointer Events con
+   captura → el gesto sigue aunque el dedo salga de la barra. */
+function installSheetDrag(grip, card){
+  if(!grip) return;
+  let startY = 0, dy = 0, dragging = false;
+  const onDown = (e) => {
+    dragging = true; startY = e.clientY; dy = 0;
+    card.style.transition = 'none';
+    try{ grip.setPointerCapture(e.pointerId); }catch(_){}
+  };
+  const onMove = (e) => {
+    if(!dragging) return;
+    dy = e.clientY - startY;
+    // abajo: sigue al dedo 1:1; arriba: resistencia (no debe crecer, solo asomar)
+    const shown = dy >= 0 ? dy : -Math.min(48, Math.log1p(-dy) * 20);
+    card.style.transform = 'translateY(' + shown + 'px)';
+  };
+  const onUp = (e) => {
+    if(!dragging) return;
+    dragging = false;
+    card.style.transition = '';
+    try{ grip.releasePointerCapture(e.pointerId); }catch(_){}
+    if(Math.abs(dy) > 90){ closeRefPreview(); }   // desplazamiento claro → cerrar
+    else { card.style.transform = ''; }           // insuficiente → vuelve a su sitio
+  };
+  grip.addEventListener('pointerdown', onDown);
+  grip.addEventListener('pointermove', onMove);
+  grip.addEventListener('pointerup', onUp);
+  grip.addEventListener('pointercancel', onUp);
+  grip.addEventListener('click', (e) => e.preventDefault());
 }

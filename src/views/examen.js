@@ -192,15 +192,26 @@ export const examenViewFactory = {
       renderExamQuestion();
     }
 
+    /* Orden de las opciones ALEATORIO por pregunta: el contenido suele traer la
+       correcta primera en `q.respuestas`, y sin barajar salía siempre la 1ª.
+       Se guarda en examState para que el pintado y la corrección usen el mismo
+       orden. La corrección casa por TEXTO (q.correcta), así que barajar la
+       vista no afecta a resultados/repaso. */
+    function shuffled(arr){
+      const a = arr.slice();
+      for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    }
     function renderExamQuestion(){
       clearExamTimer();
       const { pool, index, score, timed } = examState;
       const q = pool[index];
+      examState.currentOpts = shuffled(q.respuestas);
       examBody.innerHTML =
         '<div class="exam-progress"><span>Pregunta ' + (index + 1) + ' de ' + pool.length + ' · ' + apartadoDe(q) + '</span><span>Aciertos: ' + score + '</span></div>'
         + (timed ? '<div class="exam-timer"><div class="exam-timer-track"><div class="exam-timer-fill" id="examTimerBar"></div></div><span class="exam-timer-n" id="examTimerN">' + EXAM_TIME_LIMIT + 's</span></div>' : '')
         + '<div class="exam-q">' + q.pregunta + '</div>'
-        + '<div class="exam-opts">' + q.respuestas.map((r, i) => '<button class="exam-opt" data-i="' + i + '">' + r + '</button>').join('') + '</div>'
+        + '<div class="exam-opts">' + examState.currentOpts.map((r, i) => '<button class="exam-opt" data-i="' + i + '">' + r + '</button>').join('') + '</div>'
         + '<div class="exam-feedback" style="display:none"></div>';
       examBody.querySelectorAll('.exam-opt').forEach(btn => {
         btn.addEventListener('click', () => onExamAnswer(parseInt(btn.getAttribute('data-i'), 10)));
@@ -223,7 +234,8 @@ export const examenViewFactory = {
       clearExamTimer();
       const { pool, index } = examState;
       const q = pool[index];
-      const correctIndex = q.respuestas.indexOf(q.correcta);
+      const optTexts = examState.currentOpts;
+      const correctIndex = optTexts.indexOf(q.correcta);
       const opts = examBody.querySelectorAll('.exam-opt');
       opts.forEach((btn, idx) => {
         btn.disabled = true;
@@ -245,7 +257,7 @@ export const examenViewFactory = {
         + '</div><div class="exam-ai" id="examAi" style="display:none"></div>';
       const refBtn = fb.querySelector('#examRefBtn');
       if(refBtn) refBtn.addEventListener('click', () => openRefPreview(q));
-      const userAnswer = i === -1 ? null : q.respuestas[i];
+      const userAnswer = i === -1 ? null : optTexts[i];
       fb.querySelector('#examAskBtn').addEventListener('click', () => {
         const aiBox = fb.querySelector('#examAi');
         const willShow = aiBox.style.display === 'none';

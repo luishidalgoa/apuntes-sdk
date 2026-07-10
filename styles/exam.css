@@ -72,22 +72,47 @@
 .exam-ai-msg.error{background:#fdeceb;border:1px solid #e0938c;color:#a13a33;max-width:92%;}
 .exam-ai-input-row{display:flex;gap:8px;}
 .exam-ai-input-row input{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:13px;}
-#refPreviewOverlay{position:fixed;inset:0;z-index:70;background:rgba(42,38,32,.62);display:none;
-    align-items:center;justify-content:center;padding:20px;}
-#refPreviewOverlay.open{display:flex;}
-.ref-preview-card{background:var(--paper);border-radius:16px;width:min(96vw,920px);height:min(90vh,920px);
-    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.5);}
-.ref-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);
+/* Vista previa del temario dentro del examen (sin perder el test):
+   - Escritorio: DRAWER vertical a la derecha, velo tenue detrás.
+   - Móvil: BOTTOM-SHEET arrastrable (grip) — abajo cierra, arriba expande. */
+#refPreviewOverlay{position:fixed;inset:0;z-index:70;display:none;}
+#refPreviewOverlay.open{display:block;}
+/* velo tenue: el test sigue visible detrás; tocar fuera cierra */
+#refPreviewOverlay::before{content:"";position:absolute;inset:0;background:rgba(42,38,32,.22);
+    opacity:0;transition:opacity .22s ease;}
+#refPreviewOverlay.open::before{opacity:1;}
+
+.ref-preview-card{position:absolute;top:0;right:0;height:100%;width:min(440px,94vw);
+    background:var(--paper);display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:-26px 0 64px -26px rgba(0,0,0,.42);
+    transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);}
+#refPreviewOverlay.open .ref-preview-card{transform:translateX(0);}
+.ref-preview-grip{display:none;}   /* solo en móvil */
+.ref-preview-head{display:flex;align-items:center;gap:8px;padding:12px 12px;border-bottom:1px solid var(--line);
     background:#fff;flex:none;}
 .ref-preview-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;flex:1;color:var(--ink);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ref-preview-close{border:none;background:none;font-size:17px;cursor:pointer;color:var(--ink-faint);padding:4px 6px;flex:none;}
 .ref-preview-close:hover{color:var(--ink);}
 .ref-preview-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 20px;background:var(--paper);
-    font-size:14px;line-height:1.6;color:var(--ink-soft);}
+    font-size:14px;line-height:1.6;color:var(--ink-soft);-webkit-overflow-scrolling:touch;}
 .ref-preview-body b{color:var(--ink);}
 .ref-preview-body .sp-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--tema-accent) 14%,#fff);color:var(--tema-accent);}
-.ref-preview-card{height:auto;max-height:min(90vh,920px);}
-@media (max-width:640px){
-  .ref-preview-card{width:100vw;max-height:100vh;border-radius:0;}
+
+/* --- móvil: bottom-sheet --- */
+@media (max-width:760px){
+  .ref-preview-card{top:auto;right:0;left:0;bottom:0;width:auto;height:82vh;
+    border-radius:20px 20px 0 0;box-shadow:0 -22px 54px -22px rgba(0,0,0,.45);
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.7,.2,1);}
+  #refPreviewOverlay.open .ref-preview-card{transform:translateY(0);}
+  .ref-preview-grip{display:block;flex:none;width:100%;border:none;background:none;cursor:grab;
+    padding:9px 0 5px;touch-action:none;}
+  .ref-preview-grip::before{content:"";display:block;width:40px;height:5px;margin:0 auto;border-radius:99px;
+    background:var(--line);}
+  .ref-preview-grip:active{cursor:grabbing;}
+  .ref-preview-head{padding-top:4px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .ref-preview-card{transition:none;}
+  #refPreviewOverlay::before{transition:none;}
 }

@@ -7,6 +7,22 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.34
+
+- **Examen · las opciones ya salen en orden ALEATORIO**. El contenido trae la
+  respuesta correcta primera en `q.respuestas` y, sin barajar, salía siempre la
+  1ª. Ahora `renderExamQuestion` guarda un orden barajado en
+  `examState.currentOpts` (Fisher-Yates) que usan pintado y corrección; la
+  corrección casa por TEXTO (`q.correcta`), así que resultados/repaso no cambian.
+- **Examen · "Ver en el temario" sin perder el test**, reconvertido de modal
+  centrado a:
+  - **Escritorio**: DRAWER vertical a la derecha (440px, altura completa) con la
+    teoría referida; velo tenue detrás (el test sigue visible; tocar fuera o Esc
+    cierra). El botón «Ir al tema →» permanece como salida explícita.
+  - **Móvil**: BOTTOM-SHEET (82vh) con "grip"; se **arrastra** para cerrar
+    (desplazamiento vertical claro → cierra; corto → vuelve). Pointer Events con
+    captura. El estado del examen se conserva intacto por debajo.
+
 ## v0.1.33
 
 - **Navbar en escritorio/tablet ya no envuelve a 2 filas**: en el rango estrecho
