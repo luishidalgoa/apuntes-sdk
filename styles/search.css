@@ -125,3 +125,35 @@ body.search-open{ overflow:hidden; }
   .sr-snip{ -webkit-line-clamp:1; }
   .search-trigger .st-key{ display:none; }
 }
+
+/* --- modo "preguntar" (lenguaje natural + IA) --- */
+.sr-ask{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; justify-content:space-between;
+  margin:2px 4px 8px; padding:9px 12px; border-radius:11px;
+  background:color-mix(in srgb, var(--tema-accent) 9%, var(--paper)); border:1px solid color-mix(in srgb, var(--tema-accent) 26%, var(--paper)); }
+.sr-ask-l{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1 1 auto; min-width:0; }
+.sr-ask-spark{ font-size:15px; flex:none; }
+.sr-ask-txt{ font-size:12.5px; color:var(--ink-soft); }
+.sr-ask-term{ display:inline-block; font:700 11px "JetBrains Mono",ui-monospace,monospace; color:var(--tema-accent);
+  background:color-mix(in srgb, var(--tema-accent) 12%, var(--paper)); border:1px solid color-mix(in srgb, var(--tema-accent) 30%, var(--paper));
+  border-radius:6px; padding:2px 6px; margin-left:3px; }
+.sr-ask-btn{ flex:none; font:700 12.5px "Hanken Grotesk",system-ui,sans-serif; color:#fff; background:var(--tema-accent);
+  border:0; border-radius:9px; padding:8px 13px; cursor:pointer; transition:filter .14s; }
+.sr-ask-btn:hover{ filter:brightness(1.06); }
+.sr-ask-btn:disabled{ opacity:.7; cursor:default; }
+
+.sr-answer{ margin:0 4px 10px; padding:12px 14px; border-radius:12px;
+  background:var(--paper); border:1px solid color-mix(in srgb, var(--tema-accent) 34%, var(--paper));
+  box-shadow:0 6px 22px -14px rgba(42,38,32,.4); }
+.sr-answer-loading{ color:var(--ink-faint); font-size:13.5px; }
+.sr-answer-err{ color:var(--ink-soft); font-size:13px; line-height:1.5; }
+.sr-answer-h{ font:800 11px "Hanken Grotesk",system-ui,sans-serif; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--tema-accent); margin-bottom:6px; }
+.sr-answer-body{ font-size:14px; color:var(--ink); line-height:1.55; }
+.sr-answer-refs{ display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:11px; padding-top:10px; border-top:1px solid var(--line); }
+.sr-refs-l{ font-size:11.5px; font-weight:700; color:var(--ink-faint); }
+.sr-ref{ display:inline-flex; align-items:center; gap:6px; font:600 12.5px "Hanken Grotesk",system-ui,sans-serif;
+  color:var(--ink); background:color-mix(in srgb, var(--tema-accent) 8%, var(--paper));
+  border:1px solid color-mix(in srgb, var(--tema-accent) 30%, var(--paper)); border-radius:8px; padding:5px 9px; cursor:pointer; transition:.14s; }
+.sr-ref:hover{ background:color-mix(in srgb, var(--tema-accent) 16%, var(--paper)); }
+.sr-ref .sr-badge{ margin-top:0; }
+.sr-ref .sr-go{ opacity:.6; }

@@ -9,6 +9,7 @@ let CONFIG = {
   examLede: '',                // descripción de la tarjeta "Examen" del hub
   footer: '',                  // pie del hub
   aiSystemPrompt: '',          // prompt de sistema del tutor IA del examen
+  searchAiSystemPrompt: '',    // prompt del buscador con IA (si vacío, uno genérico con subject/title)
   anchorPrefix: 'sec-',        // prefijo de los id de sección y de los deep-links
   externalPrefixes: [],        // prefijos de refs a otros temas (p.ej. ['CE-'])
   detailLabel: null            // (n)=>string para el botón "desplegar" de la tarjeta
