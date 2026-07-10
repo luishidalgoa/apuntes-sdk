@@ -1,0 +1,165 @@
+/* ============ Navbar responsive (v0.1.31) ============
+   Un solo DOM (.controls) con tres vestidos:
+   - Desktop >1100px: barra INLINE (en el flujo) modernizada: píldora glass.
+   - Tablet 761–1100px: ISLA flotante sticky, despegada del borde.
+   - Móvil ≤760px: DOCK fijo inferior de 4 huecos (Temas·Buscar·Examen·Más);
+     en Safari iOS (body.nav-top) el dock se ancla ARRIBA.
+   El JS (core/navbar.js) mueve los controles secundarios a la hoja "Más" en
+   móvil; aquí solo se pintan. */
+
+/* ---- base común (todos los anchos): glass moderno ---- */
+.controls{
+  border:1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius:999px;
+  background:color-mix(in srgb, var(--paper) 78%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(1.15);
+  backdrop-filter:blur(14px) saturate(1.15);
+  box-shadow:0 10px 28px -16px rgba(42,38,32,.35), 0 1px 2px rgba(42,38,32,.05);
+}
+.controls .btn{transition:background .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;}
+.controls .btn:hover{transform:translateY(-1px);}
+.controls .btn:active{transform:translateY(0) scale(.97);}
+.controls .btn:focus-visible{outline:2px solid color-mix(in srgb, var(--tema-accent, var(--ink)) 55%, transparent);outline-offset:2px;}
+/* iconos de dock ocultos fuera de móvil; labels normales */
+.controls .nav-ico{display:none;line-height:0;}
+.controls .nav-ico svg{width:19px;height:19px;}
+/* botones icon-btn de la barra: solo icono (el label vive para la hoja) */
+.controls .icon-btn .nav-lab{display:none;}
+/* el label corto del buscador solo pinta en el dock móvil */
+.controls .nav-search .nav-lab{display:none;}
+/* "Más" solo existe en móvil (especificidad > button.btn) */
+.controls button.nav-more{display:none;}
+
+/* ---- tablet 761–1100px: isla flotante ---- */
+@media (min-width:761px) and (max-width:1100px){
+  .controls{
+    top:12px;
+    -webkit-backdrop-filter:blur(18px) saturate(1.2);
+    backdrop-filter:blur(18px) saturate(1.2);
+    box-shadow:0 18px 44px -18px rgba(42,38,32,.45), 0 2px 6px rgba(42,38,32,.06);
+  }
+}
+
+/* ---- desktop >1100px: inline, sticky con un respiro ---- */
+@media (min-width:1101px){
+  .controls{top:10px;}
+}
+
+/* ---- móvil ≤760px: dock fijo ---- */
+@media (max-width:760px){
+  /* La animación de entrada de vista usa transform: mientras corre, #view se
+     vuelve containing-block de los position:fixed y el dock salta. En móvil la
+     entrada anima SOLO opacidad. Ídem el .reveal del propio dock. */
+  #view.view-in{animation-name:navViewFade;}
+  .controls.reveal{animation:none;opacity:1;transform:none;}
+  .controls{
+    position:fixed;left:10px;right:10px;top:auto;
+    bottom:calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index:50;margin:0;padding:6px 8px calc(6px);
+    display:grid;grid-template-columns:repeat(4,1fr);gap:2px;align-items:stretch;
+    border-radius:22px;
+    -webkit-backdrop-filter:blur(20px) saturate(1.25);
+    backdrop-filter:blur(20px) saturate(1.25);
+    background:color-mix(in srgb, var(--paper) 86%, transparent);
+    box-shadow:0 18px 44px -14px rgba(42,38,32,.5), 0 2px 8px rgba(42,38,32,.08);
+  }
+  /* aplanar los grupos para que la rejilla mande */
+  .controls .nav-left,.controls .nav-right{display:contents;}
+  /* el wrapper del desplegable de Temas es una celda: que su botón la llene */
+  .controls .opts-wrap{display:flex;min-width:0;}
+  .controls .opts-wrap > .btn{flex:1;}
+  /* item de dock: icono arriba, label abajo */
+  .controls .btn,.controls .nav-search{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    background:none;border:none;box-shadow:none;border-radius:14px;
+    padding:7px 2px;min-width:0;font-size:10.5px;font-weight:600;color:var(--ink-soft);
+  }
+  .controls .btn:hover{transform:none;background:var(--paper-2);}
+  .controls .btn.action{color:color-mix(in srgb, var(--tema-accent, var(--ink)) 80%, #000);background:none;}
+  .controls .btn svg,.controls .nav-ico svg{width:21px;height:21px;}
+  .controls .nav-ico{display:block;}
+  .controls button.nav-more{display:flex;}
+  /* buscador → item de dock: icono + "Buscar" */
+  .controls .nav-search{flex:none;order:0;cursor:pointer;}
+  .controls .nav-search .hs-ico{width:21px;height:21px;color:inherit;}
+  .controls .nav-search .hs-txt,.controls .nav-search .st-key{display:none;}
+  .controls .nav-search .nav-lab{display:block;}
+  /* labels visibles como texto de dock */
+  .controls .nav-lab{display:block;font-size:10.5px;line-height:1;}
+  /* popup de Temas: panel fijo por encima del dock */
+  .controls .opts-pop{
+    position:fixed;left:12px;right:12px;top:auto;
+    bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+    max-height:56vh;overflow:auto;border-radius:16px;
+  }
+  /* contenido no tapado por el dock */
+  body.nav-docked #view > .wrap{padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px));}
+  /* chip del marcapáginas y hint por encima del dock */
+  body.nav-docked .bm-chip{bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
+  body.nav-docked .bm-hint{bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
+
+  /* -- variante Safari iOS: dock ARRIBA (su barra de URL vive abajo) -- */
+  body.nav-top .controls{
+    top:calc(8px + env(safe-area-inset-top, 0px));bottom:auto;
+  }
+  body.nav-top .controls .opts-pop{
+    top:calc(78px + env(safe-area-inset-top, 0px));bottom:auto;
+  }
+  body.nav-top #view > .wrap{padding-bottom:80px;padding-top:76px;}
+  body.nav-top .bm-chip{bottom:calc(18px + env(safe-area-inset-bottom, 0px));}
+  body.nav-top .bm-hint{bottom:22px;}
+}
+
+/* ---- hoja "Más" (móvil) ---- */
+.nav-scrim{position:fixed;inset:0;z-index:54;background:rgba(42,38,32,.32);
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:navFade .18s ease;}
+.nav-scrim[hidden]{display:none;}
+.nav-sheet{position:fixed;left:8px;right:8px;z-index:55;
+  bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+  background:var(--paper);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 -12px 44px -12px rgba(42,38,32,.45);
+  padding:8px 10px calc(12px);animation:navSheetUp .22s cubic-bezier(.2,.7,.2,1);}
+.nav-sheet[hidden]{display:none;}
+body.nav-top .nav-sheet{bottom:auto;top:calc(72px + env(safe-area-inset-top, 0px));animation-name:navSheetDown;}
+.nav-sheet-grip{width:38px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px;}
+body.nav-top .nav-sheet-grip{display:none;}
+.nav-sheet-body{display:flex;flex-direction:column;gap:2px;}
+/* filas de la hoja: los controles movidos, a lo ancho con icono + label */
+.nav-sheet-body > .btn,.nav-sheet-body > a.btn{
+  display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;
+  background:none;border:none;box-shadow:none;border-radius:12px;
+  padding:13px 12px;font-size:14.5px;font-weight:600;color:var(--ink);text-align:left;}
+.nav-sheet-body > .btn:hover,.nav-sheet-body > a.btn:hover{background:var(--paper-2);transform:none;}
+.nav-sheet-body .nav-lab{display:inline;}
+.nav-sheet-body .btn svg{width:19px;height:19px;}
+/* Opciones dentro de la hoja: su popup expande en acordeón, estático */
+.nav-sheet-body .opts-wrap{width:100%;}
+.nav-sheet-body .opts-wrap > .btn{display:flex;align-items:center;gap:12px;width:100%;
+  background:none;border:none;box-shadow:none;border-radius:12px;
+  padding:13px 12px;font-size:14.5px;font-weight:600;color:var(--ink);}
+.nav-sheet-body .opts-pop{position:static;display:block;width:100%;margin:2px 0 4px;
+  box-shadow:none;border:1px solid var(--line);border-radius:14px;max-height:44vh;overflow:auto;}
+.nav-sheet-body .opts-pop[hidden]{display:none;}
+@keyframes navViewFade{from{opacity:0;} to{opacity:1;}}
+@keyframes navSheetUp{from{opacity:0;transform:translateY(18px);} to{opacity:1;transform:none;}}
+@keyframes navSheetDown{from{opacity:0;transform:translateY(-18px);} to{opacity:1;transform:none;}}
+@keyframes navFade{from{opacity:0;} to{opacity:1;}}
+
+/* ---- otras vistas: misma familia visual ---- */
+/* fila de navegación del examen: píldora glass; en móvil, scroll horizontal */
+.exam-nav{border:1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius:999px;padding:8px 10px;
+  background:color-mix(in srgb, var(--paper) 78%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+  box-shadow:0 10px 28px -16px rgba(42,38,32,.35);}
+@media (max-width:760px){
+  .exam-nav{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none;border-radius:18px;}
+  .exam-nav::-webkit-scrollbar{display:none;}
+}
+/* volver del hub de materia: ghost discreto coherente */
+.hub-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;}
+
+@media (prefers-reduced-motion:reduce){
+  .nav-sheet,.nav-scrim{animation:none;}
+  .controls .btn{transition:none;}
+}

@@ -7,6 +7,26 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.31
+
+- **Navbar responsive moderno** (inspiración Aceternity UI; un solo DOM de
+  `.controls`, tres vestidos — nuevo `core/navbar.js` + `styles/navbar.css`):
+  - **Desktop >1100px · inline**: la barra en su sitio, como píldora glass
+    (blur + saturate, borde translúcido, sombra flotante, micro-hover).
+  - **Tablet 761–1100px · isla**: sticky flotante despegada, blur fuerte.
+  - **Móvil ≤760px · dock inferior fijo** de 4 huecos (Temas · Buscar ·
+    Examen · Más), iconos + label, safe-area. **"Más" abre una hoja** (bottom
+    sheet con telón) a la que se MUEVEN Volver/Marcapáginas/Subrayar/Opciones
+    (moverlos conserva sus listeners; al ensanchar se restauran). El popup de
+    Temas abre por ENCIMA del dock. Chip/hint del marcapáginas se elevan.
+  - **Safari iOS (`body.nav-top`)**: su barra de URL vive abajo → el dock se
+    ancla ARRIBA (detección de UA en `isIOSSafari()`).
+  - En móvil la animación de entrada de vista pasa a solo-opacidad: el
+    transform de `#view.view-in` convertía a la vista en containing-block y el
+    dock fijo saltaba durante 340ms.
+  - `.exam-nav` (vista examen) adopta la misma píldora glass; en móvil,
+    scroll horizontal. `.hub-back` alineado con la familia.
+
 ## v0.1.30
 
 - **Fix marcapáginas · el tallo cruzaba tarjetas enteras** cuando el ancla no

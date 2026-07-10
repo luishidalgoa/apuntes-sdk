@@ -12,3 +12,4 @@
 @import './search.css';
 @import './exam.css';
 @import './hub.css';
+@import './navbar.css';   /* el último: sus modos responsive pisan a shared/search */
