@@ -7,6 +7,31 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.28
+
+- **Marcapáginas · rediseño completo** (sutil, elegante y por fin visible en
+  móvil; la cinta de página completa con física de cuerda queda retirada):
+  - **Pestañita** (banderín con cola de milano, acento del tema) colgada del
+    borde superior-derecho de la tarjeta marcada. Si el marcador apunta a un
+    subpunto interno, un **tallo** fino se estira por el borde derecho hasta la
+    altura exacta de ese subpunto (jerarquía tarjeta → apartado), terminando en
+    una bolita. Se recoloca solo (ResizeObserver + transitionend + scroll rAF).
+  - **Chip flotante "volver al marcador"** abajo-derecha (`🔖 Art. 11.2 ↓`):
+    aparece SOLO cuando la marca está fuera de pantalla (IntersectionObserver);
+    tap → scroll con flash. En móvil este chip es el marcapáginas visible.
+  - **Uno por tema** (antes uno global que se pisaba en silencio): storage
+    `tai-bookmarks` = `{ [temaId]: { anchor, ts } }` con **migración silenciosa**
+    del formato viejo. El hub enseña el más reciente (`getLatestBookmark`).
+  - API: `createRibbon` → `createBookmarkUI(root, temaId, {onTabClick})`;
+    `getBookmark(temaId)` / `clearBookmark(temaId)` ahora exigen temaId.
+  - **Retirado**: física verlet/espiral, textura de paja, panel "Marcapáginas…"
+    de Opciones (`bookmark-settings.js`, export `openBookmarkSettings`) y la
+    clave `tai-bookmark-anim`. El CSS `.bks-*` se queda (lo usa el editor de
+    colores de subrayado).
+  - Nota: colocar el marcador exige anclas con `config().anchorPrefix` (igual
+    que antes). Los temas cuyo contenido use otros ids (p.ej. `sec-*` en TAI)
+    siguen sin poder colocarlo — pendiente de alinear contenido o generalizar.
+
 ## v0.1.27
 
 - **Safari · el chrome del navegador (barras superior/inferior) se veía BLANCO**

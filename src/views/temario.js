@@ -1,7 +1,7 @@
 import { allTemas, temaById, bloqueOf, hasMaterias, materiasWithTemas, temasOfMateria } from '../registry.js';
 import { esc } from '../core/dom.js';
 import { config } from '../config.js';
-import { getBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
+import { getLatestBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { bindMateriaCards } from '../core/materia-cards.js';
 
@@ -11,7 +11,7 @@ import { bindMateriaCards } from '../core/materia-cards.js';
    de una sola materia). Todo se genera del registry; textos desde appConfig. */
 
 function resumeCardHtml(){
-  const b = getBookmark();
+  const b = getLatestBookmark();
   if(!b) return '';
   const tema = temaById(b.temaId);
   if(!tema) return '';
@@ -114,7 +114,7 @@ function wireHub(root){
   if(dismiss){
     dismiss.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation();
-      clearBookmark();
+      const b = getLatestBookmark(); if(b) clearBookmark(b.temaId);
       const card = root.querySelector('#resumeCard');
       if(card) card.remove();
     });

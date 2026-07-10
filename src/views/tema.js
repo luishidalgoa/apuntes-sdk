@@ -6,8 +6,7 @@ import { bindCardInteractions, bindToggleAll, bindRepaso } from '../core/render-
 import { bindTabletButton } from '../core/tablet.js';
 import { openGames, closeGames } from '../games/engine.js';
 import { bindDropdown } from '../core/dropdown.js';
-import { createRibbon, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
-import { openBookmarkSettings } from '../core/bookmark-settings.js';
+import { createBookmarkUI, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
 import { bindMarks } from '../core/marks.js';
 import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
 import { exportBackup, importBackup } from '../core/backup.js';
@@ -128,7 +127,6 @@ export const temaViewFactory = {
                 <button class="opts-item" id="toggleAll">${ICONS.all} Desplegar todo</button>
                 <button class="opts-item" id="toggleRepaso">${ICONS.eye} Activar repaso</button>
                 <button class="opts-item" id="toggleTablet">${ICONS.tablet} Modo tablet</button>
-                <button class="opts-item" id="bookmarkSettingsBtn">${ICONS.bookmark} Marcapáginas…</button>
                 <div class="opts-div" aria-hidden="true"></div>
                 <button class="opts-item" id="startGamesBtn">${ICONS.games} Minijuegos</button>
                 <div class="opts-div" aria-hidden="true"></div>
@@ -172,11 +170,6 @@ export const temaViewFactory = {
           openGames(tema.engine, tema.games);
         }, { signal });
 
-        root.querySelector('#bookmarkSettingsBtn').addEventListener('click', () => {
-          opts.close();
-          openBookmarkSettings();
-        }, { signal });
-
         root.querySelector('#exportBackupBtn').addEventListener('click', () => {
           opts.close();
           exportBackup();
@@ -186,9 +179,10 @@ export const temaViewFactory = {
           importBackup({ onDone: () => location.reload() });
         }, { signal });
 
-        /* Marcapáginas de tela: botón 🔖 fijo en la barra. Al pulsarlo se entra
-           en modo "elegir": tocas el artículo donde quieres la cinta y cae ahí. */
-        const ribbon = createRibbon(root);
+        /* Marcapáginas: botón 🔖 fijo en la barra. Al pulsarlo se entra en modo
+           "elegir": tocas el artículo (o subpunto) donde quieres la marca y la
+           pestañita cuelga de esa tarjeta, con el tallo estirado hasta el
+           subpunto exacto. La pestañita también abre este modo (cambiar/quitar). */
         const bookmarkBtn = root.querySelector('#bookmarkBtn');
         const content = root.querySelector('#temaContent');
 
@@ -201,8 +195,9 @@ export const temaViewFactory = {
         root.querySelector('.wrap').appendChild(hint);
 
         let placing = false;
+        const bookmarkUI = createBookmarkUI(root, tema.id, { onTabClick: () => { if(!placing) enterPlacing(); } });
         function refreshBookmarkUI(){
-          const marked = (getBookmark() || {}).temaId === tema.id;
+          const marked = !!getBookmark(tema.id);
           bookmarkBtn.classList.toggle('on', marked);
           const label = marked ? 'Cambiar o quitar el marcapáginas' : 'Poner un marcapáginas';
           bookmarkBtn.title = label;
@@ -211,7 +206,7 @@ export const temaViewFactory = {
         function enterPlacing(){
           placing = true;
           document.body.classList.add('bookmark-placing');
-          hint.querySelector('#bmRemove').hidden = !((getBookmark() || {}).temaId === tema.id);
+          hint.querySelector('#bmRemove').hidden = !getBookmark(tema.id);
           hint.hidden = false;
           bookmarkBtn.classList.add('on');
         }
@@ -222,15 +217,15 @@ export const temaViewFactory = {
           refreshBookmarkUI();
         }
 
-        const existing = getBookmark();
-        if(ribbon && existing && existing.temaId === tema.id) ribbon.show(existing.anchor, { animate: false });
+        const existing = getBookmark(tema.id);
+        if(bookmarkUI && existing) bookmarkUI.show(existing.anchor, { animate: false });
         refreshBookmarkUI();
 
         bookmarkBtn.addEventListener('click', () => { placing ? exitPlacing() : enterPlacing(); }, { signal });
         hint.querySelector('#bmCancel').addEventListener('click', exitPlacing, { signal });
         hint.querySelector('#bmRemove').addEventListener('click', () => {
-          clearBookmark();
-          if(ribbon) ribbon.hide();
+          clearBookmark(tema.id);
+          if(bookmarkUI) bookmarkUI.hide();
           exitPlacing();
         }, { signal });
 
@@ -239,12 +234,13 @@ export const temaViewFactory = {
           if(!placing) return;
           if(e.target.closest('.disclosure')) return;   // dejar desplegar/plegar para navegar
           if(e.target.closest('.mark-btn')) return;      // la estrella no coloca marcapáginas
+          if(e.target.closest('.bm-tab')) return;        // la propia pestañita no re-coloca
           const anchor = anchorFromClick(e.target);
           if(!anchor) return;
           e.preventDefault();
           e.stopPropagation();
           markAnchor(tema.id, anchor);
-          if(ribbon) ribbon.show(anchor, { animate: true });
+          if(bookmarkUI) bookmarkUI.show(anchor, { animate: true });
           exitPlacing();
         }, { capture: true, signal });
 
@@ -264,7 +260,7 @@ export const temaViewFactory = {
           closePanel();
           closeFullText();
           closeGames();
-          if(ribbon) ribbon.destroy();
+          if(bookmarkUI) bookmarkUI.destroy();
           document.body.classList.remove('repaso', 'panel-open', 'fulltext-open', 'bookmark-placing');
         };
       },

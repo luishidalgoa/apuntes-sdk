@@ -1,69 +1,66 @@
-/* Marcador manual "marcapáginas de tela" (app de un solo usuario → localStorage).
-   El usuario pulsa "Marcar aquí" y una cinta de paja trenzada CAE desde el
-   borde superior de la página hasta el artículo visible, quedando clavada
-   (cola de milano en la punta). Vuelve a pulsar y se recoge. El hub muestra
-   además una tarjeta "seguir donde lo dejaste" que apunta al mismo marcador. */
+/* Marcapáginas (app de un solo usuario → localStorage), rediseño v0.1.28:
+   - UNO POR TEMA: cada tema recuerda su marcador; el hub enseña el más reciente.
+   - La marca es una PESTAÑITA elegante colgada del borde superior-derecho de la
+     tarjeta marcada (color de acento del tema, cola de milano). Si el marcador
+     apunta a un subpunto interno (apartado), un TALLO fino se estira por el
+     borde derecho de la tarjeta hasta la altura exacta de ese subpunto.
+   - Un CHIP flotante "volver al marcador" (abajo-derecha) aparece SOLO cuando
+     la marca está fuera de pantalla; tap → scroll suave hasta ella. En móvil
+     este chip es lo que hace visible al marcapáginas.
+   Sustituye a la cinta de página completa con física de cuerda (retirada). */
 import { temaById } from '../registry.js';
 import { revealAnchor } from './panels.js';
 import { config } from '../config.js';
 
-const KEY = 'tai-bookmark';
+const KEY = 'tai-bookmarks';        // { [temaId]: { anchor, ts } }
+const OLD_KEY = 'tai-bookmark';     // legado: { temaId, anchor, ts }
+const OLD_ANIM_KEY = 'tai-bookmark-anim';   // legado: ajuste de animación de la cinta
 
-/* Textura de paja trenzada (defs SVG): trama DIAGONAL (patternTransform rotate
-   45), cada hilo con degradado 3D, valles oscuros y sombras en los cruces. Se
-   usa como relleno del <path> de la cuerda (fill=url(#brStraw)). */
-const WEAVE_DEFS = `
-    <linearGradient id="brWarp" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#8a6a2e"/><stop offset=".18" stop-color="#c7a458"/>
-      <stop offset=".5" stop-color="#f2e3b6"/><stop offset=".82" stop-color="#c19d52"/>
-      <stop offset="1" stop-color="#836528"/>
-    </linearGradient>
-    <linearGradient id="brWeft" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#93712f"/><stop offset=".2" stop-color="#cdaa5c"/>
-      <stop offset=".5" stop-color="#ecdcac"/><stop offset=".8" stop-color="#b18f47"/>
-      <stop offset="1" stop-color="#79591f"/>
-    </linearGradient>
-    <pattern id="brStraw" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect width="26" height="26" fill="#5f4a20"/>
-      <g>
-        <rect x="1" y="-1" width="10.5" height="28" rx="3.4" fill="url(#brWarp)"/>
-        <rect x="14.5" y="-1" width="10.5" height="28" rx="3.4" fill="url(#brWarp)"/>
-        <rect x="-1" y="1" width="12" height="10.5" rx="3.4" fill="url(#brWeft)"/>
-        <rect x="14" y="14.5" width="13" height="10.5" rx="3.4" fill="url(#brWeft)"/>
-        <g fill="#4c3a18" opacity=".55">
-          <rect x="12.2" y="0" width="1.6" height="26"/>
-          <rect x="0" y="12.2" width="12" height="1.6"/>
-          <rect x="14" y="12.2" width="12" height="1.6"/>
-        </g>
-        <g fill="#000" opacity=".18">
-          <rect x="11.5" y="1" width="2.6" height="10.5"/>
-          <rect x="1" y="11.6" width="10.5" height="2.6"/>
-        </g>
-      </g>
-    </pattern>`;
-
-export function getBookmark(){
+/* Migración silenciosa del formato antiguo (un marcador global) al nuevo
+   (uno por tema). Se ejecuta perezosamente en la primera lectura. */
+function readAll(){
   try{
-    const raw = localStorage.getItem(KEY);
-    if(!raw) return null;
-    const b = JSON.parse(raw);
-    if(!b || !b.temaId || !temaById(b.temaId)) return null;
-    return b;
-  }catch(e){ return null; }
+    const old = localStorage.getItem(OLD_KEY);
+    if(old){
+      const b = JSON.parse(old);
+      const map = b && b.temaId ? { [b.temaId]: { anchor: b.anchor, ts: b.ts || Date.now() } } : {};
+      localStorage.setItem(KEY, JSON.stringify(map));
+      localStorage.removeItem(OLD_KEY);
+      localStorage.removeItem(OLD_ANIM_KEY);
+      return map;
+    }
+    return JSON.parse(localStorage.getItem(KEY)) || {};
+  }catch(e){ return {}; }
 }
-export function clearBookmark(){ try{ localStorage.removeItem(KEY); }catch(e){} }
-function save(b){ try{ localStorage.setItem(KEY, JSON.stringify(b)); }catch(e){} }
+function writeAll(map){ try{ localStorage.setItem(KEY, JSON.stringify(map)); }catch(e){} }
 
-/* Estilo de animación del marcapáginas (ajuste del usuario, persistido):
-   'cuerda' = verlet flexible (por defecto) · 'muelle' = péndulo por transform. */
-const ANIM_KEY = 'tai-bookmark-anim';
-export function getBookmarkAnim(){ try{ return localStorage.getItem(ANIM_KEY) || 'cuerda'; }catch(e){ return 'cuerda'; } }
-export function setBookmarkAnim(v){ try{ localStorage.setItem(ANIM_KEY, v); }catch(e){} }
-
-/* Referencia a la cinta activa (la crea la vista de tema) para que el panel de
-   ajustes pueda re-animarla como vista previa al cambiar de estilo. */
-let activeRibbon = null;
-export function previewBookmarkAnim(){ if(activeRibbon && activeRibbon.anchor) activeRibbon.show(activeRibbon.anchor, { animate: true }); }
+export function getBookmark(temaId){
+  const map = readAll();
+  const b = map[temaId];
+  return (b && b.anchor && temaById(temaId)) ? { temaId, anchor: b.anchor, ts: b.ts } : null;
+}
+/* El más reciente entre todos los temas (para la tarjeta del hub). */
+export function getLatestBookmark(){
+  const map = readAll();
+  let best = null;
+  for(const temaId of Object.keys(map)){
+    const b = map[temaId];
+    if(!b || !b.anchor || !temaById(temaId)) continue;
+    if(!best || (b.ts || 0) > (best.ts || 0)) best = { temaId, anchor: b.anchor, ts: b.ts };
+  }
+  return best;
+}
+export function markAnchor(temaId, anchor){
+  if(!anchor) return null;
+  const map = readAll();
+  map[temaId] = { anchor, ts: Date.now() };
+  writeAll(map);
+  return anchor;
+}
+export function clearBookmark(temaId){
+  const map = readAll();
+  if(temaId in map){ delete map[temaId]; writeAll(map); }
+}
 
 /* ancla '<prefix>113-2' o '<prefix>CE-159-3' → etiqueta legible ('Art. 113.2', '159.3') */
 export function anchorLabel(temaId, anchor){
@@ -91,234 +88,120 @@ export function relTime(ts){
   return d === 1 ? 'ayer' : 'hace ' + d + ' días';
 }
 
-/* ---------- la cinta de tela con física de cuerda (verlet de vértices) ----------
-   16 vértices con gravedad + restricciones de segmento (verlet). El contorno de
-   la cinta (banda + cola de milano) se dibuja como un <path> relleno con la
-   trama; por frame SOLO se re-escribe el atributo `d` (16 puntos), sin capas de
-   ruido ni clip-path (que era el coste que congelaba antes). Al soltar cae y
-   ondula como una cuerda y se asienta recta; en reposo no hay bucle. */
-const R_W = 56, R_CX = 30, R_HW = 14, R_NOTCH = 15, R_N = 16;
+/* Pestañita SVG: banderín con cola de milano (26×34). Hereda color por
+   currentColor (el CSS le da el acento del tema). */
+const TAB_SVG = '<svg viewBox="0 0 26 34" aria-hidden="true">'
+  + '<path d="M2 0 H24 V30 L13 23.5 L2 30 Z" fill="currentColor"/>'
+  + '<path d="M2 0 H24 V30 L13 23.5 L2 30 Z" fill="#fff" opacity=".16" transform="translate(-1.4 -1)"/>'
+  + '</svg>';
 
-/* Tramo bézier suave (Catmull-Rom → cúbicas) que pasa por una lista de puntos.
-   Asume que el llamante ya hizo el `M` sobre pp[0]. Es lo que da el aspecto
-   FLEXIBLE: aunque los vértices se muevan poco, la curva se ve como tela, no
-   como una polilínea angular. */
-function bez(pp){
-  let d = '';
-  for(let i = 0; i < pp.length - 1; i++){
-    const p0 = pp[i - 1] || pp[i], p1 = pp[i], p2 = pp[i + 1], p3 = pp[i + 2] || p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
-    d += ' C ' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1)
-       + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
-  }
-  return d;
-}
-
-/* Contorno de la cinta como banda FLEXIBLE: desplaza cada vértice ±R_HW por la
-   perpendicular a la cuerda (así la banda sigue la curva), baja suave por el
-   borde izquierdo, hace la cola de milano en la punta y sube suave por el
-   derecho. Curvas bézier en ambos bordes → tela que se dobla, no palo. */
-function ribbonPath(pts){
-  const n = pts.length, hw = R_HW, left = [], right = [];
-  for(let i = 0; i < n; i++){
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
-    let tx = b.x - a.x, ty = b.y - a.y; const L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L;
-    const nx = -ty, ny = tx;                       // perpendicular unitaria
-    left.push({ x: pts[i].x + nx * hw, y: pts[i].y + ny * hw });
-    right.push({ x: pts[i].x - nx * hw, y: pts[i].y - ny * hw });
-  }
-  const tip = pts[n - 1];
-  let d = 'M ' + left[0].x.toFixed(1) + ' ' + left[0].y.toFixed(1);
-  d += bez(left);                                  // borde izquierdo (suave)
-  d += ' L ' + tip.x.toFixed(1) + ' ' + (tip.y - R_NOTCH).toFixed(1);   // muesca cola de milano
-  d += ' L ' + right[n - 1].x.toFixed(1) + ' ' + right[n - 1].y.toFixed(1);
-  d += bez(right.slice().reverse());               // borde derecho (suave, invertido)
-  return d + ' Z';
-}
-
-export function createRibbon(root){
+/* ---------- UI del marcapáginas dentro de la vista de tema ----------
+   root: raíz de la vista · temaId · onTabClick: abrir el modo cambiar/quitar. */
+export function createBookmarkUI(root, temaId, { onTabClick } = {}){
   const wrap = root.querySelector('.wrap');
   const content = wrap && wrap.querySelector('#temaContent');
   if(!wrap || !content) return null;
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  const ribbon = document.createElement('button');
-  ribbon.type = 'button';
-  ribbon.className = 'bookmark-ribbon';
-  ribbon.setAttribute('aria-label', 'Ir a tu marcador');
-  ribbon.hidden = true;
-  /* preserveAspectRatio=none: en móvil la cinta se estrecha por CSS (width) sin
-     encoger su altura ni cortar la animación — solo se comprime en horizontal. */
-  ribbon.innerHTML = '<svg class="br-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><defs>' + WEAVE_DEFS + '</defs>'
-    + '<path class="br-shape" fill="url(#brStraw)"/></svg>';
-  wrap.appendChild(ribbon);
-  const svg = ribbon.querySelector('.br-svg');
-  const shape = ribbon.querySelector('.br-shape');
+  /* pestañita + tallo (se insertan en la tarjeta marcada) */
+  const tab = document.createElement('button');
+  tab.type = 'button';
+  tab.className = 'bm-tab';
+  tab.title = 'Tu marcapáginas — toca para cambiarlo o quitarlo';
+  tab.setAttribute('aria-label', 'Tu marcapáginas: cambiar o quitar');
+  tab.innerHTML = TAB_SVG;
+  const stem = document.createElement('span');
+  stem.className = 'bm-stem';
+  stem.setAttribute('aria-hidden', 'true');
+
+  /* chip flotante "volver al marcador" (vive en el wrap, posición fija) */
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'bm-chip';
+  chip.hidden = true;
+  wrap.appendChild(chip);
 
   let anchorId = null;
-  let ro = null;
-  let raf = 0;
-  let pts = [];
-  let H = 0;
+  let cardEl = null;
+  let io = null;         // IntersectionObserver del ancla (visibilidad del chip)
+  let ro = null;         // ResizeObserver de la tarjeta (recolocar el tallo)
+  let watchAC = null;    // aborta los listeners de transitionend/scroll
 
-  function withinWrapTop(el){
-    return el.getBoundingClientRect().top - wrap.getBoundingClientRect().top;
-  }
-  function geom(){
+  tab.addEventListener('click', (e) => { e.stopPropagation(); if(onTabClick) onTabClick(); });
+  chip.addEventListener('click', () => { if(anchorId) revealAnchor(anchorId); });
+
+  /* El tallo se estira desde la pestañita hasta la altura del subpunto marcado
+     (jerarquía). Si el marcador es la tarjeta/artículo entero, o el subpunto
+     está oculto (tarjeta plegada), el tallo se recoge. */
+  function layoutStem(){
+    if(!cardEl){ return; }
     const el = document.getElementById(anchorId);
-    if(!el) return null;
-    const start = Math.max(0, withinWrapTop(content) - 6);
-    const tip = withinWrapTop(el) + 20;
-    return { start, height: Math.max(60, tip - start) };
+    if(!el || el === cardEl || !el.offsetParent){ stem.style.height = '0px'; stem.classList.add('bm-none'); return; }
+    const cardBox = cardEl.getBoundingClientRect();
+    const elBox = el.getBoundingClientRect();
+    const top = parseFloat(getComputedStyle(stem).top) || 0;
+    const target = Math.max(0, (elBox.top - cardBox.top) + Math.min(18, elBox.height / 2) - top);
+    stem.style.height = target.toFixed(0) + 'px';
+    stem.classList.toggle('bm-none', target < 6);
   }
-  function applyBox(g){
-    ribbon.style.top = g.start + 'px';
-    ribbon.style.height = g.height + 'px';
-    H = g.height;
-    svg.setAttribute('width', R_W);
-    svg.setAttribute('height', g.height);
-    svg.setAttribute('viewBox', '0 0 ' + R_W + ' ' + g.height);
-  }
-  function render(){ shape.setAttribute('d', ribbonPath(pts)); }
-  function straightPts(h){
-    const seg = h / (R_N - 1), out = [];
-    for(let i = 0; i < R_N; i++) out.push({ x: R_CX, y: i * seg, ox: R_CX, oy: i * seg });
-    return out;
+  /* rect: boundingClientRect del propio evento IO (autoritativo en el momento
+     del callback; releer el layout aquí puede pillar el scroll a medias). */
+  function chipLabel(rect){
+    const below = rect ? rect.top > innerHeight / 2 : true;
+    const label = anchorLabel(temaId, anchorId) || 'tu marcador';
+    chip.innerHTML = '<span class="bm-chip-ico">🔖</span> ' + label + ' <span class="bm-chip-dir">' + (below ? '↓' : '↑') + '</span>';
   }
 
-  /* Verlet: cuerda colgada del vértice 0 (fijo arriba), que cae por gravedad y
-     se estira hasta H con restricciones de segmento (8 iteraciones) y
-     amortiguación → onda de "látigo" que se asienta. */
-  function step(){
-    const seg = H / (R_N - 1);
-    const grav = Math.min(11, Math.max(1, H / 300));
-    for(let i = 1; i < R_N; i++){
-      const p = pts[i];
-      const vx = (p.x - p.ox) * 0.94, vy = (p.y - p.oy) * 0.94;   // menos amortiguación → ondula más
-      p.ox = p.x; p.oy = p.y;
-      p.x += vx; p.y += vy + grav;
-    }
-    pts[0].x = R_CX; pts[0].y = 0;
-    for(let k = 0; k < 4; k++){   // restricciones más flojas → cuerda más flexible, no palo
-      for(let i = 0; i < R_N - 1; i++){
-        const a = pts[i], b = pts[i + 1];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        const dist = Math.hypot(dx, dy) || 0.001;
-        const diff = (dist - seg) / dist;
-        if(i === 0){ b.x -= dx * diff; b.y -= dy * diff; }
-        else { a.x += dx * diff * 0.5; a.y += dy * diff * 0.5; b.x -= dx * diff * 0.5; b.y -= dy * diff * 0.5; }
-      }
-      pts[0].x = R_CX; pts[0].y = 0;
-    }
-  }
-  function animate(){
-    let frames = 0;
-    const loop = () => {
-      step(); render(); frames++;
-      let moving = 0;
-      for(let i = 1; i < R_N; i++) moving += Math.abs(pts[i].x - pts[i].ox) + Math.abs(pts[i].y - pts[i].oy);
-      if(frames < 240 && moving > 0.4){ raf = requestAnimationFrame(loop); }
-      else { pts = straightPts(H); render(); raf = 0; }   // asentada: recta
-    };
-    raf = requestAnimationFrame(loop);
-  }
-
-  /* Yo-yo / desenrollar: la cinta arranca ENROLLADA en espiral (caracol) arriba
-     y se desenrolla cayendo de arriba abajo, lento, hasta quedar recta. La parte
-     ya soltada (0..U) cuelga recta; el resto sigue enrollado en un caracol en la
-     punta que desciende, y se afloja conforme baja. */
-  function coilPts(U){
-    const coilLen = Math.max(0, H - U);              // longitud aún enrollada
-    const coilR = Math.min(24, coilLen * 0.5);       // radio del caracol (se encoge)
-    const turns = Math.min(1.2, coilLen / 140);      // vueltas ~ longitud enrollada
-    const out = [];
-    for(let i = 0; i < R_N; i++){
-      const s = (i / (R_N - 1)) * H;                 // arco-longitud del punto i
-      if(s <= U || coilLen < 1){
-        out.push({ x: R_CX, y: Math.min(s, U) });    // parte recta que cuelga
-      } else {
-        const frac = (s - U) / coilLen;              // 0..1 dentro del caracol
-        const ang = frac * turns * 2 * Math.PI;
-        const rad = coilR * (1 - frac);              // radio decreciente → espiral
-        out.push({ x: R_CX + Math.sin(ang) * rad, y: U + coilR - Math.cos(ang) * rad });
-      }
-    }
-    return out;
-  }
-  function animateUnroll(){
-    let p = 0;                                        // fracción desenrollada
-    pts = coilPts(0); render();                       // arranca todo enrollado arriba
-    const loop = () => {
-      p += (1 - p) * 0.04;                            // ease-out lento (~2,2 s)
-      pts = coilPts(p * H); render();
-      if(p < 0.995){ raf = requestAnimationFrame(loop); }
-      else { pts = straightPts(H); render(); raf = 0; }
-    };
-    raf = requestAnimationFrame(loop);
-  }
-
-  /* Al hacer scroll/resize solo recolocamos la caja; en reposo la cinta queda
-     recta (no re-anima). */
-  function reposition(){
-    if(!anchorId || ribbon.hidden) return;
-    const g = geom();
-    if(!g){ hide(); return; }
-    applyBox(g);
-    // en reposo la cinta queda recta; durante la animación (raf activo) NO la
-    // pisamos (el bucle re-renderiza), para no cortar la caída con un frame recto.
-    if(!raf){ pts = straightPts(H); render(); }
-  }
-
-  ribbon.addEventListener('click', () => { if(anchorId) revealAnchor(anchorId); });
-
-  function show(id, { animate: doAnim } = {}){
+  function show(id, { animate = false } = {}){
+    hide();
     anchorId = id;
-    ribbon.hidden = false;
-    const g = geom();
-    if(!g){ hide(); return; }
-    applyBox(g);
-    if(raf){ cancelAnimationFrame(raf); raf = 0; }
-    ribbon.style.transform = '';
-    pts = straightPts(H); render();          // la cinta base siempre arranca recta
-    if(doAnim && !reduce){
-      if(getBookmarkAnim() !== 'cuerda'){
-        animateUnroll();
-      } else {
-        /* cuerda: onda lateral inicial (1,5 λ que decae hacia la punta) +
-           velocidad → ondula flexible; amplitud acotada (no latigazo de lejos). */
-        const amp = Math.min(46, H * 0.42);
-        for(let i = 0; i < R_N; i++){
-          const t = i / (R_N - 1);
-          const w = Math.sin(t * Math.PI * 1.5) * amp * (1 - 0.25 * t);
-          pts[i].x += w;
-          pts[i].ox = pts[i].x + w * 0.14;
-        }
-        animate();
-      }
+    const el = document.getElementById(id);
+    if(!el) return;
+    cardEl = el.closest('.card, .node') || el;
+    watchAC = new AbortController();
+    cardEl.classList.add('bm-host');
+    cardEl.appendChild(stem);
+    cardEl.appendChild(tab);
+    if(animate && !reduce){
+      tab.classList.add('bm-drop');
+      stem.classList.add('bm-grow');
+      setTimeout(() => { tab.classList.remove('bm-drop'); stem.classList.remove('bm-grow'); }, 700);
     }
-    if(!ro){ ro = new ResizeObserver(reposition); ro.observe(content); }
-    window.addEventListener('resize', reposition);
+    layoutStem();
+    /* recolocar el tallo si la tarjeta cambia de tamaño (desplegar/plegar,
+       resize, fuentes) — barato: solo altura de un span. El scroll-reveal (.sr)
+       mueve el contenido con transform SIN cambiar el alto de la tarjeta, así
+       que además re-medimos al asentarse esas transiciones (transitionend
+       burbujea desde los hijos) y en scroll (throttled por rAF). */
+    ro = new ResizeObserver(layoutStem);
+    ro.observe(cardEl);
+    cardEl.addEventListener('transitionend', layoutStem, { signal: watchAC.signal });
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { ticking = false; layoutStem(); });
+    }, { passive: true, signal: watchAC.signal });
+    /* chip visible solo con la marca fuera de pantalla */
+    io = new IntersectionObserver((entries) => {
+      const e = entries[entries.length - 1];
+      if(e && e.isIntersecting){ chip.hidden = true; }
+      else { chipLabel(e && e.boundingClientRect); chip.hidden = false; }
+    }, { rootMargin: '-8% 0px -8% 0px' });
+    io.observe(el);
   }
   function hide(){
     anchorId = null;
-    ribbon.hidden = true;
-    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    if(io){ io.disconnect(); io = null; }
     if(ro){ ro.disconnect(); ro = null; }
-    window.removeEventListener('resize', reposition);
+    if(watchAC){ watchAC.abort(); watchAC = null; }
+    if(cardEl){ cardEl.classList.remove('bm-host'); cardEl = null; }
+    tab.remove(); stem.remove();
+    chip.hidden = true;
   }
-  function destroy(){ hide(); ribbon.remove(); activeRibbon = null; }
+  function destroy(){ hide(); chip.remove(); }
 
-  const api = { show, hide, destroy, get anchor(){ return anchorId; } };
-  activeRibbon = api;
-  return api;
-}
-
-/* Fija el marcador en un artículo concreto (elegido por el usuario). */
-export function markAnchor(temaId, anchor){
-  if(!anchor) return null;
-  save({ temaId, anchor, ts: Date.now() });
-  return anchor;
+  return { show, hide, destroy, get anchor(){ return anchorId; } };
 }
 
 /* Dado un elemento clicado, devuelve el ancla de artículo más apropiada:

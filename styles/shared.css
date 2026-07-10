@@ -69,17 +69,39 @@ a.opts-item{text-decoration:none;}
 .seg-btn:hover{background:var(--paper-2);color:var(--ink);}
 .seg-btn.on{background:var(--ink);color:var(--paper);}
 
-/* Marcapáginas de tela: cinta de paja trenzada con física de cuerda (verlet de
-   vértices). El contorno (banda + cola de milano) es un <path> relleno con la
-   trama; el ribete del color del tema es el stroke del propio contorno, así que
-   sigue las curvas de la cuerda. overflow:visible deja que la cinta ondule
-   fuera de su caja sin recortarse. */
-.bookmark-ribbon{position:absolute;right:12px;width:56px;z-index:6;padding:0;border:none;background:none;cursor:pointer;
-  filter:drop-shadow(0 3px 5px rgba(42,38,32,.32));transition:filter .18s ease;}
-.bookmark-ribbon[hidden]{display:none;}
-.bookmark-ribbon:hover{filter:drop-shadow(0 4px 8px rgba(42,38,32,.42)) brightness(1.04);}
-.br-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block;}
-.br-shape{stroke:var(--tema-accent);stroke-width:2.4;stroke-linejoin:round;paint-order:stroke;}
+/* Marcapáginas: PESTAÑITA colgada del borde superior-derecho de la tarjeta
+   marcada (banderín con cola de milano, acento del tema). Si el marcador
+   apunta a un subpunto interno, el TALLO (.bm-stem) se estira por el borde
+   derecho hasta su altura exacta (el JS fija la height). El CHIP (.bm-chip)
+   flota abajo-derecha SOLO cuando la marca está fuera de pantalla. */
+.bm-host{overflow:visible;}
+.bm-tab{position:absolute;top:-4px;right:22px;width:26px;height:34px;z-index:7;padding:0;border:none;background:none;cursor:pointer;
+  color:var(--tema-accent);filter:drop-shadow(0 2px 3px rgba(42,38,32,.28));transition:filter .15s ease,transform .15s ease;}
+.bm-tab svg{display:block;width:100%;height:100%;}
+.bm-tab:hover{filter:drop-shadow(0 3px 6px rgba(42,38,32,.4));transform:translateY(1px);}
+.bm-stem{position:absolute;top:28px;right:33px;width:4px;height:0;z-index:6;pointer-events:none;border-radius:0 0 3px 3px;
+  background:linear-gradient(180deg,var(--tema-accent),color-mix(in srgb,var(--tema-accent) 55%,#fff));
+  transition:height .3s cubic-bezier(.2,.7,.2,1);}
+.bm-stem::after{content:"";position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;
+  background:var(--tema-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--tema-accent) 22%,transparent);}
+.bm-stem.bm-none::after{display:none;}
+@keyframes bmDrop{from{transform:translateY(-14px);opacity:0;} 60%{transform:translateY(2px);opacity:1;} to{transform:none;opacity:1;}}
+.bm-tab.bm-drop{animation:bmDrop .38s cubic-bezier(.2,.7,.2,1);}
+.bm-stem.bm-grow{transition:height .55s cubic-bezier(.2,.7,.2,1) .18s;}
+.bm-chip{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;
+  display:flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid color-mix(in srgb,var(--tema-accent) 35%,#fff);
+  border-radius:999px;background:color-mix(in srgb,var(--tema-accent) 9%,#fff);color:color-mix(in srgb,var(--tema-accent) 80%,#000);
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  box-shadow:0 8px 22px -8px rgba(42,38,32,.4);animation:bmChipIn .25s ease;}
+.bm-chip[hidden]{display:none;}
+.bm-chip:hover{background:color-mix(in srgb,var(--tema-accent) 16%,#fff);}
+.bm-chip-dir{opacity:.65;font-weight:700;}
+@keyframes bmChipIn{from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){
+  .bm-tab.bm-drop{animation:none;}
+  .bm-stem,.bm-stem.bm-grow{transition:none;}
+  .bm-chip{animation:none;}
+}
 
 /* "Marcar como importante": estrella en cada bloque + resalte del bloque marcado */
 .mark-btn{border:none;background:none;cursor:pointer;padding:2px;margin:0 6px 0 -2px;line-height:0;flex:none;
@@ -97,8 +119,9 @@ a.opts-item{text-decoration:none;}
 .art-block.marked{background:color-mix(in srgb,var(--tema-accent) 9%,transparent);border-radius:8px;}
 .band.marked{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--tema-accent) 50%,transparent);}
 
-/* Panel lateral derecho de ajustes del marcapáginas (abre desde Opciones →
-   Marcapáginas). Cajón que entra desde la derecha. */
+/* Panel lateral derecho tipo cajón (.bks-*): lo usa el editor de colores de
+   subrayado (highlight.js). Nació con los ajustes del marcapáginas (retirados
+   en v0.1.28), pero es un patrón genérico de panel. */
 .bks-panel{position:fixed;top:0;right:0;height:100%;width:min(340px,90vw);z-index:80;
   background:#fff;border-left:1px solid var(--rule);box-shadow:-16px 0 40px -24px rgba(42,38,32,.5);
   transform:translateX(110%);pointer-events:none;transition:transform .24s ease;
@@ -250,13 +273,11 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
   .chip{padding:9px 15px;font-size:13px;}
   .section-jump{gap:8px 7px;}
   .wrap{padding-left:16px;padding-right:16px;}
-  /* Marcapáginas: en móvil la cinta ancha tapaba el texto. La estrechamos y la
-     pegamos al canto derecho (queda como una cinta fina en el borde, casi sin
-     solaparse). Con preserveAspectRatio=none solo se comprime en horizontal, así
-     que la caída/ondulación siguen igual. Se aparta al abrir un panel lateral. */
-  .bookmark-ribbon{right:-4px;width:22px;}
-  .bookmark-ribbon .br-shape{stroke-width:4;}
-  body.panel-open .bookmark-ribbon,body.fulltext-open .bookmark-ribbon{opacity:0;pointer-events:none;transition:opacity .18s;}
+  /* Marcapáginas en móvil: pestañita algo más pequeña y pegada al borde de la
+     tarjeta; el chip se aparta al abrir un panel lateral. */
+  .bm-tab{width:22px;height:29px;right:12px;}
+  .bm-stem{right:21px;}
+  body.panel-open .bm-chip,body.fulltext-open .bm-chip{opacity:0;pointer-events:none;transition:opacity .18s;}
 }
 @media (max-width:430px){
   .illus{display:none;}
