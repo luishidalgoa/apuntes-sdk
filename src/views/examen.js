@@ -1,5 +1,5 @@
 /* Vista Examen: banco único agregado de TODOS los temas del registry,
-   filtrable por bloque (título de la CE), con temporizador opcional,
+   filtrable por apartado (sección del tema), con temporizador opcional,
    asistente IA y vista previa del temario sin salir del examen. */
 import { allTemas, bloqueOf, hasBloques, materiaOf, hasMaterias } from '../registry.js';
 import { config } from '../config.js';
@@ -7,6 +7,14 @@ import { renderAiPanel } from '../exam/ai.js';
 import { openRefPreview } from '../exam/preview.js';
 
 const EXAM_TIME_LIMIT = 45;
+
+/* "Apartado" = sección del examen DENTRO de un tema (cada PDF de teoría). Es el
+   nivel inferior a Materia › Bloque › Tema. Retrocompatible: si un tema/pregunta
+   aún usa el nombre antiguo (`bloques`/`bloque`) se acepta igual, para que
+   Legislación no se rompa mientras migra a `apartados`/`apartado`.
+   OJO: no confundir con el "bloque" que AGRUPA temas (bloqueOf/exam-bloque-group). */
+const apartadosDe = (t) => t.apartados || t.bloques || [];
+const apartadoDe  = (q) => (q.apartado != null ? q.apartado : q.bloque);
 
 export const examenViewFactory = {
   create(){
@@ -17,37 +25,37 @@ export const examenViewFactory = {
     /* Agregación (se calcula al montar, cuando el registry ya está poblado):
        cada pregunta conoce su tema de origen. */
     let QUESTIONS = [];
-    let TEMA_GROUPS = [];   // [{ id, label, bloques:[...] }] — solo bloques con preguntas
+    let TEMA_GROUPS = [];   // [{ id, label, apartados:[...] }] — solo apartados con preguntas
 
     function clearExamTimer(){ if(examTimer){ clearInterval(examTimer); examTimer = null; } }
 
     /* initialTema: si viene de la página de un tema (#/examen/<id>), se
-       preseleccionan solo los bloques de ese tema (los demás quedan sin marcar,
-       pero se pueden expandir y añadir). Sin él → todo marcado. */
+       preseleccionan solo los apartados de ese tema (los demás quedan sin
+       marcar, pero se pueden expandir y añadir). Sin él → todo marcado. */
     function showExamSetup(initialTema){
       clearExamTimer();
       const esc = s => String(s).replace(/"/g, '&quot;');
-      const countBloque = (b) => QUESTIONS.filter(q => q.bloque === b).length;
-      const countTema = (g) => g.bloques.reduce((s, b) => s + countBloque(b), 0);
+      const countApartado = (b) => QUESTIONS.filter(q => apartadoDe(q) === b).length;
+      const countTema = (g) => g.apartados.reduce((s, b) => s + countApartado(b), 0);
       const hasInitial = initialTema && TEMA_GROUPS.some(g => g.id === initialTema);
       const total = QUESTIONS.length;
 
       let idx = 0;
       const temaGroupHtml = (g) => {
         const on = !hasInitial || g.id === initialTema;
-        const rows = g.bloques.map(b => {
+        const rows = g.apartados.map(b => {
           const id = 'exb' + (idx++);
-          return '<div class="exam-bloque-row"><input type="checkbox" class="exam-bloque-cb" id="' + id + '" data-tema="' + esc(g.id) + '" data-bloque="' + esc(b) + '"' + (on ? ' checked' : '') + '/>'
-            + '<label for="' + id + '">' + b + '</label><span class="exam-tema-count">' + countBloque(b) + '</span></div>';
+          return '<div class="exam-apartado-row"><input type="checkbox" class="exam-apartado-cb" id="' + id + '" data-tema="' + esc(g.id) + '" data-apartado="' + esc(b) + '"' + (on ? ' checked' : '') + '/>'
+            + '<label for="' + id + '">' + b + '</label><span class="exam-tema-count">' + countApartado(b) + '</span></div>';
         }).join('');
         return '<div class="exam-tema-group" data-tema="' + esc(g.id) + '">'
           + '<div class="exam-tema-row exam-tema-head">'
           +   '<input type="checkbox" class="exam-tema-cb" data-tema="' + esc(g.id) + '"' + (on ? ' checked' : '') + '/>'
           +   '<label>' + g.label + '</label>'
           +   '<span class="exam-tema-count">' + countTema(g) + '</span>'
-          +   '<button class="exam-tema-toggle" type="button" aria-expanded="false" aria-label="Ver bloques del tema">▸</button>'
+          +   '<button class="exam-tema-toggle" type="button" aria-expanded="false" aria-label="Ver apartados del tema">▸</button>'
           + '</div>'
-          + '<div class="exam-bloques" hidden>' + rows + '</div>'
+          + '<div class="exam-apartados" hidden>' + rows + '</div>'
           + '</div>';
       };
 
@@ -93,7 +101,7 @@ export const examenViewFactory = {
         + '<div class="exam-tema-row exam-tema-all"><input type="checkbox" id="examTemaAll"' + (!hasInitial ? ' checked' : '') + '/><label for="examTemaAll">Todos los temas</label><span class="exam-tema-count">' + total + '</span></div>'
         + groupsHtml
         + '</div>'
-        + '<p class="exam-setup-warn" id="examSetupWarn" style="display:none">Selecciona al menos un bloque.</p>'
+        + '<p class="exam-setup-warn" id="examSetupWarn" style="display:none">Selecciona al menos un apartado.</p>'
         + '<p class="exam-setup-label">¿Con temporizador?</p>'
         + '<div class="opts exam-time-opts"><button class="btn" data-timed="0">Sin temporizador</button><button class="btn" data-timed="1">⏱ Con temporizador (45s/pregunta)</button></div>'
         + '<p class="exam-setup-label">¿Cuántas preguntas?</p>'
@@ -102,59 +110,59 @@ export const examenViewFactory = {
 
       const allCb = examBody.querySelector('#examTemaAll');
       const temaCbs = [...examBody.querySelectorAll('.exam-tema-cb')];
-      const bloqueCbs = [...examBody.querySelectorAll('.exam-bloque-cb')];
-      const bloquegCbs = [...examBody.querySelectorAll('.exam-bloqueg-cb')];   // checkboxes de nivel "bloque"
+      const apartadoCbs = [...examBody.querySelectorAll('.exam-apartado-cb')];
+      const bloquegCbs = [...examBody.querySelectorAll('.exam-bloqueg-cb')];   // checkboxes de nivel "bloque" (agrupa temas)
       const poolCountEl = examBody.querySelector('#examPoolCount');
       const warnEl = examBody.querySelector('#examSetupWarn');
       let timedChoice = false;
 
-      const seleccionados = () => bloqueCbs.filter(c => c.checked).map(c => c.getAttribute('data-bloque'));
-      const bloquesOf = (id) => bloqueCbs.filter(c => c.getAttribute('data-tema') === id);
+      const seleccionados = () => apartadoCbs.filter(c => c.checked).map(c => c.getAttribute('data-apartado'));
+      const apartadosOf = (id) => apartadoCbs.filter(c => c.getAttribute('data-tema') === id);
       // Capa activa (materia o bloque): mapear tema→grupo y sus checkboxes, para sincronizar el nivel superior.
       const bloqueGOf = (temaId) => { const g = TEMA_GROUPS.find(x => x.id === temaId); const gr = g && grupoDe(g); return gr ? gr.id : null; };
       const temaIdsOfBloqueG = (bid) => TEMA_GROUPS.filter(g => { const gr = grupoDe(g); return (gr ? gr.id : null) === bid; }).map(g => g.id);
       const temaCbsOfBloqueG = (bid) => { const ids = temaIdsOfBloqueG(bid); return temaCbs.filter(c => ids.includes(c.getAttribute('data-tema'))); };
-      const bloqueCbsOfBloqueG = (bid) => { const ids = temaIdsOfBloqueG(bid); return bloqueCbs.filter(c => ids.includes(c.getAttribute('data-tema'))); };
+      const apartadoCbsOfBloqueG = (bid) => { const ids = temaIdsOfBloqueG(bid); return apartadoCbs.filter(c => ids.includes(c.getAttribute('data-tema'))); };
       function syncBloqueG(bid){
         if(bid == null) return;
         const bg = bloquegCbs.find(c => c.getAttribute('data-bloque-id') === bid);
         if(!bg) return;
-        const cbs = bloqueCbsOfBloqueG(bid), on = cbs.filter(c => c.checked).length;
+        const cbs = apartadoCbsOfBloqueG(bid), on = cbs.filter(c => c.checked).length;
         bg.checked = on === cbs.length; bg.indeterminate = on > 0 && on < cbs.length;
       }
       function syncTema(id){
-        const cbs = bloquesOf(id), t = temaCbs.find(c => c.getAttribute('data-tema') === id);
+        const cbs = apartadosOf(id), t = temaCbs.find(c => c.getAttribute('data-tema') === id);
         const on = cbs.filter(c => c.checked).length;
         t.checked = on === cbs.length; t.indeterminate = on > 0 && on < cbs.length;
         syncBloqueG(bloqueGOf(id));
       }
       function syncAll(){
-        const on = bloqueCbs.filter(c => c.checked).length;
-        allCb.checked = on === bloqueCbs.length; allCb.indeterminate = on > 0 && on < bloqueCbs.length;
+        const on = apartadoCbs.filter(c => c.checked).length;
+        allCb.checked = on === apartadoCbs.length; allCb.indeterminate = on > 0 && on < apartadoCbs.length;
       }
-      function updatePoolCount(){ const sel = seleccionados(); poolCountEl.textContent = QUESTIONS.filter(q => sel.includes(q.bloque)).length; }
+      function updatePoolCount(){ const sel = seleccionados(); poolCountEl.textContent = QUESTIONS.filter(q => sel.includes(apartadoDe(q))).length; }
 
       TEMA_GROUPS.forEach(g => syncTema(g.id)); syncAll();
       allCb.addEventListener('change', () => {
-        bloqueCbs.forEach(c => c.checked = allCb.checked);
+        apartadoCbs.forEach(c => c.checked = allCb.checked);
         temaCbs.forEach(c => { c.checked = allCb.checked; c.indeterminate = false; });
         bloquegCbs.forEach(c => { c.checked = allCb.checked; c.indeterminate = false; });
         updatePoolCount();
       });
       bloquegCbs.forEach(bg => bg.addEventListener('change', () => {
         const bid = bg.getAttribute('data-bloque-id');
-        bloqueCbsOfBloqueG(bid).forEach(c => c.checked = bg.checked);
+        apartadoCbsOfBloqueG(bid).forEach(c => c.checked = bg.checked);
         temaCbsOfBloqueG(bid).forEach(c => { c.checked = bg.checked; c.indeterminate = false; });
         bg.indeterminate = false; syncAll(); updatePoolCount();
       }));
       temaCbs.forEach(t => t.addEventListener('change', () => {
-        bloquesOf(t.getAttribute('data-tema')).forEach(c => c.checked = t.checked);
+        apartadosOf(t.getAttribute('data-tema')).forEach(c => c.checked = t.checked);
         t.indeterminate = false; syncBloqueG(bloqueGOf(t.getAttribute('data-tema'))); syncAll(); updatePoolCount();
       }));
-      bloqueCbs.forEach(c => c.addEventListener('change', () => { syncTema(c.getAttribute('data-tema')); syncAll(); updatePoolCount(); }));
+      apartadoCbs.forEach(c => c.addEventListener('change', () => { syncTema(c.getAttribute('data-tema')); syncAll(); updatePoolCount(); }));
       examBody.querySelectorAll('.exam-tema-toggle').forEach(btn => {
         btn.addEventListener('click', () => {
-          const box = btn.closest('.exam-tema-group').querySelector('.exam-bloques');
+          const box = btn.closest('.exam-tema-group').querySelector('.exam-apartados');
           const open = box.hidden; box.hidden = !open;
           btn.setAttribute('aria-expanded', String(open)); btn.classList.toggle('open', open);
         });
@@ -176,8 +184,8 @@ export const examenViewFactory = {
       });
     }
 
-    function startExam(n, bloques, timed){
-      let pool = QUESTIONS.filter(q => bloques.includes(q.bloque));
+    function startExam(n, apartados, timed){
+      let pool = QUESTIONS.filter(q => apartados.includes(apartadoDe(q)));
       for(let i = pool.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
       if(n) pool = pool.slice(0, n);
       examState = { pool, index: 0, score: 0, wrongList: [], timed: !!timed };
@@ -189,7 +197,7 @@ export const examenViewFactory = {
       const { pool, index, score, timed } = examState;
       const q = pool[index];
       examBody.innerHTML =
-        '<div class="exam-progress"><span>Pregunta ' + (index + 1) + ' de ' + pool.length + ' · ' + q.bloque + '</span><span>Aciertos: ' + score + '</span></div>'
+        '<div class="exam-progress"><span>Pregunta ' + (index + 1) + ' de ' + pool.length + ' · ' + apartadoDe(q) + '</span><span>Aciertos: ' + score + '</span></div>'
         + (timed ? '<div class="exam-timer"><div class="exam-timer-track"><div class="exam-timer-fill" id="examTimerBar"></div></div><span class="exam-timer-n" id="examTimerN">' + EXAM_TIME_LIMIT + 's</span></div>' : '')
         + '<div class="exam-q">' + q.pregunta + '</div>'
         + '<div class="exam-opts">' + q.respuestas.map((r, i) => '<button class="exam-opt" data-i="' + i + '">' + r + '</button>').join('') + '</div>'
@@ -279,13 +287,13 @@ export const examenViewFactory = {
           return { id: t.id, label: num ? ('Tema ' + num + ' · ' + t.titulo) : (t.titulo || t.id),
             materia: materiaOf(t),   // capa de navegación "materia" (opcional)
             bloque: bloqueOf(t),     // agrupación "bloque" dentro de la materia (opcional)
-            bloques: (t.bloques || []).filter(b => QUESTIONS.some(q => q.bloque === b)) };
-        }).filter(g => g.bloques.length);
+            apartados: apartadosDe(t).filter(b => QUESTIONS.some(q => apartadoDe(q) === b)) };
+        }).filter(g => g.apartados.length);
         root.innerHTML = `
       <div class="wrap">
         <p class="eyebrow">${config().eyebrow || ''}</p>
         <h1>Examen</h1>
-        <p class="lede">${config().examLede || 'Banco único con las preguntas de todos los temas. Elige de qué temas o bloques examinarte, con o sin temporizador.'}</p>
+        <p class="lede">${config().examLede || 'Banco único con las preguntas de todos los temas. Elige de qué temas o apartados examinarte, con o sin temporizador.'}</p>
         <div class="exam-nav">
           <a class="btn" href="#/">📚 Temario</a>
           ${allTemas().map((t, i) => { const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1); return `<a class="btn" href="#/tema/${t.id}">Tema ${n}</a>`; }).join('\n          ')}
@@ -293,7 +301,7 @@ export const examenViewFactory = {
         <div class="exam-card">
           <div class="exam-body" id="examBody"></div>
         </div>
-        <footer>Preguntas de simulacros reales, filtradas por bloque — se van sumando conforme llegan más simulacros.</footer>
+        <footer>Preguntas de simulacros reales, filtradas por apartado — se van sumando conforme llegan más simulacros.</footer>
       </div>`;
         examBody = root.querySelector('#examBody');
         showExamSetup(route && route.temaId);

@@ -7,6 +7,21 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.25
+
+- **Examen · renombrado del nivel intra-tema `bloques` → `apartados`** (petición
+  TAI para deshacer el choque de nombres: «bloque» queda reservado para AGRUPAR
+  temas —jerarquía Materia › Bloque › Tema— y el nivel de DENTRO del tema pasa a
+  llamarse «apartado», cada uno = un PDF de teoría). Cambia `views/examen.js` y
+  `styles/exam.css`: `.exam-bloque-row`/`.exam-bloque-cb`/`.exam-bloques` →
+  `.exam-apartado-row`/`.exam-apartado-cb`/`.exam-apartados`; `data-bloque` →
+  `data-apartado`; textos «bloque» → «apartado». **Retrocompatible:** el motor
+  acepta el nombre antiguo (`tema.bloques` / `q.bloque`) como respaldo, así que
+  las apps que aún no han migrado (Legislación) siguen funcionando sin tocar
+  nada. Migrar = cambiar `bloques:`→`apartados:` en el manifiesto y `bloque:`→
+  `apartado:` en cada pregunta. **NO afecta** a la capa «bloque» que agrupa temas
+  (`bloqueOf`/`.exam-bloque-group`/`.exam-bloqueg-cb`), que sigue igual.
+
 ## v0.1.24
 - **Nuevo (UI)**: tarjetas de **materia y examen "vivas"** (inspiración
   Aceternity UI), sustituyendo el numeral/emoji genérico:
