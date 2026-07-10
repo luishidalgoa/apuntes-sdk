@@ -7,6 +7,19 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.37
+
+- **`.apartado-head` promovido a componente GENÉRICO del SDK** (nivel intra-tema
+  de v0.1.25). Antes cada tema tenía su copia local: `tai-tema3.css` (acento
+  `--t3`) y `leg-tema4/tema4.css` (scopeada a `.view-leg-tema4`). Ahora vive en
+  `shared.css` con `var(--tema-accent)` (que cada vista de tema fija en su
+  `.wrap`). Estructura: `<div class="apartado-head"><span class="apn">…</span>
+  <h2>…</h2><p class="apsub">…</p></div>`. **Migración sin roturas**: el CSS del
+  SDK carga ANTES que el de la app, así que las copias locales (igual o más
+  específicas) siguen ganando hasta que cada materia borre la suya y caiga al
+  genérico. Acción para los carriles de materia: eliminar su `.apartado-head`
+  local.
+
 ## v0.1.36
 
 - **Buscador con contexto de MATERIA**: si lo abres dentro de una materia (su

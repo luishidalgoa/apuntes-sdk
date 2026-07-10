@@ -225,6 +225,19 @@ body.bookmark-placing #temaContent .art-block:hover{
 .art-block.no-ap .ap-n{display:none;}
 .art-block.no-ap .apartado{gap:0;}
 
+/* Cabecera de APARTADO (nivel intra-tema, v0.1.25): separa un tema en secciones
+   grandes (cada una ~ un PDF de teoría). Genérico del SDK con var(--tema-accent)
+   (cada vista de tema lo fija en su .wrap) — sustituye a las copias locales que
+   tenían tai-tema3 y leg-tema4. Estructura: <div class="apartado-head">
+   <span class="apn">1 · Título</span><h2>…</h2><p class="apsub">…</p></div>. */
+.apartado-head{margin:72px 0 18px;padding:0 2px 15px;border-bottom:3px solid var(--tema-accent);}
+.apartado-head:first-child{margin-top:10px;}
+.apartado-head .apn{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.16em;
+    text-transform:uppercase;color:#fff;background:var(--tema-accent);padding:4px 12px;border-radius:999px;}
+.apartado-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:34px;line-height:1.08;margin:13px 0 6px;color:var(--ink);}
+.apartado-head .apsub{margin:0;font-size:15.5px;color:var(--ink-soft);max-width:72ch;}
+@media(max-width:560px){ .apartado-head h2{font-size:26px;} .apartado-head{margin-top:48px;} }
+
 /* Chip de etiqueta especial (lo genera specialTagChip). Base neutra: color por
    --tema-accent; la app puede recolorearlo por tipo (p.ej. .susp-tag ámbar). */
 .susp-tag{font-family:inherit;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
