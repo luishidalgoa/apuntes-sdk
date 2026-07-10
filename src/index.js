@@ -63,3 +63,4 @@ export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlig
 export { exportBackup, importBackup, buildBackup, applyBackup } from './core/backup.js';
 export { mountSearch, openSearch, closeSearch, SEARCH_ICON } from './core/search-ui.js';
 export { buildIndex, warmIndex, invalidateIndex, searchContent } from './core/content-index.js';
+export { bindScrollReveal, unbindScrollReveal } from './core/scroll-reveal.js';

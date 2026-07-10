@@ -1,3 +1,5 @@
+import { bindScrollReveal } from './core/scroll-reveal.js';
+
 /* Router por location.hash — NUNCA pushState (lanza SecurityError en file://).
    Rutas:  #/            → hub
            #/tema/<id>   → tema (con ancla opcional: #/tema/tema1/art-13-4)
@@ -53,6 +55,12 @@ export function createRouter({ root, views, ctx }){
     const cleanup = instance.mount(root, route, ctx) || null;
     current = { route, cleanup, view: instance };
     if(!route.anchor) window.scrollTo(0, 0);
+
+    /* Transición de entrada de la vista (re-dispara la animación quitando y
+       reañadiendo la clase con un reflow) + scroll-reveal del contenido (síncrono,
+       antes del paint, para que no haya parpadeo). */
+    root.classList.remove('view-in'); void root.offsetWidth; root.classList.add('view-in');
+    bindScrollReveal(root);
   }
 
   window.addEventListener('hashchange', render);

@@ -16,3 +16,20 @@ footer{margin-top:40px;text-align:center;font-size:12px;color:var(--ink-faint);}
 
 .reveal{opacity:0;transform:translateY(14px);animation:rise .6s cubic-bezier(.2,.7,.2,1) forwards;}
 @keyframes rise{to{opacity:1;transform:none;}}
+
+/* Transición de entrada al navegar entre vistas (la dispara el router). */
+#view.view-in{animation:viewIn .34s cubic-bezier(.2,.7,.2,1);}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;}}
+
+/* Scroll-reveal: tarjetas/bandas/bloques suben y aparecen al entrar en el
+   viewport, y se atenúan al salir (las dos direcciones). Lo activa el JS
+   añadiendo `.sr` (así, sin JS o sin soporte, el contenido se ve normal). */
+.sr{opacity:0;transform:translateY(22px);
+  transition:opacity .55s ease, transform .55s cubic-bezier(.2,.7,.2,1);}
+.sr.sr-in{opacity:1;transform:none;}
+
+/* Accesibilidad: sin movimiento si el usuario lo pide. */
+@media (prefers-reduced-motion: reduce){
+  .reveal,#view.view-in{animation:none;opacity:1;transform:none;}
+  .sr,.sr.sr-in{opacity:1;transform:none;transition:none;}
+}

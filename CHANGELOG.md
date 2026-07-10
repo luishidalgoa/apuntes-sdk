@@ -7,6 +7,21 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.23
+- **Nuevo (animaciones)**: la navegación y el scroll cobran vida, de forma
+  genérica (todas las apps lo heredan; el router lo cablea solo).
+  - **Transición de entrada** al cambiar de vista: el contenido aparece con un
+    breve fundido + desplazamiento (`#view.view-in`), en vez de un salto brusco.
+  - **Scroll-reveal**: las tarjetas, bandas y bloques (`.tema-card/.card/.node/
+    .band/.art-block`) suben y aparecen al **entrar** en el viewport y se atenúan
+    al **salir** (IntersectionObserver, bidireccional), con un **fallback de
+    scroll** que revela lo que va entrando aunque el observador no dispare (así
+    el contenido nunca queda invisible). Revelación inicial **síncrona** (antes
+    del primer paint) → sin parpadeo.
+  - Respeta **`prefers-reduced-motion`** (sin animación si el usuario lo pide).
+  - Módulo `core/scroll-reveal.js` (API `bindScrollReveal`/`unbindScrollReveal`);
+    CSS en `styles/base.css`; cableado en `router.js`.
+
 ## v0.1.22
 - **Nuevo (navegación)**: capa **«materia»**, una puerta de navegación de primer
   nivel por encima del tema (p. ej. «Legislación» y «TAI técnica» en una misma
