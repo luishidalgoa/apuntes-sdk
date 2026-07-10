@@ -7,6 +7,17 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.27
+
+- **Safari · el chrome del navegador (barras superior/inferior) se veía BLANCO**
+  en vez del papel de la app, rompiendo la inmersión. Dos capas:
+  `html{background-color:var(--paper)}` en `base.css` (Safari tiñe la barra
+  inferior/overscroll con el fondo del documento; antes `html` no tenía fondo) y
+  `ensureThemeColor()` en `createApp` (inyecta `<meta name="theme-color">` con
+  el `--paper` computado para la barra superior; respeta un meta estático si la
+  app ya lo trae en su `index.html`, que es lo recomendado para evitar el flash
+  blanco antes del JS).
+
 ## v0.1.26
 
 - **Fix navbar del tema · el buscador se solapaba con los botones de la derecha**

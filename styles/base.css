@@ -1,4 +1,9 @@
 *{box-sizing:border-box;}
+/* El lienzo raíz también en papel: Safari (iOS/macOS) tiñe su chrome (barra de
+   pestañas inferior, overscroll/rubber-band) con el fondo del documento — sin
+   esto se ve BLANCO y rompe la inmersión. Va a juego con el <meta theme-color>
+   que inyecta createApp (barra superior). */
+html{background-color:var(--paper);}
 body{margin:0;font-family:"Hanken Grotesk",system-ui,sans-serif;color:var(--ink);
   background:radial-gradient(1200px 600px at 80% -10%, #fff 0%, transparent 60%),linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
   background-attachment:fixed;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;}

@@ -25,9 +25,24 @@ import { mountSearch } from './core/search-ui.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
 
+/* Tiñe el chrome del navegador (barra superior de Safari iOS, Android) con el
+   papel de la app: inyecta <meta name="theme-color"> con el token --paper
+   computado (cada paleta puede sobreescribirlo). Si el index.html de la app ya
+   trae uno estático (recomendado: evita el flash blanco antes del JS), se
+   respeta y no se duplica. Complementa a html{background} de base.css. */
+function ensureThemeColor(){
+  if(document.querySelector('meta[name="theme-color"]')) return;
+  const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
+  const m = document.createElement('meta');
+  m.name = 'theme-color';
+  m.content = paper || '#FBF7EF';
+  document.head.appendChild(m);
+}
+
 export function createApp(appConfig, temas, { mountEl } = {}){
   setConfig(appConfig);
   setRegistry(temas);
+  ensureThemeColor();
 
   const app = mountEl || document.getElementById('app');
   app.insertAdjacentHTML('beforeend', CRAYON_FILTERS);
