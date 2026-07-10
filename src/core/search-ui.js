@@ -8,12 +8,26 @@ import { registerLayer } from './modal-stack.js';
 import { searchContent, normalize, warmIndex } from './content-index.js';
 import { isQuestion, keyTerms, askTemario } from './search-ask.js';
 import { esc } from './dom.js';
-import { navigate } from '../router.js';
+import { navigate, parseHash } from '../router.js';
+import { temaById, materiaOf, hasMaterias } from '../registry.js';
 
 export const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 
 let overlay, input, resultsEl, results = [], activeIdx = -1;
 let lastQuery = '', citedRefs = [], asking = false;
+/* Contexto de materia: si abres el buscador DENTRO de una materia (su hub o un
+   tema suyo), la búsqueda se acota a ella; un chip permite ampliar a todo el
+   temario. Fuera de las materias, contexto global. */
+let scopeMateria = null;   // { id, label } o null
+let scopeActive = true;    // acotar a scopeMateria (el chip lo alterna)
+
+function currentMateria(){
+  if(!hasMaterias()) return null;
+  const r = parseHash();
+  if(r.name === 'materia' && r.materiaId) return materiaOf({ materia: r.materiaId });
+  if(r.name === 'tema' && r.temaId){ const t = temaById(r.temaId); return t ? materiaOf(t) : null; }
+  return null;
+}
 
 export function mountSearch(app){
   const wrap = document.createElement('div');
@@ -45,6 +59,8 @@ export function mountSearch(app){
     if(it){ activeIdx = +it.dataset.i; paintActive(); }
   });
   resultsEl.addEventListener('click', (e) => {
+    const scopeBtn = e.target.closest('[data-scope]');
+    if(scopeBtn){ scopeActive = scopeBtn.dataset.scope === 'mat'; runQuery(input.value); input.focus(); return; }
     if(e.target.closest('[data-ask]')){ doAsk(lastQuery); return; }
     const ref = e.target.closest('[data-goref]');
     if(ref){ gotoRef(+ref.dataset.goref); return; }
@@ -69,6 +85,8 @@ function isTyping(el){ return el && (el.tagName === 'INPUT' || el.tagName === 'T
 
 export function openSearch(){
   if(!overlay || !overlay.hidden) return;
+  scopeMateria = currentMateria();
+  scopeActive = !!scopeMateria;        // dentro de una materia → acota por defecto
   overlay.hidden = false;
   document.body.classList.add('search-open');
   input.value = '';
@@ -112,9 +130,19 @@ function runQuery(q){
   lastQuery = q;
   const question = q.trim().length >= 2 && isQuestion(q);
   const rq = question ? (keyTerms(q).join(' ') || q) : q;   // en preguntas, recupera por los términos clave
-  results = q.trim().length >= 2 ? searchContent(rq) : [];
+  const scope = (scopeActive && scopeMateria) ? scopeMateria.id : null;
+  results = q.trim().length >= 2 ? searchContent(rq, 30, scope) : [];
   activeIdx = results.length ? 0 : -1;
   render(q, question);
+}
+
+/* Chip de ámbito: solo aparece si hay contexto de materia. Permite alternar
+   entre "solo esta materia" y "todo el temario". */
+function scopeChipHtml(){
+  if(!scopeMateria) return '';
+  return scopeActive
+    ? `<div class="sr-scope">Buscando en <b>${esc(scopeMateria.label)}</b><button class="sr-scope-btn" data-scope="all" type="button">Buscar en todo el temario</button></div>`
+    : `<div class="sr-scope">Buscando en <b>todo el temario</b><button class="sr-scope-btn" data-scope="mat" type="button">Solo ${esc(scopeMateria.label)}</button></div>`;
 }
 
 /* resalta los términos (best-effort, sobre el texto ya escapado) */
@@ -184,13 +212,14 @@ async function doAsk(q){
 function render(q, question){
   const kterms = question ? keyTerms(q) : (q.trim().length >= 2 ? normalize(q).split(/\s+/).filter(Boolean) : []);
   const rawTerms = q.trim().split(/\s+/).filter(Boolean);
+  const scope = scopeChipHtml();
   if(q.trim().length < 2){
-    resultsEl.innerHTML = '<div class="sr-empty">Escribe al menos 2 letras. Busca por <b>concepto</b> (Dijkstra, montículo), por <b>número de punto</b> (4.3.1) o haz una <b>pregunta</b> y deja que la IA te lleve al punto.</div>';
+    resultsEl.innerHTML = scope + '<div class="sr-empty">Escribe al menos 2 letras. Busca por <b>concepto</b> (Dijkstra, montículo), por <b>número de punto</b> (4.3.1) o haz una <b>pregunta</b> y deja que la IA te lleve al punto.</div>';
     return;
   }
   const ask = question ? askBarHtml(q) : '';
   if(!results.length){
-    resultsEl.innerHTML = ask + `<div class="sr-empty">Sin resultados para «${esc(q)}».</div>`;
+    resultsEl.innerHTML = scope + ask + `<div class="sr-empty">Sin resultados para «${esc(q)}».</div>`;
     return;
   }
   const items = results.map((e, i) => {
@@ -207,5 +236,5 @@ function render(q, question){
       <span class="sr-go">↵</span>
     </button>`;
   }).join('');
-  resultsEl.innerHTML = ask + items;
+  resultsEl.innerHTML = scope + ask + items;
 }

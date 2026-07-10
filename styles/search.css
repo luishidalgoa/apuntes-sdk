@@ -37,6 +37,14 @@ body.search-open{ overflow:hidden; }
 .search-results{ overflow-y:auto; padding:6px; }
 .sr-empty{ padding:26px 20px; text-align:center; color:var(--ink-faint); font-size:14px; line-height:1.6; }
 .sr-empty b{ color:var(--ink-soft); }
+/* chip de ámbito de búsqueda (contexto de materia) */
+.sr-scope{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 4px 8px; padding:8px 12px;
+  border-radius:11px; background:var(--paper-2); font-size:12.5px; color:var(--ink-soft); }
+.sr-scope b{ color:var(--ink); font-weight:700; }
+.sr-scope-btn{ margin-left:auto; border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+  font-family:inherit; font-size:12px; font-weight:600; padding:4px 11px; border-radius:999px; cursor:pointer;
+  transition:border-color .12s ease, color .12s ease, background .12s ease; }
+.sr-scope-btn:hover{ border-color:var(--rule); color:var(--ink); background:var(--paper); }
 
 .sr-item{
   display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;

@@ -7,6 +7,15 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.36
+
+- **Buscador con contexto de MATERIA**: si lo abres dentro de una materia (su
+  hub o un tema suyo), la búsqueda se acota a esa materia; fuera (portada global)
+  busca en todo el temario. Un **chip** «Buscando en <Materia> · Buscar en todo el
+  temario» permite ampliar a global de un toque (y volver a acotar). El índice
+  ahora guarda `materiaId` por entrada y `searchContent(q, limit, scopeMateriaId)`
+  filtra por él.
+
 ## v0.1.35
 
 - **Examen ahora es un OVERLAY (SPA), ya no una ruta**. Antes `#/examen`

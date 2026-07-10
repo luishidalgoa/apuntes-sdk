@@ -71,6 +71,7 @@ function indexTema(tema, ti){
   });
 
   entries.forEach(e => {
+    e.materiaId = mat ? mat.id : null;   // para acotar la búsqueda a una materia
     e._t = normalize(e.title); e._x = normalize(e.text); e._n = normalize(e.num);
     e._k = normalize([matLabel, blLabel, e.temaK].filter(Boolean).join(' '));   // materia y bloque también buscables (con el nombre del tema)
     e._tw = wordsOf(e._t); e._xw = wordsOf(e._x); e._kw = wordsOf(e._k);
@@ -174,12 +175,15 @@ function scoreEntry(e, q, terms){
   return sc;
 }
 
-export function searchContent(query, limit = 30){
+/* scopeMateriaId (opcional): si se pasa, solo se buscan entradas de esa materia
+   (contexto: estás dentro de una materia). Sin él, busca en todo el temario. */
+export function searchContent(query, limit = 30, scopeMateriaId = null){
   const q = normalize(query);
   if(q.length < 2) return [];
   const terms = q.split(/\s+/).filter(Boolean);
   const out = [];
   for(const e of buildIndex()){
+    if(scopeMateriaId && e.materiaId !== scopeMateriaId) continue;
     const s = scoreEntry(e, q, terms);
     if(s > 0) out.push({ e, s });
   }
