@@ -204,74 +204,101 @@ function startExam(n, apartados, timed){
   let pool = QUESTIONS.filter(q => apartados.includes(apartadoDe(q)));
   pool = shuffled(pool);
   if(n) pool = pool.slice(0, n);
-  examState = { pool, index: 0, score: 0, wrongList: [], timed: !!timed };
+  examState = { pool, index: 0, score: 0, wrongList: [], timed: !!timed, qstate: [] };
   renderExamQuestion();
   syncNewBtn();
 }
 
+/* Renderiza la pregunta `index`. Si YA se respondió (se navegó atrás a revisar),
+   la re-pinta en su estado respondido (marcas + feedback, opciones bloqueadas)
+   con el MISMO orden barajado que se guardó en qstate — así al volver no cambia. */
 function renderExamQuestion(){
-  clearExamTimer();
-  const { pool, index, score, timed } = examState;
-  const q = pool[index];
-  examState.currentOpts = shuffled(q.respuestas);
-  examBody.innerHTML =
-    '<div class="exam-progress"><span>Pregunta ' + (index + 1) + ' de ' + pool.length + ' · ' + apartadoDe(q) + '</span><span>Aciertos: ' + score + '</span></div>'
-    + (timed ? '<div class="exam-timer"><div class="exam-timer-track"><div class="exam-timer-fill" id="examTimerBar"></div></div><span class="exam-timer-n" id="examTimerN">' + EXAM_TIME_LIMIT + 's</span></div>' : '')
-    + '<div class="exam-q">' + q.pregunta + '</div>'
-    + '<div class="exam-opts">' + examState.currentOpts.map((r, i) => '<button class="exam-opt" data-i="' + i + '">' + r + '</button>').join('') + '</div>'
-    + '<div class="exam-feedback" style="display:none"></div>';
-  examBody.querySelectorAll('.exam-opt').forEach(btn => {
-    btn.addEventListener('click', () => onExamAnswer(parseInt(btn.getAttribute('data-i'), 10)));
-  });
-  if(timed){
-    let remaining = EXAM_TIME_LIMIT;
-    const bar = examBody.querySelector('#examTimerBar');
-    const numEl = examBody.querySelector('#examTimerN');
-    examTimer = setInterval(() => {
-      remaining--;
-      numEl.textContent = remaining + 's';
-      bar.style.width = (remaining / EXAM_TIME_LIMIT * 100) + '%';
-      if(remaining <= 10) bar.classList.add('low');
-      if(remaining <= 0){ clearExamTimer(); onExamAnswer(-1); }
-    }, 1000);
-  }
-}
-
-function onExamAnswer(i){
   clearExamTimer();
   const { pool, index } = examState;
   const q = pool[index];
-  const optTexts = examState.currentOpts;
-  const correctIndex = optTexts.indexOf(q.correcta);
-  const opts = examBody.querySelectorAll('.exam-opt');
-  opts.forEach((btn, idx) => {
+  let st = examState.qstate[index];
+  if(!st){ st = { opts: shuffled(q.respuestas), answered: false, userIdx: null }; examState.qstate[index] = st; }
+  const timed = examState.timed && !st.answered;   // solo se cronometra lo aún sin responder
+  examBody.innerHTML =
+    '<div class="exam-progress"><span>Pregunta ' + (index + 1) + ' de ' + pool.length + ' · ' + apartadoDe(q) + '</span><span>Aciertos: ' + examState.score + '</span></div>'
+    + (timed ? '<div class="exam-timer"><div class="exam-timer-track"><div class="exam-timer-fill" id="examTimerBar"></div></div><span class="exam-timer-n" id="examTimerN">' + EXAM_TIME_LIMIT + 's</span></div>' : '')
+    + '<div class="exam-q">' + q.pregunta + '</div>'
+    + '<div class="exam-opts">' + st.opts.map((r, i) => '<button class="exam-opt" data-i="' + i + '">' + r + '</button>').join('') + '</div>'
+    + '<div class="exam-feedback" style="display:none"></div>'
+    + '<div class="exam-navrow">'
+    +   (index > 0 ? '<button class="btn small" type="button" id="examPrevBtn">← Anterior</button>' : '<span></span>')
+    +   (st.answered ? '<button class="btn small on" type="button" id="examNextBtn">' + (index + 1 < pool.length ? 'Siguiente →' : 'Ver resultado') + '</button>' : '<span></span>')
+    + '</div>';
+  const prevBtn = examBody.querySelector('#examPrevBtn');
+  if(prevBtn) prevBtn.addEventListener('click', prevExamQuestion);
+  const nextBtn = examBody.querySelector('#examNextBtn');
+  if(nextBtn) nextBtn.addEventListener('click', nextExamQuestion);
+
+  if(st.answered){
+    paintAnswered(st, q);
+  } else {
+    examBody.querySelectorAll('.exam-opt').forEach(btn => {
+      btn.addEventListener('click', () => onExamAnswer(parseInt(btn.getAttribute('data-i'), 10)));
+    });
+    if(timed){
+      let remaining = EXAM_TIME_LIMIT;
+      const bar = examBody.querySelector('#examTimerBar');
+      const numEl = examBody.querySelector('#examTimerN');
+      examTimer = setInterval(() => {
+        remaining--;
+        numEl.textContent = remaining + 's';
+        bar.style.width = (remaining / EXAM_TIME_LIMIT * 100) + '%';
+        if(remaining <= 10) bar.classList.add('low');
+        if(remaining <= 0){ clearExamTimer(); onExamAnswer(-1); }
+      }, 1000);
+    }
+  }
+}
+
+/* Marca opciones (correcta/elegida) y muestra el feedback de una pregunta ya
+   respondida. Se usa tanto al responder como al volver a revisarla. */
+function paintAnswered(st, q){
+  const correctIndex = st.opts.indexOf(q.correcta);
+  examBody.querySelectorAll('.exam-opt').forEach((btn, idx) => {
     btn.disabled = true;
     if(idx === correctIndex) btn.classList.add('correct');
-    else if(idx === i) btn.classList.add('incorrect');
+    else if(idx === st.userIdx) btn.classList.add('incorrect');
   });
-  const isCorrect = i === correctIndex;
-  if(isCorrect) examState.score++;
-  else examState.wrongList.push(q);
+  const isCorrect = st.userIdx === correctIndex;
   const fb = examBody.querySelector('.exam-feedback');
   fb.style.display = 'block';
   fb.innerHTML =
-    '<p class="exam-result ' + (isCorrect ? 'ok' : 'bad') + '">' + (i === -1 ? '⏱ Tiempo agotado' : (isCorrect ? '✓ Correcto' : '✗ Incorrecto')) + '</p>'
+    '<p class="exam-result ' + (isCorrect ? 'ok' : 'bad') + '">' + (st.userIdx === -1 ? '⏱ Tiempo agotado' : (isCorrect ? '✓ Correcto' : '✗ Incorrecto')) + '</p>'
     + (q.explicacion ? '<p class="exam-explain">' + q.explicacion + '</p>' : '')
     + '<div class="exam-actions">'
     + (q.articulo ? '<button class="btn small" type="button" id="examRefBtn">→ Ver en el temario</button>' : '')
     + '<button class="btn small" id="examAskBtn">💬 Preguntar dudas</button>'
-    + '<button class="btn small on" id="examNextBtn">' + (index + 1 < pool.length ? 'Siguiente' : 'Ver resultado') + '</button>'
     + '</div><div class="exam-ai" id="examAi" style="display:none"></div>';
   const refBtn = fb.querySelector('#examRefBtn');
   if(refBtn) refBtn.addEventListener('click', () => openRefPreview(q));
-  const userAnswer = i === -1 ? null : optTexts[i];
+  const userAnswer = st.userIdx === -1 ? null : st.opts[st.userIdx];
   fb.querySelector('#examAskBtn').addEventListener('click', () => {
     const aiBox = fb.querySelector('#examAi');
     const willShow = aiBox.style.display === 'none';
     aiBox.style.display = willShow ? 'block' : 'none';
     if(willShow && !aiBox.dataset.rendered){ renderAiPanel(aiBox, q, userAnswer); aiBox.dataset.rendered = '1'; }
   });
-  fb.querySelector('#examNextBtn').addEventListener('click', nextExamQuestion);
+}
+
+function onExamAnswer(i){
+  clearExamTimer();
+  const { pool, index } = examState;
+  const q = pool[index];
+  const st = examState.qstate[index];
+  if(st.answered) return;                       // no re-puntuar al revisar
+  st.answered = true; st.userIdx = i;
+  if(i === st.opts.indexOf(q.correcta)) examState.score++;
+  else examState.wrongList.push(q);
+  renderExamQuestion();                          // re-pinta en estado respondido
+}
+
+function prevExamQuestion(){
+  if(examState.index > 0){ examState.index--; renderExamQuestion(); }
 }
 
 function nextExamQuestion(){
@@ -291,8 +318,12 @@ function renderExamResults(){
             '<li>' + q.pregunta + ' → <b>' + q.correcta + '</b>' + (q.articulo ? ' <button class="btn small" type="button" data-wrong-idx="' + wi + '">→ art. ' + q.articulo + '</button>' : '') + '</li>'
           ).join('') + '</ul>'
         : '<p>¡Sin fallos!</p>')
-    + '<div class="exam-results-actions"><button class="btn on" id="examRestartBtn">Repetir examen</button></div></div>';
+    + '<div class="exam-results-actions">'
+    + (pool.length ? '<button class="btn" id="examReviewBtn" type="button">← Revisar preguntas</button>' : '')
+    + '<button class="btn on" id="examRestartBtn" type="button">Repetir examen</button></div></div>';
   examBody.querySelector('#examRestartBtn').addEventListener('click', () => { examState = null; showExamSetup(null); });
+  const reviewBtn = examBody.querySelector('#examReviewBtn');
+  if(reviewBtn) reviewBtn.addEventListener('click', () => { examState.index = examState.pool.length - 1; renderExamQuestion(); });
   examBody.querySelectorAll('[data-wrong-idx]').forEach(btn => {
     btn.addEventListener('click', () => openRefPreview(wrongList[parseInt(btn.getAttribute('data-wrong-idx'), 10)]));
   });

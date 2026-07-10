@@ -7,6 +7,18 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.38
+
+- **Examen · navegación entre preguntas (revisar / volver atrás)**. Antes solo
+  se avanzaba; ahora hay **← Anterior / Siguiente →** y se puede volver a una
+  pregunta ya respondida para revisarla (opciones marcadas correcta/elegida +
+  explicación, en modo solo-lectura). El estado por pregunta se guarda en
+  `examState.qstate[i]` (orden barajado FIJO + respuesta elegida), así que al
+  volver el orden NO cambia y **no se re-puntúa** (score/fallos solo la 1ª vez).
+  La pantalla de resultados añade **«← Revisar preguntas»** (salta a la última y
+  navegas con Anterior). El temporizador solo corre en preguntas aún sin
+  responder.
+
 ## v0.1.37
 
 - **`.apartado-head` promovido a componente GENÉRICO del SDK** (nivel intra-tema
