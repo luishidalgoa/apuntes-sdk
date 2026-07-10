@@ -95,7 +95,11 @@ body.search-open{ overflow:hidden; }
    los grupos de navegación (izquierda/derecha con el mismo peso). Abre el mismo
    overlay al pulsarla. */
 .controls .nav-left{ flex:1 1 0; }
-.controls .nav-right{ flex:1 1 0; justify-content:flex-end; }
+/* La derecha (Examen + iconos + Opciones) es más ancha que la izquierda: si se
+   le deja encoger por debajo de su contenido (min-width:0), el exceso desborda
+   hacia la izquierda con justify-end y se solapa con el buscador. min-width en
+   max-content la fija a su contenido, así encoge el buscador (no la derecha). */
+.controls .nav-right{ flex:0 1 auto; justify-content:flex-end; min-width:max-content; }
 .nav-search{
   flex:0 1 340px; min-width:0;
   display:flex; align-items:center; gap:9px;

@@ -7,6 +7,18 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.26
+
+- **Fix navbar del tema · el buscador se solapaba con los botones de la derecha**
+  (Examen/marcar/subrayar/Opciones). Causa: `.controls .nav-right` tenía
+  `flex:1 1 0` + `min-width:0`, así que su caja se forzaba al mismo ancho que la
+  izquierda pese a tener más contenido; con `justify-content:flex-end` el exceso
+  desbordaba hacia la izquierda e invadía la caja de búsqueda (medido: ~17px de
+  solape a 1000px de ancho). Ahora `flex:0 1 auto; min-width:max-content`: la
+  derecha se fija a su contenido y es el buscador el que encoge. Solo cambia
+  `styles/search.css`; el layout estrecho (<760px, buscador en su propia fila)
+  no se toca.
+
 ## v0.1.25
 
 - **Examen · renombrado del nivel intra-tema `bloques` → `apartados`** (petición
