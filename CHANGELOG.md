@@ -7,6 +7,25 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.21
+- **Nuevo**: el **buscador entiende lenguaje natural + IA** (mini-RAG genérico).
+  Al escribir una pregunta, en vez de solo casar palabras, el buscador:
+  1. Detecta que es una pregunta y extrae sus **términos clave** (fuera palabras
+     vacías/de pregunta; conserva acrónimos como AVL/ABB) — algorítmico, sin
+     depender de la gramática.
+  2. **Recupera** los puntos del temario relevantes con el propio índice del
+     buscador (los detecta porque están indexados).
+  3. Se los pasa a la **IA** (misma `/api/groq` del tutor del examen) como
+     contexto para que **responda conciso y cite el/los punto(s)** → botones
+     «Ir a la explicación» (deep-link al punto exacto).
+  - Sin clave IA, los pasos 1-2 (detectar + recuperar + saltar) funcionan igual;
+    solo el botón «Responder con IA» queda deshabilitado con aviso.
+  - `core/ai.js` (nuevo): cliente Groq compartido `callGroq`, extraído de
+    `exam/ai.js` (que ahora lo importa). `core/search-ask.js` (nuevo):
+    `isQuestion`, `keyTerms`, `retrieve`, `askTemario`. `search-ui.js`: barra
+    «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
+    `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
+
 ## v0.1.20
 - **Nuevo (estructura)**: capa opcional **«bloque»** por encima del tema, para
   agrupar temas (p. ej. «Bloque 1», «Bloque 2»…). Contrato agnóstico: un tema
