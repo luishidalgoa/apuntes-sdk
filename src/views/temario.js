@@ -3,6 +3,7 @@ import { esc } from '../core/dom.js';
 import { config } from '../config.js';
 import { getBookmark, clearBookmark, anchorLabel, relTime } from '../core/bookmark.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
+import { bindMateriaCards } from '../core/materia-cards.js';
 
 /* Portada y hubs. Con `appConfig.materias`, la portada (#/) es un SELECTOR de
    materias (tarjetas) y cada materia tiene su propio hub (#/materia/<id>) con sus
@@ -48,29 +49,40 @@ function temaCardHtml(t){
               <div class="tema-arrow">→</div>
             </a>`;
 }
+/* Badge en abanico (Images Badge): los numerales de los temas, solapados; al
+   pasar el ratón por la tarjeta se despliegan. */
+function fanBadgeHtml(temas){
+  const chips = temas.slice(0, 4).map((t, i) =>
+    `<span class="mc-chip" style="--i:${i};--chip-accent:${t.accent || 'var(--ink)'}">${esc(String(t.numeral || i + 1))}</span>`
+  ).join('');
+  const n = temas.length;
+  return `<span class="mc-badge"><span class="mc-chips">${chips}</span><span class="mc-badge-t">${n} tema${n === 1 ? '' : 's'}</span></span>`;
+}
 function materiaCardHtml(m){
-  const n = m.temas.length;
+  const iconHtml = m.icon
+    ? `<div class="mc-icon" data-icon="${esc(m.icon)}" data-depth="46"></div>`
+    : `<div class="tema-num" data-depth="46">${esc(m.numeral || (m.label || '·').slice(0, 1))}</div>`;
   return `
-            <a class="tema-card materia-card" style="--accent:${m.accent || 'var(--ink)'}" href="#/materia/${m.id}">
-              <div class="tema-num">${esc(m.numeral || (m.label || '·').slice(0, 1))}</div>
-              <div class="tema-body">
-                <div class="tema-k">${n} tema${n === 1 ? '' : 's'}</div>
+            <a class="tema-card materia-card mc-3d" style="--accent:${m.accent || 'var(--ink)'}" href="#/materia/${m.id}">
+              ${iconHtml}
+              <div class="tema-body" data-depth="22">
+                <div class="tema-k">${fanBadgeHtml(m.temas)}</div>
                 <div class="tema-title">${esc(m.label)}</div>
                 <div class="tema-desc">${esc(m.descripcion || '')}</div>
               </div>
-              <div class="tema-arrow">→</div>
+              <div class="tema-arrow" data-depth="34">→</div>
             </a>`;
 }
 function examCardHtml(cfg){
   return `
-            <a class="tema-card" style="--accent:var(--ink)" href="#/examen">
-              <div class="tema-num">📝</div>
-              <div class="tema-body">
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#/examen">
+              <div class="mc-icon" data-icon="exam" data-depth="46"></div>
+              <div class="tema-body" data-depth="22">
                 <div class="tema-k">Banco único · todos los temas</div>
                 <div class="tema-title">Examen</div>
                 <div class="tema-desc">${cfg.examLede || 'Preguntas filtrables por bloque, con temporizador opcional y asistente de dudas.'}</div>
               </div>
-              <div class="tema-arrow">→</div>
+              <div class="tema-arrow" data-depth="34">→</div>
             </a>`;
 }
 
@@ -107,6 +119,7 @@ function wireHub(root){
       if(card) card.remove();
     });
   }
+  bindMateriaCards(root);   // iconos animados + tilt 3D de las tarjetas mc-3d
 }
 
 /* Portada (#/): selector de materias si las hay; si no, la lista de temas. */

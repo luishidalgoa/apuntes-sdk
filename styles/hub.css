@@ -6,6 +6,42 @@
 .materia-card .tema-num{font-size:26px;}
 .view-materia .lede:empty{margin-bottom:24px;}
 
+/* ---- Tarjetas 3D de materia/examen (inspiración Aceternity: 3D Card) ----
+   La tarjeta rota siguiendo el ratón (el JS fija el transform inline) y sus
+   capas [data-depth] se elevan con translateZ al hover. La vuelta al reposo
+   lleva un muelle (cubic-bezier con rebote). */
+a.tema-card.mc-3d{transform-style:preserve-3d;}
+a.tema-card.mc-3d.mc-reset{transition:transform .6s cubic-bezier(.3,1.5,.45,1),box-shadow .18s ease;}
+a.tema-card.mc-3d.mc-on{box-shadow:0 2px 4px rgba(42,38,32,.06),0 22px 44px -18px rgba(42,38,32,.34);}
+.mc-3d [data-depth]{transition:transform .4s cubic-bezier(.2,.8,.25,1);}
+.mc-3d.mc-on [data-depth]{transform:translateZ(calc(var(--depth,0)*1px));}
+
+/* Losa del icono de materia: gradiente del acento + escena SVG a medida. */
+.mc-icon{flex:none;width:64px;height:64px;border-radius:18px;display:grid;place-items:center;position:relative;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 86%,#fff) 0%,color-mix(in srgb,var(--accent) 80%,#000) 100%);
+  box-shadow:0 12px 24px -10px color-mix(in srgb,var(--accent) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.35);}
+.mc-icon svg{width:46px;height:46px;display:block;}
+/* Las partes animadas de la escena rotan/escalan sobre sí mismas. */
+.mc-icon .ic-part,.mc-icon .chip-core{transform-box:fill-box;transform-origin:center;}
+.mc-icon .law-beam{transform-box:view-box;transform-origin:32px 18px;}
+
+/* Badge en abanico (inspiración Aceternity: Images Badge): los numerales de los
+   temas, solapados; se despliegan al pasar el ratón por la tarjeta. */
+.mc-badge{display:inline-flex;align-items:center;gap:8px;vertical-align:middle;}
+.mc-chips{display:inline-flex;}
+.mc-chip{width:20px;height:20px;border-radius:999px;display:grid;place-items:center;
+  font:800 9.5px/1 "Hanken Grotesk",system-ui,sans-serif;letter-spacing:0;color:#fff;
+  background:color-mix(in srgb,var(--chip-accent,var(--accent)) 88%,#000);
+  border:2px solid #fff;margin-left:-7px;box-shadow:0 1px 3px rgba(42,38,32,.22);
+  transition:transform .38s cubic-bezier(.3,1.4,.4,1);}
+.mc-chip:first-child{margin-left:0;}
+.mc-3d.mc-on .mc-chip{transform:translateY(-4px) translateX(calc(var(--i)*3px)) rotate(calc((var(--i) - 1.5)*9deg)) scale(1.16);}
+
+@media (prefers-reduced-motion: reduce){
+  a.tema-card.mc-3d.mc-reset,.mc-3d [data-depth],.mc-chip{transition:none;}
+  .mc-3d.mc-on [data-depth],.mc-3d.mc-on .mc-chip{transform:none;}
+}
+
 /* Tarjeta "seguir donde lo dejaste" (marcador automático) */
 .resume-card{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;margin:-18px 0 26px;
   padding:13px 16px;border:1px dashed var(--rule);border-radius:14px;background:rgba(255,255,255,.6);

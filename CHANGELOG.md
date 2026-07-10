@@ -7,6 +7,24 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.24
+- **Nuevo (UI)**: tarjetas de **materia y examen "vivas"** (inspiración
+  Aceternity UI), sustituyendo el numeral/emoji genérico:
+  - **Tilt 3D** (3D Card Effect): la tarjeta rota siguiendo el ratón
+    (perspective + rotateX/rotateY) y sus capas internas (`[data-depth]`) se
+    **elevan** con translateZ al hover; la vuelta al reposo lleva un muelle.
+  - **Iconos a medida** por materia: escenas SVG dibujadas ex profeso sobre una
+    losa con gradiente del acento, **animadas con Motion** (la API vanilla de la
+    casa de Framer Motion, nueva dependencia `motion`): la **balanza** (`law`)
+    oscila, el **chip** (`chip`) late y sus pistas fluyen, y los **checks** del
+    examen (`exam`) se dibujan en secuencia. La app elige el icono con
+    `materias[].icon` (fallback: el `numeral` de siempre).
+  - **Badge en abanico** (Images Badge): los numerales de los temas de la
+    materia, solapados, se despliegan al hover.
+  - Respeta `prefers-reduced-motion`. Módulo `core/materia-cards.js`
+    (`bindMateriaCards`, catálogo `MATERIA_ICONS` ampliable); CSS en
+    `styles/hub.css`; cableado en el hub y en el hub de materia.
+
 ## v0.1.23
 - **Nuevo (animaciones)**: la navegación y el scroll cobran vida, de forma
   genérica (todas las apps lo heredan; el router lo cablea solo).
