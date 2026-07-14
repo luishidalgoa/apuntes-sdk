@@ -8,6 +8,7 @@ import { openGames, closeGames } from '../games/engine.js';
 import { bindDropdown } from '../core/dropdown.js';
 import { createBookmarkUI, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
 import { bindMarks } from '../core/marks.js';
+import { wrapGlossary } from '../core/glossary.js';
 import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
 import { exportBackup, importBackup } from '../core/backup.js';
 import { registerLayer, registerExclusive } from '../core/modal-stack.js';
@@ -146,6 +147,9 @@ export const temaViewFactory = {
       </div>`;
 
         tema.renderContent(root.querySelector('#temaContent'));
+        /* Acrónimos del glosario → <abbr.acro> clicable. ANTES de marcas/subrayado
+           (no cambia la longitud del texto, así que sus offsets siguen válidos). */
+        wrapGlossary(root.querySelector('#temaContent'), tema);
         setTemaContext(tema.engine);
 
         root.querySelector('#searchBtn').addEventListener('click', openSearch, { signal });

@@ -20,6 +20,7 @@ import { temaViewFactory } from './views/tema.js';
 import { mountExamOverlay } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountHighlight } from './core/highlight.js';
+import { mountGlossary } from './core/glossary.js';
 import { mountSearch } from './core/search-ui.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
@@ -53,6 +54,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
   mountExamOverlay(app);   // examen como overlay (SPA), no como ruta
   mountRefPreview(app);
   mountHighlight(app);
+  mountGlossary(app);   // rótulo de acrónimos del glosario
   mountSearch(app);
   installEscapeHandler();
   applyTabletMode();
@@ -70,6 +72,7 @@ export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsI
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
 export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark } from './core/marks.js';
+export { wrapGlossary, mountGlossary, closeAcro } from './core/glossary.js';
 export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';

@@ -1,6 +1,6 @@
 {
   "name": "apuntes-sdk",
-  "version": "0.1.42",
+  "version": "0.1.43",
   "description": "SDK de apuntes: shell + router + motor de examen/juegos/marcador + sistema de diseño, agnóstico de asignatura. Se compila dentro del singlefile de cada app.",
   "type": "module",
   "exports": {

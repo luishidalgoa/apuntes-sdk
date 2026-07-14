@@ -13,6 +13,9 @@ let CONFIG = {
   anchorPrefix: 'sec-',        // prefijo de los id de sección y de los deep-links
   externalPrefixes: [],        // prefijos de refs a otros temas (p.ej. ['CE-'])
   detailLabel: null,           // (n)=>string para el botón "desplegar" de la tarjeta
+  glossary: {},                // acrónimo→título completo ({ 'AGE':'Administración General…' }).
+                               // El SDK auto-envuelve sus apariciones en <abbr.acro> clicable.
+                               // Un tema puede ampliarlo con `tema.glossary` en su manifiesto.
   materias: []                 // (opcional) puerta de navegación de primer nivel:
                                // [{ id, label, descripcion?, accent?, numeral? }]. Cada tema
                                // declara a qué materia pertenece (`materia:'<id>'`). Si está

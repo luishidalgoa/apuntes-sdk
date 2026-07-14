@@ -1,0 +1,24 @@
+/* Acrónimos del glosario: subrayado punteado discreto en el texto; al clicar,
+   un rótulo (popover) con el título completo. Tokens del SDK. */
+.acro{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2.5px;text-decoration-thickness:1.5px;
+  text-decoration-color:color-mix(in srgb,var(--tema-accent,var(--ink-soft)) 50%,transparent);
+  color:inherit;font:inherit;white-space:nowrap;}
+.acro:hover,.acro.acro-open{text-decoration-color:var(--tema-accent,var(--ink));}
+.acro:focus-visible{outline:2px solid color-mix(in srgb,var(--tema-accent) 55%,transparent);outline-offset:2px;border-radius:3px;}
+
+.acro-pop{position:fixed;z-index:75;max-width:320px;padding:9px 13px;border-radius:11px;
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);
+  box-shadow:0 14px 32px -12px rgba(42,38,32,.42),0 2px 6px rgba(42,38,32,.06);
+  font-size:13.5px;line-height:1.45;font-weight:500;pointer-events:none;}
+.acro-pop[hidden]{display:none;}
+.acro-pop.in{animation:acroIn .16s cubic-bezier(.2,.7,.2,1);}
+.acro-pop.flip.in{animation:acroInUp .16s cubic-bezier(.2,.7,.2,1);}
+@keyframes acroIn{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:none;}}
+@keyframes acroInUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+/* flecha apuntando al acrónimo (posición horizontal por --arrow-x) */
+.acro-pop::before{content:"";position:absolute;left:var(--arrow-x,50%);top:-6px;transform:translateX(-50%) rotate(45deg);
+  width:11px;height:11px;background:var(--paper);border-left:1px solid var(--line);border-top:1px solid var(--line);}
+.acro-pop.flip::before{top:auto;bottom:-6px;border-left:none;border-top:none;
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+@media(max-width:560px){ .acro-pop{font-size:14.5px;padding:11px 15px;max-width:min(340px,calc(100vw - 20px));} }
+@media (prefers-reduced-motion:reduce){ .acro-pop.in,.acro-pop.flip.in{animation:none;} }

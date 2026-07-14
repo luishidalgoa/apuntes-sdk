@@ -7,6 +7,26 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.43
+
+- **Glosario de ACRÓNIMOS clicables** (nueva API `appConfig.glossary`). La app
+  aporta `glossary = { 'AGE':'Administración General del Estado', … }` (y opcional
+  `tema.glossary` por manifiesto); el SDK auto-envuelve sus apariciones en el
+  contenido del tema en un `<abbr class="acro">` clicable (subrayado punteado).
+  Al clicar (o Enter/Espacio) muestra un **rótulo** con el título completo:
+  posicionado junto al acrónimo con flecha, se **voltea** arriba/abajo si no cabe,
+  **uno abierto a la vez**, se cierra con 2º clic · Escape · clic fuera; tokens del
+  SDK + micro-animación que respeta `prefers-reduced-motion`.
+  - **Robusto**: solo la LISTA BLANCA del glosario (nunca "cualquier mayúscula"),
+    con límites de palabra y **normalizando puntuación** (CCAA ≡ CC.AA.). No
+    envuelve dentro de encabezados, enlaces, refs, chips, código ni SVG; es
+    **idempotente**. NO cambia la longitud del texto → no rompe subrayado,
+    marcadores ni búsqueda (el índice usa el texto plano). Sin lookbehind
+    (compat Safari). Funciona offline (single-file).
+  - Se ejecuta en el render del tema ANTES de marcas/subrayado.
+  - Nuevo módulo `core/glossary.js` (`wrapGlossary`/`mountGlossary`/`closeAcro`) +
+    `styles/glossary.css`.
+
 ## v0.1.42
 
 - **Marcar importancia en 3 NIVELES** (antes era un booleano: la estrella). Ahora
