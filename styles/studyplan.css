@@ -48,7 +48,11 @@
 a.sp-label:hover{text-decoration:underline;text-underline-offset:2px;}
 .sp-mat-label{font-family:"Fraunces",serif;font-weight:700;font-size:15px;color:var(--sp-accent,var(--ink));cursor:default;}
 .sp-tema-label{font-weight:600;}
+.sp-sec-label{font-weight:600;}
+.sp-sub .sp-label{font-size:13px;color:var(--ink-soft,var(--ink));}
 .sp-mat > .sp-caret{color:var(--sp-accent,var(--ink-faint));font-size:12px;}
+/* numeral del nodo (1 · 1.1 · Apartado 2), atenuado, delante del título */
+.sp-n{font-size:11px;font-weight:700;color:var(--ink-faint);font-variant-numeric:tabular-nums;margin-right:2px;}
 
 /* resumen (roll-up) de importantes bajo un padre */
 .sp-roll{display:inline-flex;gap:4px;flex:none;}

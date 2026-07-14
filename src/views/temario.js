@@ -157,7 +157,6 @@ export const temarioView = {
         <h1>${cfg.title || 'Temario'}</h1>
         <p class="lede">${cfg.lede || 'Un esquema navegable por cada tema: tarjetas, referencias cruzadas, examen y minijuegos.'}</p>
         ${searchBarHtml()}
-        ${hubToolsHtml()}
         ${resumeCardHtml()}
         ${body}
         ${cfg.footer ? `<footer>${cfg.footer}</footer>` : ''}
