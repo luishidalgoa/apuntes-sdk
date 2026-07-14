@@ -1,64 +1,102 @@
-/* "Marcar como importante" bloques de contenido (app de un solo usuario →
-   localStorage). Genérico: funciona sobre tarjetas (.card), bloques de sección
-   (.art-block) y bandas/títulos (.band[id]). Cada bloque marcable expone un id
-   estable por tema: en tarjetas `data-mark-id` (lo pone renderCard), en bloques
-   y bandas el propio `id` del elemento. En legislación eso es un artículo, una
-   sección o un título. Estado guardado como { temaId: [ids…] }. */
+/* Marcar IMPORTANCIA de bloques de contenido, en 3 NIVELES (app de un solo
+   usuario → localStorage). Genérico: funciona sobre tarjetas (.card), bloques de
+   sección (.art-block) y bandas/títulos (.band[id]). Cada bloque marcable expone
+   un id estable por tema: en tarjetas `data-mark-id` (lo pone renderCard), en
+   bloques y bandas el propio `id`.
+   Niveles: 1=baja (verde) · 2=media (ámbar) · 3=alta (rojo). Clic cicla
+   off→1→2→3→off. Estado: { temaId: { id: nivel } }. */
 
 const KEY = 'tai-marks';
+const MAX = 3;
+const LEVEL_NAMES = { 1: 'baja', 2: 'media', 3: 'alta' };
 
 function readAll(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } }
 function writeAll(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
 
-export function markedIds(temaId){ return new Set(readAll()[temaId] || []); }
-export function isMarked(temaId, id){ return markedIds(temaId).has(id); }
-export function toggleMark(temaId, id){
-  const all = readAll(); const list = all[temaId] || [];
-  const i = list.indexOf(id);
-  if(i >= 0) list.splice(i, 1); else list.push(id);
-  all[temaId] = list; writeAll(all);
-  return i < 0;   // true = ahora está marcado
+/* Devuelve el mapa { id: nivel } del tema. MIGRA el formato antiguo
+   ({ temaId: [ids] } booleano) a niveles: los marcados pasan a "alta" (3), que
+   es lo que significaban. Se reescribe la primera vez que se lee ese tema. */
+function levelsOf(temaId){
+  const all = readAll();
+  const v = all[temaId];
+  if(Array.isArray(v)){
+    const map = {}; v.forEach(id => { map[id] = 3; });
+    all[temaId] = map; writeAll(all);
+    return map;
+  }
+  return v || {};
 }
 
-const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
-export function markButton(id){
-  return '<button class="mark-btn" type="button" data-mark="' + id
-    + '" aria-label="Marcar como importante" title="Marcar como importante">' + STAR + '</button>';
+export function markLevel(temaId, id){ return levelsOf(temaId)[id] || 0; }
+export function markedIds(temaId){ return new Set(Object.keys(levelsOf(temaId))); }
+export function isMarked(temaId, id){ return markLevel(temaId, id) > 0; }
+
+/* Cicla el nivel del bloque: off→1→2→3→off. Devuelve el nuevo nivel (0..3). */
+export function cycleMark(temaId, id){
+  const all = readAll();
+  let map = all[temaId];
+  if(Array.isArray(map)){ const m = {}; map.forEach(x => { m[x] = 3; }); map = m; }
+  map = map || {};
+  const next = ((map[id] || 0) + 1) % (MAX + 1);
+  if(next === 0) delete map[id]; else map[id] = next;
+  all[temaId] = map; writeAll(all);
+  return next;
+}
+/* compat: toggle → cicla (no lo usa la app). */
+export function toggleMark(temaId, id){ return cycleMark(temaId, id) > 0; }
+
+function levelTitle(level){
+  return level ? ('Importancia: ' + LEVEL_NAMES[level] + ' · clic para cambiar')
+               : 'Marcar importancia · clic: baja › media › alta';
+}
+/* Botón indicador: 3 barras que se rellenan y colorean según el nivel (el CSS lo
+   pinta con var(--mk) por severidad). */
+const BARS = '<span class="mk-bars"><i></i><i></i><i></i></span>';
+export function markButton(id, level = 0){
+  return '<button class="mark-btn" type="button" data-mark="' + id + '" data-level="' + level + '"'
+    + ' aria-label="Importancia" title="' + levelTitle(level) + '">' + BARS + '</button>';
 }
 
-/* Coloca las estrellas en cada bloque marcable, aplica el estado guardado y
-   delega los clics (toggle). Idempotente: no duplica estrellas (marca los
-   bloques ya procesados con data-marked). */
+function applyLevel(btn, block, level){
+  btn.setAttribute('data-level', level);
+  btn.setAttribute('aria-label', 'Importancia' + (level ? ': ' + LEVEL_NAMES[level] : ''));
+  btn.title = levelTitle(level);
+  if(block){
+    if(level) block.setAttribute('data-mark-level', level);
+    else block.removeAttribute('data-mark-level');
+  }
+}
+
+/* Coloca los indicadores en cada bloque marcable, aplica el estado guardado y
+   delega los clics (ciclo). Idempotente: no duplica (marca con data-marked). */
 export function bindMarks(root, temaId, { signal } = {}){
-  const marked = markedIds(temaId);
-  const apply = (block, btn, id) => { if(marked.has(id)){ block.classList.add('marked'); btn.classList.add('on'); } };
+  const levels = levelsOf(temaId);
+  const place = (block, host, id, where) => {
+    host.insertAdjacentHTML(where, markButton(id));
+    const btn = where === 'beforeend' ? host.lastElementChild : host.firstElementChild;
+    applyLevel(btn, block, levels[id] || 0);
+  };
 
   root.querySelectorAll('.card[data-mark-id]:not([data-marked])').forEach(c => {
     c.setAttribute('data-marked', '');
     const row = c.querySelector('.card-head .row1') || c.querySelector('.card-head');
-    if(!row) return;
-    row.insertAdjacentHTML('afterbegin', markButton(c.getAttribute('data-mark-id')));
-    apply(c, row.firstElementChild, c.getAttribute('data-mark-id'));
+    if(row) place(c, row, c.getAttribute('data-mark-id'), 'afterbegin');
   });
   root.querySelectorAll('.art-block[id]:not([data-marked])').forEach(a => {
     a.setAttribute('data-marked', '');
-    const head = a.querySelector('.art-block-head'); if(!head) return;
-    head.insertAdjacentHTML('afterbegin', markButton(a.id));
-    apply(a, head.firstElementChild, a.id);
+    const head = a.querySelector('.art-block-head');
+    if(head) place(a, head, a.id, 'afterbegin');
   });
   root.querySelectorAll('.band[id]:not([data-marked])').forEach(b => {
     b.setAttribute('data-marked', '');
-    b.insertAdjacentHTML('beforeend', markButton(b.id));   // esquina sup. derecha (CSS)
-    apply(b, b.lastElementChild, b.id);
+    place(b, b, b.id, 'beforeend');   // esquina sup. derecha (CSS)
   });
 
   root.addEventListener('click', (e) => {
     const btn = e.target.closest('.mark-btn');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation();
-    const now = toggleMark(temaId, btn.getAttribute('data-mark'));
-    btn.classList.toggle('on', now);
-    const block = btn.closest('.card, .art-block, .band');
-    if(block) block.classList.toggle('marked', now);
+    const level = cycleMark(temaId, btn.getAttribute('data-mark'));
+    applyLevel(btn, btn.closest('.card, .art-block, .band'), level);
   }, { signal });
 }

@@ -109,21 +109,37 @@ a.opts-item{text-decoration:none;}
   .bm-chip{animation:none;}
 }
 
-/* "Marcar como importante": estrella en cada bloque + resalte del bloque marcado */
-.mark-btn{border:none;background:none;cursor:pointer;padding:2px;margin:0 6px 0 -2px;line-height:0;flex:none;
-  color:var(--ink-faint);opacity:.4;transition:opacity .15s ease,color .15s ease,transform .12s ease;}
-.mark-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;display:block;}
-.mark-btn:hover{opacity:1;color:var(--tema-accent);transform:scale(1.15);}
-.mark-btn.on{opacity:1;color:var(--tema-accent);}
-.mark-btn.on svg{fill:currentColor;}
-/* estrella de banda/título: esquina superior derecha */
+/* Marcar IMPORTANCIA en 3 niveles: indicador de barras + resalte del bloque por
+   color de SEVERIDAD (baja=verde · media=ámbar · alta=rojo). El color por nivel
+   (--mk) es independiente del acento de la materia (la importancia es ortogonal).
+   Clic cicla off→baja→media→alta→off (marks.js). */
+[data-level="1"],[data-mark-level="1"]{--mk:#3f9d68;}   /* baja  · verde */
+[data-level="2"],[data-mark-level="2"]{--mk:#e0a13a;}   /* media · ámbar */
+[data-level="3"],[data-mark-level="3"]{--mk:#d1493f;}   /* alta  · rojo  */
+
+.mark-btn{border:none;background:none;cursor:pointer;padding:3px;margin:0 6px 0 -2px;flex:none;line-height:0;
+  transition:transform .12s ease,opacity .15s ease;}
+.mark-btn:hover{transform:scale(1.14);}
+.mark-btn[data-level="0"]{opacity:.5;}
+.mark-btn[data-level="0"]:hover{opacity:1;}
+/* barras crecientes: se rellenan y colorean con --mk según cuántas cubra el nivel */
+.mk-bars{display:inline-flex;align-items:flex-end;gap:2.5px;height:16px;}
+.mk-bars i{display:block;width:4px;border-radius:2px;background:var(--line);transition:background .13s ease;}
+.mk-bars i:nth-child(1){height:7px;}
+.mk-bars i:nth-child(2){height:11px;}
+.mk-bars i:nth-child(3){height:16px;}
+.mark-btn[data-level="1"] .mk-bars i:nth-child(-n+1),
+.mark-btn[data-level="2"] .mk-bars i:nth-child(-n+2),
+.mark-btn[data-level="3"] .mk-bars i:nth-child(-n+3){background:var(--mk);}
+/* indicador de banda/título: esquina superior derecha */
 .band{position:relative;}
 .band > .mark-btn{position:absolute;top:12px;right:14px;margin:0;}
-/* bloque marcado: anillo + tinte de acento */
-.card.marked{background:color-mix(in srgb,var(--tema-accent) 7%,#fff);
-  box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--tema-accent) 45%,transparent);}
-.art-block.marked{background:color-mix(in srgb,var(--tema-accent) 9%,transparent);border-radius:8px;}
-.band.marked{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--tema-accent) 50%,transparent);}
+/* bloque marcado: anillo/tinte/franja en el color del nivel */
+.card[data-mark-level]{background:color-mix(in srgb,var(--mk) 8%,#fff);
+  box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--mk) 48%,transparent);}
+.art-block[data-mark-level]{background:color-mix(in srgb,var(--mk) 10%,transparent);border-radius:8px;
+  box-shadow:inset 3px 0 0 var(--mk);}
+.band[data-mark-level]{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--mk) 55%,transparent);}
 
 /* Panel lateral derecho tipo cajón (.bks-*): lo usa el editor de colores de
    subrayado (highlight.js). Nació con los ajustes del marcapáginas (retirados
@@ -312,8 +328,10 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
   /* Ergonomía táctil: objetivos de pulsación más cómodos en móvil (≈44px) */
   button.btn,a.btn{min-height:42px;}
   .btn.icon-btn{min-width:44px;padding:10px 11px;font-size:18px;}
-  .mark-btn{padding:8px;margin:0 4px 0 -4px;}
-  .mark-btn svg{width:20px;height:20px;}
+  .mark-btn{padding:7px;margin:0 4px 0 -4px;}
+  .mk-bars{height:18px;gap:3px;}
+  .mk-bars i{width:4.5px;}
+  .mk-bars i:nth-child(1){height:8px;} .mk-bars i:nth-child(2){height:13px;} .mk-bars i:nth-child(3){height:18px;}
   .band > .mark-btn{top:8px;right:8px;}
   .chip{padding:9px 15px;font-size:13px;}
   .section-jump{gap:8px 7px;}

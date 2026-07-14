@@ -69,7 +69,7 @@ export { esc, CRAYON_FILTERS } from './core/dom.js';
 export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsInto, renderArticleBlock, specialTagChip } from './core/render-tema.js';
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
-export { bindMarks, markButton, isMarked, toggleMark, markedIds } from './core/marks.js';
+export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark } from './core/marks.js';
 export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';

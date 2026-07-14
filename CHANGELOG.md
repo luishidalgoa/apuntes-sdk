@@ -7,6 +7,19 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.42
+
+- **Marcar importancia en 3 NIVELES** (antes era un booleano: la estrella). Ahora
+  el indicador cicla off→**baja**→**media**→**alta**→off a cada clic, y se lee de
+  un vistazo por **color de severidad + forma**: baja=verde, media=ámbar,
+  alta=rojo, con un icono de **barras 1·2·3** que se rellenan según el nivel
+  (legible también sin depender del color). El bloque marcado se tiñe/enmarca en
+  ese color. El color de nivel (`--mk`) es independiente del acento de la materia.
+  - Storage `tai-marks` pasa de `{ temaId: [ids] }` a `{ temaId: { id: nivel } }`
+    con **migración automática**: lo marcado en el formato viejo pasa a "alta".
+  - API: `markLevel`/`cycleMark` (nuevas); `bindMarks`/`markButton` adaptados;
+    `isMarked`/`markedIds`/`toggleMark` se mantienen (compat).
+
 ## v0.1.39
 
 - **Subrayado en el "texto literal"** (panel de fuente), persistido. Antes: (a)
