@@ -71,6 +71,32 @@ opcionales salvo que quieras el comportamiento por defecto.
 | `anchorPrefix` | Prefijo de los `id` de sección y de los deep-links. Por defecto `'sec-'`; usa `'art-'` si necesitas compatibilidad con enlaces antiguos. |
 | `externalPrefixes` | Prefijos de referencias a otros temas (p.ej. `['CE-']`). |
 | `detailLabel` | `(n) => string` para el botón "desplegar" de la tarjeta. |
+| `glossary` | Glosario de **acrónimos** de la asignatura: `{ 'AGE':'Administración General del Estado', … }`. Ver el recuadro de abajo. |
+
+### Glosario de acrónimos
+
+Cada asignatura aporta su `glossary` (acrónimo → título completo). El SDK
+**auto-envuelve** las apariciones de esos acrónimos en el contenido de los temas
+en un `<abbr class="acro">` clicable; al clicar (o Enter/Espacio) muestra un
+**rótulo** con el título completo.
+
+```js
+glossary: {
+  'AGE':  'Administración General del Estado',
+  'CCAA': 'Comunidades Autónomas',    // cubre también 'CC.AA.' (se normaliza la puntuación)
+  'EBEP': 'Estatuto Básico del Empleado Público'
+}
+```
+
+- La **clave** es el acrónimo; el **valor**, el título completo.
+- **Lista blanca:** enlaza SOLO contra estas claves. Nunca marca "cualquier
+  mayúscula" (p.ej. `NO`, `CONGRESO` en énfasis no se tocan).
+- **Puntuación normalizada:** pon `'CCAA'` y también cubre `CC.AA.` (y
+  `'AAPP'` ≡ `AA.PP.`); no dupliques variantes.
+- **Override por tema:** un tema puede ampliar el glosario con `tema.glossary`
+  (se fusiona sobre el global) para siglas que solo salen en ese tema.
+- No hay que tocar nada más: el SDK excluye títulos/enlaces/refs/chips/SVG, es
+  idempotente y no altera la búsqueda ni el subrayado.
 
 ---
 
@@ -114,13 +140,19 @@ export default {
   renderContent(el){ … },           // pinta el cuerpo (ver §8)
   games,                            // (opcional) minijuegos (ver §9)
   questions,                        // preguntas de examen (puede ser []) (ver §10)
-  bloques: ['Título I', 'Título II']  // sub-bloques de EXAMEN del tema (ver §10)
+  apartados: ['Título I', 'Título II'],  // sub-bloques de EXAMEN del tema (ver §10)
+  glossary: { 'AGE': 'Administración General del Estado' }  // (OPCIONAL) amplía el glosario solo aquí (§3)
 };
 ```
 
-> **Aviso de nombres:** `bloque` (singular, §6) y `bloques` (plural) son cosas
-> DISTINTAS. `bloque` es la capa que agrupa varios **temas**; `bloques` son los
-> sub-bloques de **examen** dentro de un tema (para filtrar preguntas).
+> **Aviso de nombres** (se parecen, son cosas DISTINTAS):
+> - `bloque` (singular, §6) = capa que agrupa varios **temas** (navegación).
+> - `apartados` (plural, §10) = sub-bloques de **examen** dentro de un tema, para
+>   filtrar preguntas (`q.apartado` en cada pregunta). Desde SDK v0.1.25 se llaman
+>   `apartados`/`apartado`; los nombres antiguos `bloques`/`bloque` siguen aceptados
+>   (retrocompatible), pero usa los nuevos.
+> - No confundir con los `apartados` de un **artículo** (`sections.<clave>.apartados
+>   = [{n,text}]`, los puntos numerados del texto): mismo nombre, otro nivel.
 
 ---
 
@@ -265,7 +297,7 @@ contenedor y utilidades del SDK).
 
 ---
 
-## 10. Examen — `questions` y `bloques`
+## 10. Examen — `questions` y `apartados`
 
 **`questions`** — el array de preguntas del tema (puede ser `[]` si aún no
 tienes). Todas las preguntas de todos los temas forman un banco único filtrable:
@@ -273,19 +305,23 @@ tienes). Todas las preguntas de todos los temas forman un banco único filtrable
 ```js
 const questions = [
   { id: 1,
-    bloque: 'Sistema solar',              // el sub-bloque de examen al que pertenece
+    apartado: 'Sistema solar',            // el sub-bloque de examen al que pertenece (antes `bloque`)
     articulo: 'sol',                      // (opcional) clave de sección → botón "Ver en el temario"
     pregunta: '¿Qué % de la masa concentra el Sol?',
-    respuestas: ['50%', '75%', '99,8%', '90%'],
+    respuestas: ['50%', '75%', '99,8%', '90%'],  // el SDK las baraja al presentarlas
     correcta: '99,8%',
     explicacion: 'El Sol acumula el 99,8% de la masa total.' }
 ];
 ```
 
-**`bloques`** — la lista de sub-bloques de **examen** del tema (las categorías por
-las que se filtran las preguntas). En el setup del examen, cada tema se puede
-expandir en sus `bloques`. Un tema sin preguntas en ninguno de sus `bloques` no
-aparece en el examen.
+**`apartados`** — la lista de sub-bloques de **examen** del tema (las categorías
+por las que se filtran las preguntas; el campo por pregunta es `q.apartado`). En
+el setup del examen, cada tema se puede expandir en sus `apartados`. Un tema sin
+preguntas en ninguno de sus `apartados` no aparece en el examen.
+
+> Desde SDK v0.1.25 estos campos se llaman `apartados` (tema) y `apartado`
+> (pregunta). Los antiguos `bloques`/`bloque` siguen funcionando (retrocompatible),
+> pero en temas nuevos usa `apartados`/`apartado`.
 
 ---
 

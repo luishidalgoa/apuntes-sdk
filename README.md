@@ -57,14 +57,27 @@ export default {
     sourceDigitFallback?, specialTags?, external?
   },
   renderContent(el),   // usa renderCardTreesInto / renderSectionsInto del SDK
-  games?, questions, bloques
+  games?, questions,
+  apartados,           // sub-bloques de EXAMEN del tema (filtro de preguntas). Desde
+                       // v0.1.25 se llama `apartados` (antes `bloques`, aún aceptado).
+  glossary?            // (OPCIONAL) amplía el glosario de acrónimos solo para este tema
 };
 ```
 
-El hub, el examen (bloques y recuentos), las flashcards, el buscador y los
-deep-links se generan solos a partir de `TEMAS`. Ojo con el nombre: `bloque`
-(singular, agrupa **temas**) y `bloques` (plural, sub-bloques de **examen** de un
-tema) son cosas distintas.
+El hub, el examen (apartados y recuentos), las flashcards, el buscador y los
+deep-links se generan solos a partir de `TEMAS`. Ojo con los nombres, que se
+parecen pero son cosas distintas: `bloque` (singular, agrupa **temas** — capa de
+navegación) vs `apartados` (sub-bloques de **examen** de un tema, para filtrar
+preguntas; `q.apartado` en cada pregunta). No confundir con los `apartados` de un
+artículo (`sections.<clave>.apartados = [{n,text}]`, los puntos numerados del
+texto).
+
+**Glosario de acrónimos.** Cada asignatura aporta su glosario
+`appConfig.glossary = { 'AGE':'Administración General del Estado', … }` (con
+override opcional por tema, `tema.glossary`). El SDK hace clicables sus
+apariciones en el contenido, mostrando el título completo en un rótulo. Enlaza
+**SOLO contra la lista blanca** del glosario (nunca "cualquier mayúscula") y
+**normaliza la puntuación** (`CCAA` ≡ `CC.AA.`). Ver la guía para el formato.
 
 ## Propagar un cambio de diseño a todas las apps
 
