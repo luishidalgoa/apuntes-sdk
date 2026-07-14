@@ -277,7 +277,7 @@ export function mountPanels(shell){
   /* Delegación global de clicks (una sola vez; los selectores de T1 y T2 no
      colisionan porque solo hay una vista montada a la vez). */
   document.addEventListener('click', (e) => {
-    const numEl = e.target.closest('.anum, .art-num, .ap-n');
+    const numEl = e.target.closest('.anum, .art-num, .art-hd-num, .ap-n');
     if(numEl){
       e.stopPropagation();
       openFullText(numEl.getAttribute('data-ref'));
