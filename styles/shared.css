@@ -407,6 +407,13 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
 #fullTextPanel .ft-p{font-family:Georgia,"Times New Roman",serif;font-size:13.5px;line-height:1.7;color:var(--ink);margin:0 0 12px;text-align:justify;}
 #fullTextPanel .ft-p:last-child{margin-bottom:0;}
 #fullTextPanel .ft-p b{font-family:"Fraunces",serif;color:var(--accent,var(--ink-faint));}
+/* enumeración por letras/ordinales dentro del texto literal (a) b) c)… / 1.º…) */
+#fullTextPanel .ft-abc{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:7px;}
+#fullTextPanel .ft-abc li{position:relative;padding-left:30px;font-family:Georgia,"Times New Roman",serif;
+  font-size:13.5px;line-height:1.6;color:var(--ink);text-align:justify;}
+#fullTextPanel .ft-abc .ft-m{position:absolute;left:0;top:0;min-width:24px;font-family:"Fraunces",serif;
+  font-weight:700;color:var(--accent,var(--ink-faint));}
+body.tablet-mode #fullTextPanel .ft-abc li{font-size:15.5px;line-height:1.7;}
 #fullTextPanel .ft-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
     color:var(--ink-faint);border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin-bottom:10px;}
 @media (min-width:1301px){
