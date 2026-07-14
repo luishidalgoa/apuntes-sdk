@@ -140,6 +140,10 @@ a.opts-item{text-decoration:none;}
 .art-block[data-mark-level]{background:color-mix(in srgb,var(--mk) 10%,transparent);border-radius:8px;
   box-shadow:inset 3px 0 0 var(--mk);}
 .band[data-mark-level]{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--mk) 55%,transparent);}
+/* apartado (cabecera de sección): indicador en la esquina + franja de prioridad */
+.apartado-head{position:relative;}
+.apartado-head > .mark-btn{position:absolute;top:4px;right:2px;margin:0;}
+.apartado-head[data-mark-level]{box-shadow:inset 5px 0 0 var(--mk);padding-left:13px;}
 
 /* Panel lateral derecho tipo cajón (.bks-*): lo usa el editor de colores de
    subrayado (highlight.js). Nació con los ajustes del marcapáginas (retirados

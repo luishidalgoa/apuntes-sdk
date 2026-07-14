@@ -5,6 +5,7 @@ import { getLatestBookmark, clearBookmark, anchorLabel, relTime } from '../core/
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { bindMateriaCards } from '../core/materia-cards.js';
 import { openExam } from './examen.js';
+import { openStudyPlan } from '../core/studyplan.js';
 
 /* Portada y hubs. Con `appConfig.materias`, la portada (#/) es un SELECTOR de
    materias (tarjetas) y cada materia tiene su propio hub (#/materia/<id>) con sus
@@ -36,6 +37,15 @@ function searchBarHtml(){
           <span class="hs-txt">Buscar un concepto o un punto del temario…</span>
           <span class="st-key">⌘K</span>
         </button>`;
+}
+
+/* Acceso discreto al Plan de estudio (árbol de prioridades) desde los hubs: el
+   desplegable "Temas" solo existe dentro de un tema, y el plan es global. */
+function hubToolsHtml(){
+  return `
+        <div class="hub-tools">
+          <button class="hub-tool" id="hubPlanBtn" type="button"><span aria-hidden="true">📋</span> Plan de estudio</button>
+        </div>`;
 }
 
 function temaCardHtml(t){
@@ -114,6 +124,8 @@ function temaCardsHtml(temas){
 function wireHub(root){
   const sb = root.querySelector('#hubSearchBtn');
   if(sb) sb.addEventListener('click', openSearch);
+  const planBtn = root.querySelector('#hubPlanBtn');
+  if(planBtn) planBtn.addEventListener('click', openStudyPlan);
   const examLink = root.querySelector('[data-exam]');
   if(examLink) examLink.addEventListener('click', (e) => {
     e.preventDefault();
@@ -145,6 +157,7 @@ export const temarioView = {
         <h1>${cfg.title || 'Temario'}</h1>
         <p class="lede">${cfg.lede || 'Un esquema navegable por cada tema: tarjetas, referencias cruzadas, examen y minijuegos.'}</p>
         ${searchBarHtml()}
+        ${hubToolsHtml()}
         ${resumeCardHtml()}
         ${body}
         ${cfg.footer ? `<footer>${cfg.footer}</footer>` : ''}
@@ -166,6 +179,7 @@ export const materiaView = {
         <h1>${esc(m.label)}</h1>
         <p class="lede">${esc(m.descripcion || '')}</p>
         ${searchBarHtml()}
+        ${hubToolsHtml()}
         ${temaCardsHtml(m.temas)}
         <div class="temas">${examCardHtml(cfg, m.id)}</div>
       </div>`;

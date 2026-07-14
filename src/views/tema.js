@@ -15,6 +15,7 @@ import { registerLayer, registerExclusive } from '../core/modal-stack.js';
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { mountResponsiveNav } from '../core/navbar.js';
 import { openExam } from './examen.js';
+import { openStudyPlan } from '../core/studyplan.js';
 
 const ICONS = {
   all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
@@ -70,6 +71,11 @@ function temasDropdownHtml(tema){
             <div class="opts-wrap">
               <button class="btn ghost" id="temasBtn" aria-haspopup="true" aria-expanded="false"><span class="nav-ico">${ICONS.list}</span><span class="nav-lab">Temas</span></button>
               <div class="opts-pop opts-pop-left" id="temasPop" role="menu" hidden>
+                <button class="opts-item ti-action" id="planItem" type="button" role="menuitem">
+                  <span class="ti-num ti-num-ico">📋</span>
+                  <span class="ti-body"><span class="ti-title">Plan de estudio</span><span class="ti-desc">Prioridades de todo el temario, en árbol</span></span>
+                </button>
+                <div class="ti-sep" role="separator"></div>
                 ${inner}
               </div>
             </div>`;
@@ -178,6 +184,7 @@ export const temaViewFactory = {
         /* Desplegables del navbar: Temas (navegación) y Opciones (herramientas).
            En Opciones los clics internos NO cierran el menú (son toggles). */
         bindDropdown(root.querySelector('#temasBtn'), root.querySelector('#temasPop'), { signal });
+        root.querySelector('#planItem')?.addEventListener('click', () => openStudyPlan(), { signal });
         const opts = bindDropdown(root.querySelector('#optsBtn'), root.querySelector('#optsPop'), { signal, closeOnItemClick: false });
 
         /* Nav responsive: dock móvil (Temas·Buscar·Examen·Más) + hoja "Más"

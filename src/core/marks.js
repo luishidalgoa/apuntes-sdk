@@ -91,12 +91,27 @@ export function bindMarks(root, temaId, { signal } = {}){
     b.setAttribute('data-marked', '');
     place(b, b, b.id, 'beforeend');   // esquina sup. derecha (CSS)
   });
+  /* Apartados intra-tema (cabecera .apartado-head con id): también marcables. */
+  root.querySelectorAll('.apartado-head[id]:not([data-marked])').forEach(h => {
+    h.setAttribute('data-marked', '');
+    place(h, h, h.id, 'beforeend');   // esquina sup. derecha (CSS)
+  });
 
   root.addEventListener('click', (e) => {
     const btn = e.target.closest('.mark-btn');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation();
     const level = cycleMark(temaId, btn.getAttribute('data-mark'));
-    applyLevel(btn, btn.closest('.card, .art-block, .band'), level);
+    applyLevel(btn, btn.closest('.card, .art-block, .band, .apartado-head'), level);
   }, { signal });
 }
+
+/* Nivel de importancia del TEMA entero (clave reservada `__tema__`). Se fija
+   desde la vista de Plan de estudio; se muestra en la tarjeta del tema. */
+const TEMA_KEY = '__tema__';
+export function temaLevel(temaId){ return levelsOf(temaId)[TEMA_KEY] || 0; }
+export function cycleTemaLevel(temaId){ return cycleMark(temaId, TEMA_KEY); }
+
+/* Mapa completo { id: nivel } de un tema (para el árbol de prioridades). */
+export function levelsMap(temaId){ return { ...levelsOf(temaId) }; }
+export const TEMA_MARK_KEY = TEMA_KEY;

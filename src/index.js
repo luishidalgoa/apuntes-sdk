@@ -21,6 +21,7 @@ import { mountExamOverlay } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountHighlight } from './core/highlight.js';
 import { mountGlossary } from './core/glossary.js';
+import { mountStudyPlan } from './core/studyplan.js';
 import { mountSearch } from './core/search-ui.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
@@ -55,6 +56,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
   mountRefPreview(app);
   mountHighlight(app);
   mountGlossary(app);   // rótulo de acrónimos del glosario
+  mountStudyPlan(app);  // árbol de prioridades (Plan de estudio), overlay
   mountSearch(app);
   installEscapeHandler();
   applyTabletMode();
@@ -73,6 +75,8 @@ export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
 export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark } from './core/marks.js';
 export { wrapGlossary, mountGlossary, closeAcro } from './core/glossary.js';
+export { mountStudyPlan, openStudyPlan, closeStudyPlan } from './core/studyplan.js';
+export { temaLevel, cycleTemaLevel, levelsMap } from './core/marks.js';
 export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';
