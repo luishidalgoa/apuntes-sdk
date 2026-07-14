@@ -46,12 +46,15 @@ function labelOf(el){
   }
   // .card — marcable si tiene data-mark-id; si no, es agrupador estructural.
   const markId = el.getAttribute('data-mark-id');
-  const name = el.querySelector('.card-head .name');   // tarjeta marcable: .secn + título
+  const name = el.querySelector('.card-head .name');   // título de la tarjeta marcable
   const label = el.querySelector('.card-head .label'); // tarjeta-grupo (leg-tema1): título limpio
   let num = '', title = '';
   if(name){
+    // El número puede ir DENTRO de .name como .secn (formato TAI: "1.1") o como
+    // HERMANO .sig en la fila (formato Legislación: "Art. 66").
     const secn = name.querySelector('.secn');
-    num = secn ? txt(secn) : '';
+    const sig = el.querySelector('.card-head .sig');
+    num = secn ? txt(secn) : (sig ? txt(sig) : '');
     title = name.textContent.trim();
     if(secn) title = title.replace(secn.textContent, '').trim();
   } else if(label){
