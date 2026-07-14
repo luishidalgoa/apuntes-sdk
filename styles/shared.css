@@ -281,6 +281,15 @@ body.bookmark-placing #temaContent .art-block:hover{
 .anum:hover{text-decoration-color:var(--accent);}
 .atxt{font-size:13.5px;color:var(--ink-soft);line-height:1.45;}
 .atxt b{color:var(--ink);}
+/* Grupo por artículo dentro de un rango: cabecera (nº + título) + sus apartados */
+.art-group{border-bottom:2px solid color-mix(in srgb,var(--accent) 22%,var(--line));}
+.art-group:last-child{border-bottom:0;}
+.art-hd{display:flex;align-items:baseline;gap:9px;padding:9px 13px 7px;background:color-mix(in srgb,var(--accent) 8%,transparent);}
+.art-hd-num{flex:none;font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--accent);white-space:nowrap;
+    background:none;border:none;padding:0;cursor:pointer;text-decoration-line:underline;text-decoration-style:dotted;
+    text-decoration-color:transparent;transition:text-decoration-color .15s;}
+.art-hd-num:hover{text-decoration-color:var(--accent);}
+.art-hd-title{font-weight:700;font-size:13.5px;color:var(--ink);letter-spacing:-.01em;}
 body.repaso .card .desc, body.repaso .card .truco{filter:blur(6px);opacity:.5;transition:.2s;user-select:none;}
 body.repaso .card.revealed .desc, body.repaso .card.revealed .truco{filter:none;opacity:1;}
 body.repaso .card-head{cursor:pointer;}

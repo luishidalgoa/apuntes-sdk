@@ -57,9 +57,15 @@ export function renderArtRow(ctx, key){
   if(!art) return '';
   const label = ctx.labelFor(key);
   if(art.apartados){
-    return art.apartados.map(ap =>
-      '<div class="art" id="' + anchorId(key, ap.n) + '"><button class="anum" data-ref="' + key + '.' + ap.n + '" type="button" title="Ver texto literal">' + label + '.' + ap.n + '</button><span class="atxt">' + linkify(ap.text, ap.refs) + '</span></div>'
+    /* Cabecera por artículo (nº + título) para que dentro de un rango cada
+       artículo se distinga; los apartados cuelgan debajo mostrando solo su nº. */
+    const head = '<div class="art-hd">'
+      + '<button class="art-hd-num" data-ref="' + key + '" type="button" title="Ver texto literal">' + label + '</button>'
+      + '<span class="art-hd-title">' + art.title + '</span></div>';
+    const rows = art.apartados.map(ap =>
+      '<div class="art" id="' + anchorId(key, ap.n) + '"><button class="anum" data-ref="' + key + '.' + ap.n + '" type="button" title="Ver texto literal">' + ap.n + '</button><span class="atxt">' + linkify(ap.text, ap.refs) + '</span></div>'
     ).join('');
+    return '<div class="art-group" id="' + anchorId(key) + '">' + head + rows + '</div>';
   }
   return '<div class="art" id="' + anchorId(key) + '"><button class="anum" data-ref="' + key + '" type="button" title="Ver texto literal">' + label + '</button><span class="atxt"><b>' + art.title + '.</b> ' + linkify(art.text, art.refs) + '</span></div>';
 }
