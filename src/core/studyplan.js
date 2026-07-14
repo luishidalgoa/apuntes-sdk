@@ -70,12 +70,18 @@ function labelOf(el){
   return { id: markId || null, num, title, markable: !!markId };   // title puede quedar vacío → se completa en blockNode
 }
 
+const slug = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+/* Clave de PRIORIDAD de un nodo: su id real si lo tiene (así se sincroniza con
+   el marcador del contenido); si es un agrupador sin id, una clave sintética
+   estable por título (`~capitulo-i`). Storage por-tema, colisión improbable. */
+const pkOf = (id, title) => id || ('~' + slug(title));
+
 let gcount = 0;   // contador para claves de grupos sin id (colapsado)
 /* Nodo de bloque (.card/.art-block), recursivo por contención. */
 function blockNode(el){
   const info = labelOf(el);
   const gid = info.id || ('g' + (gcount++));
-  if(el.matches('.art-block[id]')) return { ...info, gid, kind: 'sub', children: [] };
+  if(el.matches('.art-block[id]')) return { ...info, gid, pk: info.id, kind: 'sub', children: [] };
   const kids = [];
   el.querySelectorAll('.card, .art-block[id]').forEach(ch => { if(nearestStruct(ch) === el) kids.push(blockNode(ch)); });
   const kind = (kids.length || !info.markable) ? 'section' : 'sub';
@@ -86,9 +92,16 @@ function blockNode(el){
     const nums = [...el.querySelectorAll('.art-block[id] .art-num')].map(a => txt(a)).filter(Boolean);
     title = nums.length ? ('Arts. ' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '')) : (info.id || '—');
   }
-  return { ...info, title, gid, kind, children: kids };
+  return { ...info, title, gid, pk: pkOf(info.id, title), kind, children: kids };
 }
-function sectionNode(el){ const info = labelOf(el); return { ...info, gid: info.id, kind: 'section', children: [] }; }
+function sectionNode(el){ const info = labelOf(el); return { ...info, gid: info.id, pk: info.id, kind: 'section', children: [] }; }
+/* Ancla de navegación: id real del propio nodo, o el del primer descendiente
+   con id (p.ej. "Capítulo I" → art-11). null si nada tiene id. */
+function navAnchor(node){
+  if(node.id) return node.id;
+  for(const c of (node.children || [])){ const a = navAnchor(c); if(a) return a; }
+  return null;
+}
 
 /* Extrae la jerarquía de cada tema renderizando su contenido en un div
    desconectado (como el índice de búsqueda). Se cachea (no cambia en runtime). */
@@ -133,10 +146,10 @@ function countIds(map, ids){
   ids.forEach(id => { const lv = map[id] || 0; if(lv === 3) alta++; else if(lv === 2) media++; });
   return { alta, media };
 }
-/* Ids marcables del subárbol de un nodo (incluido él si es marcable). */
-function walkIds(node, acc){ if(node.id) acc.push(node.id); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
-function branchCounts(map, node){ return countIds(map, walkIds(node, []).filter(id => id !== node.id)); }
-function branchMax(map, node){ const ids = walkIds(node, []); return ids.length ? Math.max(...ids.map(id => map[id] || 0)) : 0; }
+/* Claves de prioridad del subárbol de un nodo (incluido él). */
+function walkIds(node, acc){ if(node.pk) acc.push(node.pk); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
+function branchCounts(map, node){ return countIds(map, walkIds(node, []).filter(k => k !== node.pk)); }
+function branchMax(map, node){ const ks = walkIds(node, []); return ks.length ? Math.max(...ks.map(k => map[k] || 0)) : 0; }
 function temaCounts(tema, map){
   const ids = [TEMA_MARK_KEY];
   tema.nodes.forEach(n => walkIds(n, ids));
@@ -153,20 +166,28 @@ function rollupHtml(alta, media){
 const setBtn = (scope, temaId, id, lv) =>
   '<button class="mk-set mark-btn" type="button" data-scope="' + scope + '" data-tema="' + esc(temaId) + '"'
   + (id ? ' data-id="' + esc(id) + '"' : '') + ' data-level="' + lv + '" title="' + btnTitle(lv) + '" aria-label="Prioridad">' + BARS + '</button>';
-const labelText = (o) => (o.num ? '<span class="sp-n">' + esc(o.num) + '</span> ' : '') + esc(o.title);
+/* Etiqueta del nodo: enlace al contenido (su ancla, o la del 1er descendiente
+   con id). Si no hay ancla, span no navegable. */
+function labelHtml(temaId, o, cls){
+  const inner = (o.num ? '<span class="sp-n">' + esc(o.num) + '</span> ' : '') + esc(o.title);
+  const anchor = navAnchor(o);
+  return anchor
+    ? '<a class="sp-label' + cls + '" href="#/tema/' + esc(temaId) + '/' + esc(anchor) + '">' + inner + '</a>'
+    : '<span class="sp-label' + cls + '">' + inner + '</span>';
+}
 
 /* Fila de un nodo (recursivo): hoja si no tiene hijos; rama colapsable si los
-   tiene. Nodos no marcables (agrupadores) no llevan botón de prioridad. */
+   tiene. TODO nodo lleva botón de prioridad (por su clave `pk`). */
 function nodeHtml(temaId, o, map){
-  const lv = o.markable ? (map[o.id] || 0) : 0;
+  const lv = map[o.pk] || 0;
   const kids = o.children || [];
   const isSec = o.kind === 'section';
-  const btn = o.markable ? setBtn('node', temaId, o.id, lv) : '';
+  const btn = setBtn('node', temaId, o.pk, lv);
   if(!kids.length){
     const hide = filterMin && lv < filterMin ? ' sp-hidden' : '';
     return '<div class="sp-row ' + (isSec ? 'sp-sec' : 'sp-sub') + hide + '" data-level="' + lv + '">'
       + '<span class="sp-indent"></span>'
-      + '<span class="sp-label' + (isSec ? ' sp-sec-label' : '') + '">' + labelText(o) + '</span>'
+      + labelHtml(temaId, o, isSec ? ' sp-sec-label' : '')
       + btn + '</div>';
   }
   const c = branchCounts(map, o);
@@ -176,7 +197,7 @@ function nodeHtml(temaId, o, map){
   return '<div class="sp-group sp-sec-group' + hide + col + '" data-key="' + esc(key) + '">'
     + '<div class="sp-row sp-sec" data-level="' + lv + '">'
     +   '<button class="sp-caret" type="button" aria-label="Plegar/desplegar">' + caretGlyph(key) + '</button>'
-    +   '<span class="sp-label sp-sec-label">' + labelText(o) + '</span>'
+    +   labelHtml(temaId, o, ' sp-sec-label')
     +   rollupHtml(c.alta, c.media)
     +   btn
     + '</div>'

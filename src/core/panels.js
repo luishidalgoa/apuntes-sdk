@@ -227,7 +227,10 @@ function showBackBtn(){
 
 /* ---------- salto a un ancla (modo Saltar, deep-links, preview) ---------- */
 export function revealAnchor(id, { flash = true, saveReturn = false } = {}){
-  const el = document.getElementById(id);
+  // Por id de elemento (art-blocks, apartados, bandas) o, si no, por data-mark-id
+  // (las tarjetas usan data-mark-id, no id) — así el Plan de estudio navega a ellas.
+  const esc = (window.CSS && CSS.escape) ? CSS.escape(id) : String(id).replace(/["\\]/g, '\\$&');
+  const el = document.getElementById(id) || document.querySelector('[data-mark-id="' + esc + '"]');
   if(!el) return false;
   const card = el.closest('.card');
   const det = card ? card.querySelector('.det, .arts-list') : null;
