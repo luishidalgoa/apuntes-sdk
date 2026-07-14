@@ -1,11 +1,13 @@
 /* "Plan de estudio": árbol GLOBAL del temario con la PRIORIDAD (baja/media/alta)
    de cada nodo, colapsable y editable in situ (clic cicla). La jerarquía de cada
-   tema se extrae de su contenido real: Materia › Tema › Sección › Subpunto.
-   - Sección = cabecera de apartado (.apartado-head) o banda numerada (.band).
-   - Subpunto = tarjeta (.card) o bloque de artículo (.art-block) que sigue a una
-     sección (por ORDEN de documento; en el DOM no están anidados).
-   Overlay SPA (no cambia de ruta). Comparte storage con el marcador del
-   contenido (marks.js), así que marcar aquí se refleja en el tema y viceversa. */
+   tema se extrae de su contenido real combinando dos señales:
+   - ORDEN de documento para cabeceras (.apartado-head, .band): son títulos,
+     hermanos del contenido que encabezan.
+   - CONTENCIÓN para bloques (.card, .art-block): un .card puede AGRUPAR
+     art-blocks/cards anidados (p.ej. leg-tema1: Capítulo › artículos).
+   Un .card sin `data-mark-id` que agrupa es una sección estructural (sin
+   prioridad propia, solo pliega y hace roll-up). Overlay SPA. Comparte storage
+   con el marcador del contenido (marks.js): marcar aquí se refleja en el tema. */
 import { allTemas, materiasWithTemas, hasMaterias } from '../registry.js';
 import { levelsMap, cycleTemaLevel, cycleMark, TEMA_MARK_KEY } from './marks.js';
 import { registerLayer } from './modal-stack.js';
@@ -20,60 +22,104 @@ const caretGlyph = (key) => collapsed.has(key) ? '▸' : '▾';
 const BARS = '<span class="mk-bars"><i></i><i></i><i></i></span>';
 const LNAME = { 1: 'baja', 2: 'media', 3: 'alta' };
 const btnTitle = (lv) => lv ? ('Prioridad ' + LNAME[lv] + ' · clic para cambiar') : 'Sin prioridad · clic: baja › media › alta';
-const NODE_SEL = '.apartado-head[id], .band[id], .card[data-mark-id], .art-block[id]';
+const HEADER_SEL = '.apartado-head[id], .band[id]';
+const STRUCT_SEL = '.apartado-head[id], .band[id], .card, .art-block[id]';
+const txt = (el) => el ? (el.textContent || '').trim() : '';
 
-/* Etiqueta (numeral + título) de un nodo markable según su tipo. */
-function labelOf(n){
-  if(n.matches('.card[data-mark-id]')){
-    const name = n.querySelector('.card-head .name');
-    const secn = name && name.querySelector('.secn');
-    let title = name ? name.textContent.trim() : '';
-    if(secn) title = title.replace(secn.textContent, '').trim();
-    return { kind: 'sub', id: n.getAttribute('data-mark-id'), num: secn ? secn.textContent.trim() : '', title: title || n.getAttribute('data-mark-id') };
-  }
-  if(n.matches('.apartado-head[id]')){
-    return { kind: 'section', id: n.id, num: ((n.querySelector('.apn') || {}).textContent || '').trim(), title: ((n.querySelector('h2') || {}).textContent || n.id).trim() };
-  }
-  if(n.matches('.band[id]')){
-    return { kind: 'section', id: n.id, num: ((n.querySelector('.rom') || {}).textContent || '').trim(), title: ((n.querySelector('h2') || {}).textContent || n.id).trim() };
-  }
-  // .art-block
-  return { kind: 'sub', id: n.id, num: '', title: ((n.querySelector('.art-block-head') || {}).textContent || n.id).trim().replace(/\s+/g, ' ').slice(0, 70) };
+/* Ancestro estructural más cercano (o null si está en la raíz del contenido). */
+function nearestStruct(el){
+  let p = el.parentElement;
+  while(p){ if(p.matches && p.matches(STRUCT_SEL)) return p; p = p.parentElement; }
+  return null;
 }
+
+/* Etiqueta {id, num, title, markable} de un nodo markable/estructural. */
+function labelOf(el){
+  if(el.matches('.art-block[id]')){
+    return { id: el.id, num: txt(el.querySelector('.art-num')), title: txt(el.querySelector('.art-title')) || el.id, markable: true };
+  }
+  if(el.matches('.apartado-head[id]')){
+    return { id: el.id, num: txt(el.querySelector('.apn')), title: txt(el.querySelector('h2')) || el.id, markable: true };
+  }
+  if(el.matches('.band[id]')){
+    return { id: el.id, num: txt(el.querySelector('.rom')), title: txt(el.querySelector('h2')) || el.id, markable: true };
+  }
+  // .card — marcable si tiene data-mark-id; si no, es agrupador estructural.
+  const markId = el.getAttribute('data-mark-id');
+  const name = el.querySelector('.card-head .name');   // tarjeta marcable: .secn + título
+  const label = el.querySelector('.card-head .label'); // tarjeta-grupo (leg-tema1): título limpio
+  let num = '', title = '';
+  if(name){
+    const secn = name.querySelector('.secn');
+    num = secn ? txt(secn) : '';
+    title = name.textContent.trim();
+    if(secn) title = title.replace(secn.textContent, '').trim();
+  } else if(label){
+    title = label.textContent.trim();
+  } else {
+    const head = el.querySelector('.card-head');
+    if(head){
+      const c = head.cloneNode(true);
+      c.querySelectorAll('button, .badge, .chip, .range, .art-tag, .tag, .mark-btn, .desc, .truco, .illus, .icon, p, .arts-list').forEach(x => x.remove());
+      title = c.textContent.replace(/\s+/g, ' ').trim();
+    }
+  }
+  return { id: markId || null, num, title, markable: !!markId };   // title puede quedar vacío → se completa en blockNode
+}
+
+let gcount = 0;   // contador para claves de grupos sin id (colapsado)
+/* Nodo de bloque (.card/.art-block), recursivo por contención. */
+function blockNode(el){
+  const info = labelOf(el);
+  const gid = info.id || ('g' + (gcount++));
+  if(el.matches('.art-block[id]')) return { ...info, gid, kind: 'sub', children: [] };
+  const kids = [];
+  el.querySelectorAll('.card, .art-block[id]').forEach(ch => { if(nearestStruct(ch) === el) kids.push(blockNode(ch)); });
+  const kind = (kids.length || !info.markable) ? 'section' : 'sub';
+  // Tarjeta-grupo sin título (p.ej. la Corona: solo un disclosure con arts 56-65):
+  // etiqueta por el rango de artículos que contiene.
+  let title = info.title;
+  if(!title){
+    const nums = [...el.querySelectorAll('.art-block[id] .art-num')].map(a => txt(a)).filter(Boolean);
+    title = nums.length ? ('Arts. ' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '')) : (info.id || '—');
+  }
+  return { ...info, title, gid, kind, children: kids };
+}
+function sectionNode(el){ const info = labelOf(el); return { ...info, gid: info.id, kind: 'section', children: [] }; }
 
 /* Extrae la jerarquía de cada tema renderizando su contenido en un div
    desconectado (como el índice de búsqueda). Se cachea (no cambia en runtime). */
 function buildStructure(){
   if(struct) return struct;
+  gcount = 0;
   struct = allTemas().map((t, i) => {
     const num = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
-    let nodes = [];
+    const nodes = [];
     try {
       const box = document.createElement('div');
       t.renderContent(box);
-      // Pila de 2 niveles de sección: apartado (nivel 1) › banda (nivel 2) › card.
       let apartado = null, band = null;
-      [...box.querySelectorAll(NODE_SEL)].forEach(n => {
-        const info = { ...labelOf(n), children: [] };
-        if(n.matches('.apartado-head[id]')){ apartado = info; band = null; nodes.push(info); }
-        else if(n.matches('.band[id]')){ band = info; (apartado ? apartado.children : nodes).push(info); }
-        else { const parent = band || apartado; (parent ? parent.children : nodes).push(info); }  // card/art-block
+      // Recorrido de nivel superior: cabeceras (orden) + bloques sin ancestro
+      // estructural (los anidados los recoge blockNode por contención).
+      const top = [...box.querySelectorAll(STRUCT_SEL)].filter(n => n.matches(HEADER_SEL) || nearestStruct(n) === null);
+      top.forEach(n => {
+        if(n.matches('.apartado-head[id]')){ apartado = sectionNode(n); band = null; nodes.push(apartado); }
+        else if(n.matches('.band[id]')){ band = sectionNode(n); (apartado ? apartado.children : nodes).push(band); }
+        else { const node = blockNode(n); (band ? band.children : apartado ? apartado.children : nodes).push(node); }
       });
     } catch(e){}
     return { id: t.id, num, titulo: t.titulo || t.id, nodes };
   });
-  // Por defecto las secciones (con hijos) nacen PLEGADAS: el árbol es grande, así
-  // se ve Materia › Tema › Sección y se despliega cada una para sus puntos. Un
-  // tema SIN secciones (lista plana de tarjetas, p.ej. leg-tema1 con sus 55
-  // artículos) nace plegado a nivel de tema para no volcarlo entero. Solo la
-  // primera vez (luego el Set refleja lo que abra/cierre el usuario).
+  // Secciones (nodos con hijos) PLEGADAS por defecto: estado inicial compacto
+  // (Materia › Tema › Sección). Un tema sin secciones, plegado a nivel de tema.
+  // Solo la primera vez (luego el Set refleja lo que abra/cierre el usuario).
   const seed = (temaId, n) => {
-    if((n.children || []).length && n.kind === 'section') collapsed.add('x:' + temaId + '/' + n.id);
+    if((n.children || []).length) collapsed.add('x:' + temaId + '/' + n.gid);
     (n.children || []).forEach(c => seed(temaId, c));
   };
   struct.forEach(t => {
     t.nodes.forEach(n => seed(t.id, n));
-    if(!t.nodes.some(n => n.kind === 'section')) collapsed.add('t:' + t.id);
+    if(!t.nodes.some(n => (n.children || []).length)) collapsed.add('t:' + t.id);
   });
   return struct;
 }
@@ -84,12 +130,10 @@ function countIds(map, ids){
   ids.forEach(id => { const lv = map[id] || 0; if(lv === 3) alta++; else if(lv === 2) media++; });
   return { alta, media };
 }
-/* Todos los ids del subárbol de un nodo (incluido él). */
-function walkIds(node, acc){ acc.push(node.id); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
-/* Roll-up de una rama: sus DESCENDIENTES marcados (sin contarse a sí misma). */
+/* Ids marcables del subárbol de un nodo (incluido él si es marcable). */
+function walkIds(node, acc){ if(node.id) acc.push(node.id); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
 function branchCounts(map, node){ return countIds(map, walkIds(node, []).filter(id => id !== node.id)); }
-function branchMax(map, node){ return Math.max(...walkIds(node, []).map(id => map[id] || 0), 0); }
-/* Roll-up del tema: su propio nivel + todos sus nodos (recursivo). */
+function branchMax(map, node){ const ids = walkIds(node, []); return ids.length ? Math.max(...ids.map(id => map[id] || 0)) : 0; }
 function temaCounts(tema, map){
   const ids = [TEMA_MARK_KEY];
   tema.nodes.forEach(n => walkIds(n, ids));
@@ -109,28 +153,29 @@ const setBtn = (scope, temaId, id, lv) =>
 const labelText = (o) => (o.num ? '<span class="sp-n">' + esc(o.num) + '</span> ' : '') + esc(o.title);
 
 /* Fila de un nodo (recursivo): hoja si no tiene hijos; rama colapsable si los
-   tiene. Sirve para secciones (banda/apartado) y subpuntos (card/art-block). */
+   tiene. Nodos no marcables (agrupadores) no llevan botón de prioridad. */
 function nodeHtml(temaId, o, map){
-  const lv = map[o.id] || 0;
+  const lv = o.markable ? (map[o.id] || 0) : 0;
   const kids = o.children || [];
   const isSec = o.kind === 'section';
+  const btn = o.markable ? setBtn('node', temaId, o.id, lv) : '';
   if(!kids.length){
     const hide = filterMin && lv < filterMin ? ' sp-hidden' : '';
     return '<div class="sp-row ' + (isSec ? 'sp-sec' : 'sp-sub') + hide + '" data-level="' + lv + '">'
       + '<span class="sp-indent"></span>'
       + '<span class="sp-label' + (isSec ? ' sp-sec-label' : '') + '">' + labelText(o) + '</span>'
-      + setBtn('node', temaId, o.id, lv) + '</div>';
+      + btn + '</div>';
   }
   const c = branchCounts(map, o);
   const hide = filterMin && branchMax(map, o) < filterMin ? ' sp-hidden' : '';
-  const key = 'x:' + temaId + '/' + o.id;
+  const key = 'x:' + temaId + '/' + o.gid;
   const col = collapsed.has(key) ? ' collapsed' : '';
   return '<div class="sp-group sp-sec-group' + hide + col + '" data-key="' + esc(key) + '">'
     + '<div class="sp-row sp-sec" data-level="' + lv + '">'
     +   '<button class="sp-caret" type="button" aria-label="Plegar/desplegar">' + caretGlyph(key) + '</button>'
     +   '<span class="sp-label sp-sec-label">' + labelText(o) + '</span>'
     +   rollupHtml(c.alta, c.media)
-    +   setBtn('node', temaId, o.id, lv)
+    +   btn
     + '</div>'
     + '<div class="sp-children">' + kids.map(k => nodeHtml(temaId, k, map)).join('') + '</div>'
     + '</div>';
@@ -181,14 +226,44 @@ function buildTree(){
   return html || '<p class="sp-empty">No hay temas.</p>';
 }
 
+/* Ajusta el plegado global a una PROFUNDIDAD (atajo): materias · temas ·
+   secciones · todo. Referencia la jerarquía por su nombre interno. */
+function allKeys(){
+  buildStructure();
+  const mats = [], temas = [], secs = [];
+  const walk = (temaId, n) => { if((n.children || []).length){ secs.push('x:' + temaId + '/' + n.gid); n.children.forEach(c => walk(temaId, c)); } };
+  struct.forEach(t => { temas.push('t:' + t.id); t.nodes.forEach(n => walk(t.id, n)); });
+  if(hasMaterias()) materiasWithTemas().forEach(m => mats.push('m:' + m.id));
+  return { mats, temas, secs };
+}
+function applyDepth(depth){
+  const { mats, temas, secs } = allKeys();
+  collapsed.clear();
+  if(depth === 'materias') [...mats, ...temas, ...secs].forEach(k => collapsed.add(k));
+  else if(depth === 'temas') [...temas, ...secs].forEach(k => collapsed.add(k));
+  else if(depth === 'secciones') secs.forEach(k => collapsed.add(k));
+  // 'todo' → sin plegados
+  render();
+}
+
 function render(){
   body.innerHTML =
     '<div class="sp-toolbar">'
     + '<span class="sp-lede">Marca la prioridad de cada tema, sección y punto; pliega o filtra para ver antes lo importante.</span>'
-    + '<div class="sp-filter" role="group" aria-label="Filtrar por prioridad">'
-    +   '<button type="button" data-min="0"' + (filterMin === 0 ? ' class="on"' : '') + '>Todo</button>'
-    +   '<button type="button" data-min="2"' + (filterMin === 2 ? ' class="on"' : '') + '>≥ Media</button>'
-    +   '<button type="button" data-min="3"' + (filterMin === 3 ? ' class="on"' : '') + '>Solo alta</button>'
+    + '<div class="sp-controls">'
+    +   '<div class="sp-expand" role="group" aria-label="Nivel de vista">'
+    +     '<span class="sp-ctl-lbl">Ver:</span>'
+    +     '<button type="button" data-depth="materias">Materias</button>'
+    +     '<button type="button" data-depth="temas">Temas</button>'
+    +     '<button type="button" data-depth="secciones">Secciones</button>'
+    +     '<button type="button" data-depth="todo">Todo</button>'
+    +   '</div>'
+    +   '<div class="sp-filter" role="group" aria-label="Filtrar por prioridad">'
+    +     '<span class="sp-ctl-lbl">Prioridad:</span>'
+    +     '<button type="button" data-min="0"' + (filterMin === 0 ? ' class="on"' : '') + '>Todo</button>'
+    +     '<button type="button" data-min="2"' + (filterMin === 2 ? ' class="on"' : '') + '>≥ Media</button>'
+    +     '<button type="button" data-min="3"' + (filterMin === 3 ? ' class="on"' : '') + '>Solo alta</button>'
+    +   '</div>'
     + '</div></div>'
     + '<div class="sp-tree">' + buildTree() + '</div>';
 }
@@ -231,6 +306,8 @@ export function mountStudyPlan(shell){
       const scrollTop = body.scrollTop; render(); body.scrollTop = scrollTop;   // repinta (roll-ups + filtro)
       return;
     }
+    const dep = e.target.closest('.sp-expand button');
+    if(dep){ applyDepth(dep.getAttribute('data-depth')); return; }
     const label = e.target.closest('.sp-label[href]');
     if(label){ closeStudyPlan(); /* el href (#/…) navega solo */ return; }
     const f = e.target.closest('.sp-filter button');
