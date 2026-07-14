@@ -40,7 +40,26 @@ function indexTema(tema, ti){
   try { tema.renderContent(box); } catch(e){ return entries; }   // un tema que falle no rompe el resto
 
   let bandTitle = '';
-  box.querySelectorAll('.band, .node').forEach((el) => {
+  // Recorrido por ORDEN de documento: bandas (cabeceras), tarjetas (.node) y
+  // artículos (.art-block). Los art-blocks se indexan como entradas propias
+  // (búsqueda a nivel de artículo; su detalle vive en .arts-list, no en .det,
+  // así que el bucle de cards no lo captura). `bandTitle` es correcto por orden.
+  box.querySelectorAll('.band, .node, .art-block[id]').forEach((el) => {
+    if(el.classList.contains('art-block')){
+      const artTitle = clean((el.querySelector('.art-title') || {}).textContent);
+      if(!artTitle) return;
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('.art-block-head, button').forEach(x => x.remove());   // fuera nº+título del cuerpo
+      entries.push({
+        temaId: tema.id, temaNum: num, temaK: tema.k, bloque: blLabel, kind: 'card',
+        num: clean((el.querySelector('.art-num') || {}).textContent),
+        title: artTitle,
+        text: clean(clone.textContent).slice(0, 700),
+        anchor: el.id,
+        path: crumb + 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
+      });
+      return;
+    }
     if(el.classList.contains('band')){
       bandTitle = clean((el.querySelector('h2') || {}).textContent);
       const kicker = clean((el.querySelector('.k') || {}).textContent);   // suele traer la ref oficial (4.1, 4.2…)
@@ -54,7 +73,7 @@ function indexTema(tema, ti){
       });
       return;
     }
-    const nameEl = el.querySelector('.name');
+    const nameEl = el.querySelector('.name, .label');   // .label: tarjetas artesanales (leg-tema1)
     if(!nameEl) return;
     const numEl = nameEl.querySelector('.secn') || el.querySelector('.sig') || el.querySelector('.anum');
     const secn = clean(numEl && numEl.textContent);
