@@ -7,6 +7,20 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.1.39
+
+- **Subrayado en el "texto literal"** (panel de fuente), persistido. Antes: (a)
+  clicar la paleta del subrayador CERRABA el panel literal (era un clic "fuera"
+  que disparaba `closeFullText`), y (b) el subrayado solo estaba ligado a
+  `#temaContent`. Ahora:
+  - `panels.js` excluye la paleta (`.hl-palette`/`#hlPalette`) del cierre por
+    clic-fuera → el panel ya no se cierra al elegir color/goma.
+  - El subrayado se generaliza a varias SUPERFICIES: handlers `doMouseUp/doClick
+    (root, storeId)`; el panel literal se liga con `bindFullTextHighlighting` y
+    persiste bajo `<temaId>::ft::<ref>` (reaparece al reabrir el artículo).
+  - `mousedown` de la paleta hace `preventDefault` (no colapsa la selección).
+  - El `::selection` coloreado del color activo también aplica en `#fullTextPanel`.
+
 ## v0.1.38
 
 - **Examen · navegación entre preguntas (revisar / volver atrás)**. Antes solo

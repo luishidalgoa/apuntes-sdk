@@ -66,8 +66,8 @@ function updateSelStyle(){
   let st = document.getElementById('hlSelStyle');
   if(!st){ st = document.createElement('style'); st.id = 'hlSelStyle'; document.head.appendChild(st); }
   const bg = eraseMode ? 'rgba(110,110,110,.30)' : ((colorByKey(activeColor) || {}).color || '#FFE066');
-  st.textContent = 'body.hl-on #temaContent ::selection{background:' + bg + ';color:inherit;}'
-    + 'body.hl-on #temaContent ::-moz-selection{background:' + bg + ';color:inherit;}';
+  st.textContent = 'body.hl-on #temaContent ::selection,body.hl-on #fullTextPanel ::selection{background:' + bg + ';color:inherit;}'
+    + 'body.hl-on #temaContent ::-moz-selection,body.hl-on #fullTextPanel ::-moz-selection{background:' + bg + ';color:inherit;}';
 }
 
 /* ---------------- storage de subrayados ---------------- */
@@ -145,13 +145,13 @@ export function applyHighlightsInto(root, temaId){
   }
 }
 
-/* Re-lee TODOS los <mark.hl> del contenido y regenera el storage (única fuente
-   de escritura tras cualquier cambio: añadir, quitar, recolorear). */
-function serialize(){
-  if(!temaRoot || !temaId) return;
+/* Re-lee TODOS los <mark.hl> de `root` y regenera su storage (`storeId`): única
+   fuente de escritura tras cualquier cambio (añadir, quitar, recolorear). */
+function serialize(root, storeId){
+  if(!root || !storeId) return;
   const list = [];
-  temaRoot.querySelectorAll('mark.hl').forEach(mark => {
-    const anch = anchorFor(mark, temaRoot);
+  root.querySelectorAll('mark.hl').forEach(mark => {
+    const anch = anchorFor(mark, root);
     if(!anch) return;
     const r = document.createRange();
     r.selectNodeContents(anch.el);
@@ -159,11 +159,14 @@ function serialize(){
     const s = r.toString().length;
     list.push({ t: anch.t, a: anch.a, s, e: s + mark.textContent.length, c: mark.dataset.c });
   });
-  saveMarks(temaId, list);
+  saveMarks(storeId, list);
 }
 
 /* ---------------- interacción ---------------- */
-let temaRoot = null, temaId = null, on = false, suppressClick = false;
+/* El subrayado funciona sobre varias SUPERFICIES (temario `#temaContent` y el
+   panel de "texto literal"), cada una con su propio `storeId`. Los handlers son
+   genéricos: reciben (root, storeId). */
+let temaId = null, on = false, suppressClick = false;
 
 export function isHighlightOn(){ return on; }
 
@@ -172,48 +175,64 @@ function unwrap(mark){
   while(mark.firstChild) p.insertBefore(mark.firstChild, mark);
   p.removeChild(mark); p.normalize();
 }
-function eraseInRange(range){
-  temaRoot.querySelectorAll('mark.hl').forEach(m => { if(range.intersectsNode(m)) unwrap(m); });
+function eraseInRange(root, range){
+  root.querySelectorAll('mark.hl').forEach(m => { if(range.intersectsNode(m)) unwrap(m); });
 }
 
 function onMouseDown(){ suppressClick = false; }
-function onMouseUp(){
-  if(!on) return;
+function doMouseUp(root, storeId){
+  if(!on || !root || !storeId) return;
   const sel = window.getSelection();
   if(!sel || sel.isCollapsed || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);
-  if(!temaRoot.contains(range.commonAncestorContainer)) return;
+  if(!root.contains(range.commonAncestorContainer)) return;
   if(eraseMode){                                 // goma: quita todo subrayado tocado por la selección
-    eraseInRange(range); serialize(); sel.removeAllRanges(); suppressClick = true; return;
+    eraseInRange(root, range); serialize(root, storeId); sel.removeAllRanges(); suppressClick = true; return;
   }
   if(!sel.toString().replace(/\s+/g, '')) return;
-  const anch = anchorFor(range.commonAncestorContainer, temaRoot);
+  const anch = anchorFor(range.commonAncestorContainer, root);
   if(!anch) return;
   const o1 = offsetTo(anch.el, range.startContainer, range.startOffset);
   const o2 = offsetTo(anch.el, range.endContainer, range.endOffset);
   const s = Math.min(o1, o2), e = Math.max(o1, o2);
   if(e <= s) return;
   wrapRange(anch.el, s, e, activeColor);
-  serialize();
+  serialize(root, storeId);
   sel.removeAllRanges();
   suppressClick = true;   // el 'click' que sigue a la selección no debe tocar el subrayado
 }
-function onClick(e){
+function doClick(e, root, storeId){
   if(suppressClick){ suppressClick = false; return; }
-  if(!on) return;
+  if(!on || !storeId) return;
   const mark = e.target.closest && e.target.closest('mark.hl');
-  if(!mark) return;
+  if(!mark || !root.contains(mark)) return;
   e.preventDefault(); e.stopPropagation();
   if(eraseMode || mark.dataset.c === activeColor) unwrap(mark);   // goma o mismo color → quitar
   else mark.dataset.c = activeColor;                              // otro color → recolorear
-  serialize();
+  serialize(root, storeId);
 }
 
+/* Superficie principal: el contenido del tema (`#temaContent`). */
 export function bindHighlighting(root, tId, { signal } = {}){
-  temaRoot = root; temaId = tId;
+  temaId = tId;
   root.addEventListener('mousedown', onMouseDown, { signal });
-  root.addEventListener('mouseup', onMouseUp, { signal });
-  root.addEventListener('click', onClick, { capture: true, signal });
+  root.addEventListener('mouseup', () => doMouseUp(root, tId), { signal });
+  root.addEventListener('click', (e) => doClick(e, root, tId), { capture: true, signal });
+}
+
+/* Superficie secundaria: el panel de "texto literal". Se liga una sola vez (el
+   panel es estable); su storeId cambia con el artículo mostrado (lo fija
+   applyFullTextHighlights). Persiste bajo `<temaId>::ft::<ref>`. */
+let ftStoreId = null;
+export function bindFullTextHighlighting(ftRoot){
+  if(!ftRoot) return;
+  ftRoot.addEventListener('mousedown', onMouseDown);
+  ftRoot.addEventListener('mouseup', () => doMouseUp(ftRoot, ftStoreId));
+  ftRoot.addEventListener('click', (e) => doClick(e, ftRoot, ftStoreId), { capture: true });
+}
+export function applyFullTextHighlights(ftRoot, refKey){
+  ftStoreId = (temaId && refKey != null) ? (temaId + '::ft::' + refKey) : null;
+  if(ftRoot && ftStoreId) applyHighlightsInto(ftRoot, ftStoreId);
 }
 
 /* ---------------- activar / desactivar ---------------- */
@@ -276,6 +295,9 @@ export function mountHighlight(shell){
   shell.insertAdjacentHTML('beforeend', '<div id="hlPalette" class="hl-palette" role="toolbar" aria-label="Subrayado" hidden></div>');
   palette = shell.querySelector('#hlPalette');
   renderPalette();
+  /* Clicar la paleta no debe robar el foco ni COLAPSAR la selección de texto
+     (para poder subrayar/recolorear lo seleccionado, p.ej. en el texto literal). */
+  palette.addEventListener('mousedown', (e) => e.preventDefault());
   palette.addEventListener('click', (e) => {
     const sw = e.target.closest('.hl-sw');
     if(sw){ sw.dataset.act === 'erase' ? setEraseMode(true) : setActiveColor(sw.dataset.key); return; }

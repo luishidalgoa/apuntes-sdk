@@ -10,6 +10,7 @@
 import { linkify } from './render-tema.js';
 import { registerLayer } from './modal-stack.js';
 import { anchorId } from '../config.js';
+import { bindFullTextHighlighting, applyFullTextHighlights } from './highlight.js';
 
 const BREAKPOINT = 1300;
 
@@ -166,6 +167,7 @@ export function openFullText(key){
   const content = buildFullTextContent(ctx, key);
   ftTitle.textContent = content.title;
   ftBody.innerHTML = content.body;
+  applyFullTextHighlights(ftBody, key);   // reaplica los subrayados guardados de este artículo
   ftPanel.classList.add('open');
   document.body.classList.add('fulltext-open');
 }
@@ -262,6 +264,7 @@ export function mountPanels(shell){
   ftPanel = shell.querySelector('#fullTextPanel');
   ftTitle = ftPanel.querySelector('.sp-title');
   ftBody = ftPanel.querySelector('.sp-body');
+  bindFullTextHighlighting(ftBody);   // el "texto literal" también es subrayable (persistido)
   backBtn = shell.querySelector('#backBtn');
 
   panel.querySelector('.sp-close').addEventListener('click', closePanel);
@@ -291,6 +294,8 @@ export function mountPanels(shell){
       openPanel(tag, key);
       return;
     }
+    // clicar la paleta de subrayado (vive fuera de los paneles) NO debe cerrarlos
+    if(e.target.closest('.hl-palette, #hlPalette')) return;
     if(panel.classList.contains('open') && !panel.contains(e.target)) closePanel();
     if(ftPanel.classList.contains('open') && !ftPanel.contains(e.target)) closeFullText();
   });
