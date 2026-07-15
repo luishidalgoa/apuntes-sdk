@@ -7,8 +7,9 @@
 let tabletMode = false;
 try{ tabletMode = localStorage.getItem('ce-tablet-mode') === '1'; }catch(e){}
 
-const phoneMql = window.matchMedia('(max-width:600px)');
-const isPhone = () => phoneMql.matches;
+// matchMedia se evalúa al importar; en node (scripts vía registry→SDK) no existe.
+const phoneMql = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width:600px)') : null;
+const isPhone = () => !!(phoneMql && phoneMql.matches);
 const apply = () => document.body.classList.toggle('tablet-mode', tabletMode && !isPhone());
 
 export function applyTabletMode(){

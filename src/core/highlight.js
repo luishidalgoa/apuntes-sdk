@@ -47,7 +47,10 @@ export function setColors(list){
 }
 export function resetColors(){ writeJSON(LS_COLORS, null); setColors(getColors()); }
 
-let activeColor = localStorage.getItem(LS_ACTIVE) || 'imp';
+// Se lee al cargar el módulo, así que guardamos el acceso: en node (scripts como
+// export-questions) `localStorage` no existe y esto se importa vía registry→SDK.
+let activeColor = 'imp';
+try { activeColor = localStorage.getItem(LS_ACTIVE) || 'imp'; } catch (_) {}
 let eraseMode = false;
 function colorByKey(key){ return getColors().find(c => c.key === key); }
 export function getActiveColor(){ return activeColor; }
