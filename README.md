@@ -11,6 +11,10 @@ Se consume como **dependencia** y se compila **dentro del singlefile** de cada
 app (Vite + vite-plugin-singlefile), así que las fuentes y el CSS quedan
 inlinados y la app funciona por `file://` sin red.
 
+
+> **¿Quieres montar tu propio temario?** → [**EMPEZAR-AQUI.md**](EMPEZAR-AQUI.md)
+> (de cero a app de estudio en 3 comandos; con tu IA y un PDF, sin programar).
+
 ## Instalar en una app
 
 ```jsonc
