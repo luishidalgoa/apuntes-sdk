@@ -47,6 +47,19 @@ Eso te deja una app funcionando (con dos temas de ejemplo, examen, minijuegos y
 glosario) en menos de un minuto. Luego sustituyes el contenido por el tuyo y
 `npm run verify` audita que cumple el contrato del SDK.
 
+### Con un cliente MCP (Claude Desktop, Claude Code, Cursor…)
+
+El SDK trae un servidor MCP: la IA crea la app, lee el contrato, verifica y
+compila **sin que toques ficheros**. Añádelo a la configuración de tu cliente:
+
+```jsonc
+{ "mcpServers": { "apuntes": { "command": "npx", "args": ["-y", "apuntes-mcp"] } } }
+```
+
+Herramientas: `leer_contrato` · `crear_app` · `listar_temas` · `verificar` · `compilar`.
+`verificar` devuelve los defectos **estructurados**, así que el modelo puede
+corregirse solo; `compilar` se niega si el contrato no se cumple.
+
 **Guía completa paso a paso: [`docs/crear-temario.md`](docs/crear-temario.md).**
 
 > **¿Vas a montar un tema con una IA?** Pásale
