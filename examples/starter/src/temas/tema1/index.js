@@ -61,7 +61,7 @@ const CARDS = [
 ];
 
 const TEMPLATE = `
-  <div class="band b-astro reveal">
+  <div class="band b-astro reveal" id="astro">
     <div class="rom">☉</div>
     <div>
       <div class="k">Demo · 3 secciones</div>

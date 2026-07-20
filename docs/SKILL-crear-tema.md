@@ -405,9 +405,28 @@ Si metes el `<button>` DENTRO de `.det`, queda **invisible** (el SDK colapsa
 No des un tema por terminado sin **ejecutar** esto:
 
 ```bash
+npm run verify     # audita el contrato de TODOS los temas  ← lo primero
 npm run dev        # levanta la app
 npm run build      # debe compilar sin errores
 ```
+
+`npm run verify` comprueba automáticamente casi todo lo de esta sección y te dice
+**qué está mal y por qué importa**. Sale con código ≠ 0 si hay errores, así que
+sirve en CI. Detecta, entre otros:
+
+| Comprueba | Por qué |
+|---|---|
+| campos obligatorios del manifiesto | sin ellos el tema no se lista bien |
+| **ids duplicados** en un tema | un deep-link aterriza en el sitio equivocado |
+| tarjetas sin `data-mark-id` | invisibles al marcador, al buscador y al plan |
+| tarjetas sin `.name`/`.label` | el indexador las ignora |
+| `.disclosure` dentro de `.det` | el botón queda invisible |
+| `.band`/`.apartado-head` sin `id` | no agrupan en el plan de estudio |
+| **APIs de navegador al importar** | rompen los scripts de línea de comandos |
+| glosario: claves <2 letras o muertas | se ignoran en silencio |
+| examen: `correcta` fuera de `respuestas`, ids repetidos | preguntas rotas |
+
+Aun así, **mira estas con el tema abierto** (lo que ninguna herramienta ve):
 
 Y comprueba, con el tema abierto en el navegador:
 

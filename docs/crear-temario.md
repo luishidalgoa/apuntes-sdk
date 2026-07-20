@@ -12,6 +12,13 @@ La plantilla viva es [`examples/starter`](../examples/starter) (una demo mínima
 del *Sistema Solar*, sin nada de legislación). La forma más rápida de empezar es
 **clonarla** y sustituir el contenido.
 
+> **Verificar antes de dar por hecho** — `npm run verify` (lo aporta el SDK como
+> `apuntes-verify`) audita el contrato de todos tus temas: ids duplicados,
+> tarjetas invisibles al buscador, botones atrapados, APIs de navegador que
+> rompen los scripts, glosarios muertos y preguntas mal formadas. Sale con
+> código ≠ 0, así que vale para CI. Añádelo a tu `package.json`:
+> `"scripts": { "verify": "apuntes-verify" }`
+
 > **Autoría con IA** — para crear **un tema** concreto, usa
 > [`SKILL-crear-tema.md`](SKILL-crear-tema.md): es el contrato autosuficiente
 > que le pasas a una IA junto con tu material (PDF, apuntes). Este documento que

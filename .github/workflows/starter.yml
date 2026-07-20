@@ -27,6 +27,11 @@ jobs:
       - name: Instalar dependencias del starter
         run: npm install --prefix examples/starter
 
+      # Auditoría del contrato: si un cambio del SDK rompe lo que el skill
+      # promete (ids, data-mark-id, .name/.label, disclosure…), falla aquí.
+      - name: Verificar el contrato de los temas
+        run: npm run verify --prefix examples/starter
+
       - name: Compilar el starter (temas de ejemplo del skill)
         run: npm run build --prefix examples/starter
 
