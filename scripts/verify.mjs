@@ -223,6 +223,21 @@ function revisarDom(t, box, idsGlobales){
   if(glCorto.length) add(id, 'warn', 'glosario-corto',
     `${glCorto.length} clave(s) de glosario con menos de 2 letras: se ignoran${muestra(glCorto)}`);
 
+  /* Tema con siglas en el texto pero SIN glosario. Las siglas sin expandir son
+     un modo de fallo típico de un tema generado desde un PDF (como las
+     respuestas contaminadas). Aviso, no error: quizá el tema no las necesita.
+     Solo salta si hay varias candidatas de verdad, para no dar la lata. */
+  if(!Object.keys(t.glossary || {}).length){
+    const candidatas = new Set((cuerpo.match(/\b[A-ZÁÉÍÓÚÑ]{2,6}\b/g) || [])
+      .filter(s => !/^[IVXLCDM]+$/.test(s)));   // fuera numerales romanos (I, IV, LXX…)
+    if(candidatas.size >= 4) add(id, 'warn', 'sin-glosario',
+      `El tema no declara \`glossary\` pero su texto tiene ${candidatas.size} siglas${muestra([...candidatas])}`,
+      'Cada materia mantiene UN glosario compartido (p.ej. tai-glossary.js) e importa\n' +
+      '     `glossary: MI_GLOSARIO` en cada tema. Va por materia, no en appConfig global:\n' +
+      '     las claves colisionan entre materias (IT = Incapacidad Temporal vs Information\n' +
+      '     Technology). Ver §6 del skill.');
+  }
+
   /* preguntas de examen. Ojo: `id` es OPCIONAL (hay temas que no lo usan);
      solo se comprueba la unicidad cuando existe. */
   const qs = t.questions || [];

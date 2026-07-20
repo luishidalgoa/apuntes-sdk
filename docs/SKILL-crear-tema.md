@@ -252,6 +252,21 @@ glossary: { ADN: 'Ácido desoxirribonucleico', ARNm: 'ARN mensajero' }
 Declaralo **por tema** (no global) para evitar colisiones entre materias
 (p.ej. `IT` significa cosas distintas en dos asignaturas).
 
+**Patrón recomendado — UN glosario por materia, compartido:** no repitas las
+siglas en cada tema. Mantén un solo fichero por materia e impórtalo:
+
+```js
+// src/glosario.js  (o materia-glossary.js si hay varias materias)
+export const GLOSARIO = { ADN: 'Ácido desoxirribonucleico', ARNm: 'ARN mensajero' };
+
+// en cada tema de esa materia:
+import { GLOSARIO } from '../../glosario.js';
+export default { …, glossary: GLOSARIO, renderContent(el){ … } };
+```
+
+Va por materia y **no** en `appConfig` global precisamente para que dos materias
+puedan dar significados distintos a la misma sigla.
+
 **Reglas del matcher — si no las cumples, la clave se ignora en silencio:**
 
 | Regla | Detalle |
@@ -469,8 +484,9 @@ Y comprueba, con el tema abierto en el navegador:
 - [ ] **Marcador**: puedes marcar prioridad en una tarjeta y persiste al recargar.
 - [ ] **Deep-link**: `#/tema/<id>/<ancla>` abre y hace scroll al sitio correcto.
 - [ ] **Examen**: tus preguntas salen, la correcta puntúa y la explicación se lee.
-- [ ] **Glosario** (si lo declaraste): los acrónimos salen subrayados y al
-      **clicarlos** aparece el rótulo.
+- [ ] **Glosario**: la materia tiene su glosario compartido y el tema lo importa
+      (`glossary: GLOSARIO`); los acrónimos salen subrayados y al **clicarlos**
+      aparece el rótulo. `verify` avisa si el tema tiene siglas pero no glosario.
 - [ ] **Móvil**: a 375 px no hay desbordamiento horizontal.
 
 > ⚠️ **Antes de dar por malo un resultado, comprueba QUÉ código se está sirviendo.**
