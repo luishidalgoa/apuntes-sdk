@@ -30,6 +30,9 @@ const registryUrl = pathToFileURL(registryPath).href;
 /* ---------- hallazgos ---------- */
 const findings = [];   // {tema, level:'error'|'warn', code, msg, hint}
 const glosarioGlobal = new Map();   // clave -> ¿aparece en algún tema?
+/* Determinantes: si al quitar el sufijo solo queda uno de estos, el nombre del
+   apartado ES la respuesta (no hay contaminación). */
+const ARTICULOS = new Set(['el','la','los','las','un','una','unos','unas','del','de','al','su','sus','este','esta','ese','esa','lo']);
 const add = (tema, level, code, msg, hint) => findings.push({ tema, level, code, msg, hint });
 
 /* ---------- PASADA A: importar SIN DOM ----------
@@ -250,10 +253,24 @@ function revisarDom(t, box, idsGlobales){
   for(const q of qs) if(q.apartado) rotulos.add(String(q.apartado).trim());
   const sospechosas = [];
   for(const q of qs){
-    for(const r of (q.respuestas || [])){
-      const s = String(r).trim();
+    const resp = (q.respuestas || []).map(r => String(r).trim());
+    for(const s of resp){
       for(const rot of rotulos){
-        if(rot.length > 3 && s.length > rot.length + 1 && s.endsWith(' ' + rot)) sospechosas.push(s.slice(0, 46));
+        if(rot.length <= 3 || s.length <= rot.length + 1 || !s.endsWith(' ' + rot)) continue;
+        /* Discriminante clave: si el nombre del apartado aparece TAMBIÉN en otra
+           respuesta de la misma pregunta, es vocabulario legítimo del tema
+           («…propuestos por el propio Defensor del Pueblo»), no basura pegada.
+           La contaminación real solo ensucia UNA opción: la que quedó junto al
+           salto de sección en el PDF. */
+        const enHermanas = resp.some(o => o !== s && o.includes(rot));
+        if(enHermanas) continue;
+        /* Segundo discriminante: qué queda al quitar el sufijo. Si solo queda un
+           artículo («El» + «Defensor del Pueblo»), el apartado ES la respuesta,
+           no basura pegada. La contaminación real deja delante una respuesta
+           completa por sí sola («MIMD», «Recorrido postorden»). */
+        const prefijo = s.slice(0, s.length - rot.length - 1).trim();
+        if(ARTICULOS.has(prefijo.toLowerCase())) continue;
+        sospechosas.push(s.slice(0, 46));
       }
     }
   }
