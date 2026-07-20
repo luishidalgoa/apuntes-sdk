@@ -14,4 +14,5 @@
 @import './exam.css';
 @import './hub.css';
 @import './studyplan.css';
+@import './stepper.css';
 @import './navbar.css';   /* el último: sus modos responsive pisan a shared/search */

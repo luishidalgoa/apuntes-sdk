@@ -322,8 +322,7 @@ const games = [
 Para lo verdaderamente a medida (un simulador, un diagrama interactivo, un
 widget) tienes dos vías, en este orden:
 
-1. **Componente del SDK** si existe (consulta el catálogo del SDK). Ej.:
-   `renderInfographic(...)`.
+1. **Componente del SDK** si existe — mira primero el **catálogo (§10.1)**.
 2. **Código propio** en un fichero del tema, montado desde `renderContent`.
    Requisitos: que viva dentro de `el`, que sea idempotente, y que **no toque
    `window`/`localStorage` en el cuerpo del módulo**.
@@ -331,6 +330,50 @@ widget) tienes dos vías, en este orden:
 > Al escribir un widget a medida, **no rompas el contrato**: si es contenido
 > estudiable, envuélvelo en una tarjeta con `data-mark-id`; si es una sección,
 > dale `.band` + `id`.
+
+### 10.1 Catálogo de componentes
+
+| Componente | Para qué | Import |
+|---|---|---|
+| `renderInfographic(spec)` | Infografía de cierre (recap visual data-driven) | `apuntes-sdk` |
+| **`mountStepper(host, spec)`** | **Simulación paso a paso** (algoritmos, autómatas, trazas) | `apuntes-sdk` |
+| `mountSteppersAll(root, sel, fn)` | Un stepper por cada host que case (widget repetido) | `apuntes-sdk` |
+
+#### `mountStepper` — motor de pasos
+
+Úsalo **siempre** que quieras "avanzar y ver qué pasa". Tú aportas los datos y
+cómo se pinta un paso; **el SDK pone** los controles, el cronómetro, el índice y
+sus límites, el contador, la parada automática al salir del tema y el
+`aria-live` de la narración.
+
+```js
+import { mountStepper } from 'apuntes-sdk';
+
+mountStepper(el.querySelector('[data-widget="orbita"]'), {
+  steps: ORBITA,                                        // array de datos (o una función)
+  render:  ({ step }) => escenaOrbita(step),            // devuelve HTML → el SDK lo pinta
+  narrate: ({ step }) => '<b>' + step.t + '.</b> ' + step.d,
+  idleMsg: 'Pulsa ▶ para empezar.',
+  controls: { back: true, position: 'dots', speed: 1500 }
+});
+```
+
+**Dos modos de pintado**, según lo que devuelva `render`:
+- **devuelve un string** → el SDK lo vuelca en su contenedor de escena.
+- **no devuelve nada** → tú ya pintaste (p.ej. iluminando con clases un SVG que
+  ya estaba en la tarjeta). Usa `reset` para limpiar antes de cada paso.
+
+**Opciones de `controls`**: `play`, `step`, `back`, `reset` (booleanos),
+`speed` (número fijo · array `[{ms,label}]` → `<select>` · `{min,max}` → slider),
+`position` (`'counter'` · `'dots'` · `false`), `idleIndex` (`-1` arranca en
+reposo, `0` arranca en el primer paso).
+
+**Devuelve un controlador**: `.reload(nuevosPasos)` (cuando cambie un control de
+dominio tuyo), `.goTo(n)`, `.destroy()`.
+
+> Los **controles de dominio** (elegir algoritmo, cambiar la entrada, nº de
+> marcos…) los montas **tú** en el tema; cuando cambien, llama a `.reload()`.
+> El stepper solo se encarga del transporte (▶ ⏭ ‹ ↺).
 
 **Patrón obligatorio del desplegable**: el botón va **FUERA** de `.det`.
 

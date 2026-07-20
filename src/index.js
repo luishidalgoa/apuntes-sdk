@@ -78,6 +78,7 @@ export { wrapGlossary, mountGlossary, closeAcro } from './core/glossary.js';
 export { mountStudyPlan, openStudyPlan, closeStudyPlan } from './core/studyplan.js';
 export { temaLevel, cycleTemaLevel, levelsMap } from './core/marks.js';
 export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';
+export { mountStepper, mountSteppersAll } from './core/stepper.js';
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
          isHighlightOn, getColors as getHighlightColors, setColors as setHighlightColors } from './core/highlight.js';
 export { exportBackup, importBackup, buildBackup, applyBackup } from './core/backup.js';

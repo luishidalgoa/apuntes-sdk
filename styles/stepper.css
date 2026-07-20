@@ -1,0 +1,43 @@
+/* Motor de pasos (stepper.js): barra de controles, escena y narración. El tema
+   pone el contenido de la escena; esto es solo el "chrome" del reproductor. */
+.stp-head{font-size:13px;color:var(--ink-soft,var(--ink));margin:0 0 10px;line-height:1.5;}
+
+.stp-scene{margin:0 0 10px;}
+.stp-scene[hidden]{display:none;}
+
+/* Narración del paso actual (aria-live: los lectores de pantalla la anuncian) */
+.stp-cap{margin:0 0 10px;min-height:2.6em;font-size:13.5px;line-height:1.5;color:var(--ink);
+  padding:9px 12px;border-radius:10px;background:var(--paper-2,rgba(0,0,0,.035));
+  border-left:3px solid var(--tema-accent,var(--ink-faint));}
+.stp-cap:empty{display:none;}
+.stp-cap b{color:var(--tema-accent,var(--ink));}
+
+/* Barra de controles */
+.stp-bar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;}
+.stp-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
+  font:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;line-height:1;
+  transition:border-color .15s,background .15s,transform .1s;}
+.stp-btn:hover:not(:disabled){border-color:var(--tema-accent,var(--ink-faint));background:var(--paper-2,rgba(0,0,0,.03));}
+.stp-btn:active:not(:disabled){transform:translateY(1px);}
+.stp-btn:disabled{opacity:.4;cursor:default;}
+.stp-play{min-width:44px;}
+
+.stp-speed{font:inherit;font-size:12.5px;color:var(--ink);background:var(--paper);
+  border:1px solid var(--line);border-radius:9px;padding:6px 9px;}
+input.stp-speed{padding:0;width:96px;accent-color:var(--tema-accent,var(--ink));}
+
+/* Posición: contador "paso n/N" o puntitos */
+.stp-pos{font-size:12.5px;color:var(--ink-faint);margin-left:auto;font-variant-numeric:tabular-nums;}
+.stp-pos b{color:var(--ink);}
+.stp-dots{display:inline-flex;gap:5px;margin-left:auto;align-items:center;}
+.stp-dot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .18s;}
+.stp-dot.on{background:var(--tema-accent,var(--ink-faint));}
+
+@media(max-width:560px){
+  .stp-bar{gap:6px;}
+  .stp-btn{padding:8px 11px;}          /* algo más alto: objetivo táctil */
+  .stp-pos,.stp-dots{margin-left:0;width:100%;}
+}
+@media (prefers-reduced-motion:reduce){
+  .stp-btn,.stp-dot{transition:none;}
+}

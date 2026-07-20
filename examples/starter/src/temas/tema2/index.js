@@ -1,7 +1,7 @@
 /* Manifiesto del Tema 2 de la demo · Órbitas y leyes de Kepler.
    Escrito siguiendo ÚNICAMENTE docs/SKILL-crear-tema.md, para validar que el
    contrato del skill basta para producir un tema completo y funcional. */
-import { renderCardTreesInto } from 'apuntes-sdk';
+import { renderCardTreesInto, mountStepper } from 'apuntes-sdk';
 
 /* --- §4 engine: contenido citable --- */
 const SECTIONS = {
@@ -82,6 +82,14 @@ const TEMPLATE = `
   </div>
   <div class="tree" id="tree-leyes"></div>
 
+  <div class="card a-orbita" data-mark-id="demo-orbita">
+    <div class="card-head"><div class="body">
+      <div class="row1"><span class="sig">▶</span><span class="name">Recorre la órbita</span></div>
+      <p class="desc">Avanza paso a paso y observa cómo cambia la <b>velocidad</b> según la segunda ley.</p>
+    </div></div>
+    <div data-widget="orbita"></div>
+  </div>
+
   <div class="band b-orbita reveal" id="causa">
     <div class="rom">2</div>
     <div>
@@ -91,6 +99,21 @@ const TEMPLATE = `
     </div>
   </div>
   <div class="tree" id="tree-causa"></div>`;
+
+/* --- Datos del simulador: un paso = una posición en la órbita --- */
+const ORBITA = [
+  { t: 'Perihelio', d: 'El punto más cercano al Sol: aquí el planeta va <b>más rápido</b>.', x: 8,  v: 'máxima' },
+  { t: 'Cuadratura', d: 'A media distancia la velocidad es <b>intermedia</b>.',              x: 30, v: 'media' },
+  { t: 'Afelio',    d: 'El punto más lejano: aquí el planeta va <b>más lento</b>.',          x: 52, v: 'mínima' },
+  { t: 'Regreso',   d: 'Al acercarse vuelve a acelerar: se cumple la <b>segunda ley</b>.',   x: 30, v: 'media' }
+];
+/* Pinta un paso: el planeta sobre la elipse + el rótulo de velocidad. */
+const escenaOrbita = (s) => svg(
+  '<ellipse cx="30" cy="30" rx="24" ry="15" stroke="#3f8fd0" stroke-width="1.5"/>'
+  + '<circle cx="14" cy="30" r="5" fill="#e8a13a"/>'
+  + '<circle cx="' + s.x + '" cy="30" r="3.4" fill="#2f6ea8"/>'
+  + '<text x="30" y="55" font-size="6" text-anchor="middle" fill="#8b8475">velocidad ' + s.v + '</text>'
+);
 
 /* --- §7 examen --- */
 const questions = [
@@ -143,6 +166,15 @@ export default {
       { containerId: 'tree-leyes', cards: CARDS_LEYES, cls: 'a-orbita' },
       { containerId: 'tree-causa', cards: CARDS_CAUSA, cls: 'a-orbita' }
     ]);
+    /* Simulador con el motor de pasos del SDK: el tema solo aporta los datos y
+       cómo se pinta un paso; controles, cronómetro y contador los pone el SDK. */
+    mountStepper(el.querySelector('[data-widget="orbita"]'), {
+      steps: ORBITA,
+      render: ({ step }) => escenaOrbita(step),
+      narrate: ({ step }) => '<b>' + step.t + '.</b> ' + step.d,
+      idleMsg: 'Pulsa ▶ para recorrer la órbita y ver cómo cambia la velocidad.',
+      controls: { back: true, position: 'dots', speed: 1500 }
+    });
   },
   games,
   questions,
