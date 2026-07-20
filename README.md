@@ -1,27 +1,102 @@
 # apuntes-sdk
 
-Núcleo reutilizable para apps de **apuntes de estudio**: el shell (router hash,
-navbar, opciones), el motor de **examen** (con tutor IA opcional vía proxy),
-**minijuegos** (clasificación + flashcards), el **marcapáginas de tela**, los
-**paneles** de referencia/texto fuente y el **sistema de diseño** (tipografía,
-tarjetas, bandas y el rail que une sección con sección). Es **agnóstico de
-asignatura**: cada app aporta su configuración, su paleta y su contenido.
+**Convierte tus apuntes en una app de estudio interactiva.** Es el núcleo
+reutilizable —agnóstico de asignatura— que aporta toda la maquinaria; tú solo
+pones el contenido.
 
-Se consume como **dependencia** y se compila **dentro del singlefile** de cada
-app (Vite + vite-plugin-singlefile), así que las fuentes y el CSS quedan
-inlinados y la app funciona por `file://` sin red.
+Lo que obtienes **gratis** a partir de tus temas:
 
+- **Examen** que baraja las opciones, puntúa y **explica al fallar** (con tutor IA opcional).
+- **Buscador** global a nivel de artículo, **plan de estudio** por prioridad, **marcapáginas** y **subrayado** persistentes.
+- **Glosario** de siglas clicable, **tarjetas** con truco, **minijuegos** (clasificación + flashcards).
+- **Simulaciones y diapositivas** paso a paso (motor `mountStepper`).
+- Compila a un **único `index.html`** que funciona sin conexión (doble clic, o súbelo donde quieras).
 
-> **¿Quieres montar tu propio temario?** → [**EMPEZAR-AQUI.md**](EMPEZAR-AQUI.md)
-> (de cero a app de estudio en 3 comandos; con tu IA y un PDF, sin programar).
+---
 
-## Instalar en una app
+## Requisitos
+
+**Node.js 18 o superior** ([nodejs.org](https://nodejs.org)). Es lo único. No hace falta saber programar si usas una IA para el contenido.
+
+---
+
+## Instalación y primer arranque
+
+Un solo comando, sin instalar nada global:
+
+```bash
+npx --package "github:luishidalgoa/apuntes-sdk#v0.2.2" apuntes-crear-app mi-temario --titulo "Mi asignatura"
+cd mi-temario
+npm install
+npm run dev
+```
+
+Se abre en el navegador con **dos temas de ejemplo** (uno con simulador), examen,
+minijuegos y glosario, para que veas cómo queda. Esos los sustituirás por lo tuyo.
+
+---
+
+## Uso: crear tus temas
+
+### A) Con IA — recomendado
+
+El SDK trae un **contrato de autoría** autosuficiente para que cualquier IA
+monte un tema válido sin conocer el SDK. Tras instalar, está en:
+
+```
+node_modules/apuntes-sdk/docs/SKILL-crear-tema.md
+```
+
+Pásaselo a tu IA (Claude, ChatGPT, Cursor…) junto con tu PDF:
+
+> «Aquí tienes el contrato de autoría (SKILL-crear-tema.md) y el PDF de mi tema.
+> Crea un tema en `src/temas/` siguiéndolo y regístralo en `src/registry.js`.»
+
+**¿Tu IA soporta MCP?** (Claude Desktop, Claude Code, Cursor…) Conéctala al
+servidor del SDK y ni copias ficheros — la IA crea, verifica y compila sola:
 
 ```jsonc
-// package.json de la app — fíjala a un tag y en formato git+https
-// (el lockfile NO debe quedar en git+ssh, o el `npm ci` de Vercel falla)
-"dependencies": { "apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#v0.1.20" }
+{ "mcpServers": {
+  "apuntes": { "command": "npx",
+    "args": ["-y", "--package", "github:luishidalgoa/apuntes-sdk#v0.2.2", "apuntes-mcp"] }
+} }
 ```
+
+Luego, en el chat: *«monta el tema de este PDF»*. Verbos disponibles:
+`leer_contrato` · `crear_app` · `listar_temas` · `verificar` · `compilar`.
+`verificar` devuelve los defectos **estructurados** (la IA se corrige sola) y
+`compilar` se niega si el contrato no se cumple.
+
+### B) A mano
+
+1. Copia `src/temas/tema1/` a `src/temas/mi-tema/`.
+2. Cambia el contenido siguiendo el ejemplo y el contrato.
+3. Añade una línea en `src/registry.js`.
+
+---
+
+## Verificar y publicar
+
+```bash
+npm run verify   # audita que tus temas cumplen el contrato (0 errores)
+npm run build    # genera dist/index.html: un único archivo, portable y offline
+```
+
+`npm run verify` es tu red de seguridad: te dice **qué está mal y por qué
+importa** (ids duplicados, tarjetas que no saldrán en el buscador, siglas sin
+glosario, preguntas mal formadas, respuestas contaminadas al extraer de un PDF…).
+Sale con código ≠ 0 si hay errores, así que vale también para CI.
+
+Para publicar: sube el `dist/index.html` a cualquier hosting estático (Vercel,
+Netlify, GitHub Pages) o compártelo tal cual — es autocontenido.
+
+---
+
+## Cómo funciona (en breve)
+
+Una app son **tres cosas** tuyas —configuración, paleta y temas— y el SDK pone
+todo lo demás. El hub, el examen, el buscador, el plan de estudio y los
+deep-links **se generan solos** a partir de tus temas.
 
 ```js
 // src/main.js
@@ -30,100 +105,80 @@ import './palette.css';        // los acentos de TU asignatura
 import { createApp } from 'apuntes-sdk';
 import { TEMAS } from './registry.js';
 
-createApp({
-  title: 'Mi asignatura',
-  eyebrow: 'Oposición X · Asignatura Y',
-  lede: '…',
-  aiSystemPrompt: 'Eres un tutor de …',
-  anchorPrefix: 'sec-',        // 'art-' si quieres compatibilidad con deep-links viejos
-  externalPrefixes: []         // p.ej. ['CE-'] para refs cruzadas entre temas
-}, TEMAS);
+createApp({ title: 'Mi asignatura', eyebrow: '…', lede: '…' }, TEMAS);
 ```
 
-## Crear una asignatura nueva
-
-```bash
-npx apuntes-crear-app mi-temario --titulo "Mi asignatura"
-cd mi-temario && npm install && npm run dev
-```
-
-Eso te deja una app funcionando (con dos temas de ejemplo, examen, minijuegos y
-glosario) en menos de un minuto. Luego sustituyes el contenido por el tuyo y
-`npm run verify` audita que cumple el contrato del SDK.
-
-### Con un cliente MCP (Claude Desktop, Claude Code, Cursor…)
-
-El SDK trae un servidor MCP: la IA crea la app, lee el contrato, verifica y
-compila **sin que toques ficheros**. Añádelo a la configuración de tu cliente:
-
-```jsonc
-{ "mcpServers": { "apuntes": { "command": "npx", "args": ["-y", "apuntes-mcp"] } } }
-```
-
-Herramientas: `leer_contrato` · `crear_app` · `listar_temas` · `verificar` · `compilar`.
-`verificar` devuelve los defectos **estructurados**, así que el modelo puede
-corregirse solo; `compilar` se niega si el contrato no se cumple.
-
-**Guía completa paso a paso: [`docs/crear-temario.md`](docs/crear-temario.md).**
-
-> **¿Vas a montar un tema con una IA?** Pásale
-> [`docs/SKILL-crear-tema.md`](docs/SKILL-crear-tema.md) junto con tu material
-> (un PDF, tus apuntes). Es un contrato autosuficiente —manifiesto, recetas de
-> cada patrón, reglas de diseño y checklist de verificación— pensado para que
-> cualquier IA produzca un tema válido **sin conocer el resto del SDK**.
-
-En resumen: clona `examples/starter` (una asignatura mínima que NO es de
-legislación) y sustituye el contenido. Cada tema es una carpeta
-`src/temas/temaN/` con un manifiesto:
+Cada tema es una carpeta `src/temas/<id>/` con un manifiesto (**el contrato
+completo está en `docs/SKILL-crear-tema.md`**):
 
 ```js
 export default {
-  id, numeral, k, titulo, descripcion, accent, headerHtml, chips?, hintHtml?,
-  bloque?,             // (OPCIONAL) capa que agrupa temas ('Bloque 1' o {id,label});
-                       // si ningún tema la declara, no hay agrupación (retrocompatible)
-  engine: {
-    sections,          // { clave: { title, text | apartados:[{n,text,refs?,tags?}] } }
-    source?,           // { clave: { title, paragraphs:[{n,text}] } }  (texto fuente)
-    labelFor(key),     // clave → etiqueta ('Art. 97', 'El Sol', …)
-    keySplit,          // 'first' | 'last' (por qué punto se parte la clave)
-    sourceDigitFallback?, specialTags?, external?
-  },
-  renderContent(el),   // usa renderCardTreesInto / renderSectionsInto del SDK
-  games?, questions,
-  apartados,           // sub-bloques de EXAMEN del tema (filtro de preguntas). Desde
-                       // v0.1.25 se llama `apartados` (antes `bloques`, aún aceptado).
-  glossary?            // (OPCIONAL) amplía el glosario de acrónimos solo para este tema
+  id, titulo, k, descripcion,        // identidad (obligatorio)
+  numeral, accent, headerHtml, chips,// presentación
+  materia, bloque,                   // navegación (opcional)
+  engine,                            // contenido citable (sections/source/…)
+  renderContent(el){ … },            // pinta el cuerpo con los helpers del SDK
+  questions, games, glossary         // examen, minijuegos, glosario (opcional)
 };
 ```
 
-El hub, el examen (apartados y recuentos), las flashcards, el buscador y los
-deep-links se generan solos a partir de `TEMAS`. Ojo con los nombres, que se
-parecen pero son cosas distintas: `bloque` (singular, agrupa **temas** — capa de
-navegación) vs `apartados` (sub-bloques de **examen** de un tema, para filtrar
-preguntas; `q.apartado` en cada pregunta). No confundir con los `apartados` de un
-artículo (`sections.<clave>.apartados = [{n,text}]`, los puntos numerados del
-texto).
+> **La regla de oro**: el SDK no lee tus datos, lee el **DOM** que produces.
+> Buscador, plan de estudio, marcador, glosario y deep-links funcionan todos
+> reconociendo unas clases e `id` concretos. Si respetas ese contrato (lo
+> documenta el skill), esas funciones aparecen solas; si te lo saltas, el tema
+> se ve bien pero queda mudo. Por eso `npm run verify` lo audita por ti.
 
-**Glosario de acrónimos.** Cada asignatura aporta su glosario
-`appConfig.glossary = { 'AGE':'Administración General del Estado', … }` (con
-override opcional por tema, `tema.glossary`). El SDK hace clicables sus
-apariciones en el contenido, mostrando el título completo en un rótulo. Enlaza
-**SOLO contra la lista blanca** del glosario (nunca "cualquier mayúscula") y
-**normaliza la puntuación** (`CCAA` ≡ `CC.AA.`). Ver la guía para el formato.
+**Glosario por materia:** mantén un `src/temas/<materia>-glossary.js` compartido
+e importa `glossary: MI_GLOSARIO` en cada tema. Va por materia (no global)
+porque las claves colisionan entre asignaturas (`IT` = Incapacidad Temporal vs
+Information Technology).
 
-## Propagar un cambio de diseño a todas las apps
+---
 
-El diseño vive en `styles/` y el comportamiento en `src/`. Al cambiarlos, sube
-una versión nueva del SDK (`git tag vX.Y.Z`) y en cada app:
+## Herramientas y componentes
+
+| CLI (vienen con el paquete) | Qué hace |
+|---|---|
+| `apuntes-crear-app` | Crea una asignatura nueva desde la plantilla |
+| `apuntes-verify` (`npm run verify`) | Audita el contrato de todos los temas |
+| `apuntes-mcp` | Servidor MCP para pilotar todo desde un cliente de IA |
+
+| Componente (`import … from 'apuntes-sdk'`) | Para |
+|---|---|
+| `mountStepper` | Simulaciones y diapositivas paso a paso (presets `player`/`deck`) |
+| `renderInfographic` | Infografía de cierre (recap visual) |
+| `renderCard`, `renderCardTreesInto`, `renderSectionsInto`, `renderArtRow` | Helpers de render de los manifiestos |
+| `linkify`, `esc`, `config`, `anchorId`, `revealAnchor` | Utilidades |
+
+---
+
+## Para integradores (desarrollo)
+
+`createApp(appConfig, temas)` inyecta la config, registra los temas, monta el
+shell (una vez) y arranca el router hash. Estilos en `apuntes-sdk/styles`.
+
+**Fijar la dependencia** en el `package.json` de una app (a un tag, en
+`git+https` — el lockfile NO debe quedar en `git+ssh`, o el `npm ci` de Vercel
+falla):
+
+```jsonc
+"dependencies": { "apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#v0.2.2" }
+```
+
+**Propagar una versión nueva del SDK** a una app existente:
 
 ```bash
-npm install apuntes-sdk@github:luishidalgoa/apuntes-sdk#vX.Y.Z   # (o npm run sync-sdk)
+npm install apuntes-sdk@github:luishidalgoa/apuntes-sdk#vX.Y.Z
 npm run build   # + redeploy
 ```
 
-## API pública
+Se compila **dentro del singlefile** de la app (Vite + `vite-plugin-singlefile`):
+fuentes y CSS quedan inlinados y el HTML resultante funciona por `file://`.
 
-`createApp(appConfig, TEMAS)` · helpers de render para los manifiestos
-(`renderCard`, `renderCardTreesInto`, `renderSectionsInto`, `renderArtRow`,
-`linkify`, `specialTagChip`) · `esc`, `config`, `anchorId`, `revealAnchor`.
-Estilos en `apuntes-sdk/styles`.
+---
+
+## Documentación
+
+- **[EMPEZAR-AQUI.md](EMPEZAR-AQUI.md)** — arranque para un usuario nuevo, sin programar.
+- **[docs/SKILL-crear-tema.md](docs/SKILL-crear-tema.md)** — el contrato de autoría de UN tema (para pasarle a una IA).
+- **[docs/crear-temario.md](docs/crear-temario.md)** — guía completa de montaje de la app.
