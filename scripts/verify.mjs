@@ -239,6 +239,29 @@ function revisarDom(t, box, idsGlobales){
   if(malaCorrecta.length) add(id, 'error', 'pregunta-correcta',
     `${malaCorrecta.length} pregunta(s) cuya \`correcta\` no está entre sus \`respuestas\`${muestra(malaCorrecta)}`,
     '`correcta` es el TEXTO exacto de una de las opciones (el SDK las baraja).');
+  /* Respuestas CONTAMINADAS al importar de un PDF: se arrastra el encabezado de
+     la sección siguiente pegado al final («MIMD Periféricos» en vez de «MIMD»).
+     Es EL modo de fallo de las preguntas extraídas por IA de un documento, y
+     nadie lo ve: el alumno memoriza la basura como si fuera la respuesta.
+     Heurística: la respuesta TERMINA en el nombre de un apartado/sección del
+     tema, pero no ES ese nombre. Aviso, no error: puede haber falsos positivos. */
+  const rotulos = new Set();
+  for(const a of (t.apartados || t.bloques || [])) rotulos.add(String(a.label || a.id || a).trim());
+  for(const q of qs) if(q.apartado) rotulos.add(String(q.apartado).trim());
+  const sospechosas = [];
+  for(const q of qs){
+    for(const r of (q.respuestas || [])){
+      const s = String(r).trim();
+      for(const rot of rotulos){
+        if(rot.length > 3 && s.length > rot.length + 1 && s.endsWith(' ' + rot)) sospechosas.push(s.slice(0, 46));
+      }
+    }
+  }
+  if(sospechosas.length) add(id, 'warn', 'respuesta-contaminada',
+    `${sospechosas.length} respuesta(s) acaban con el nombre de un apartado del tema${muestra([...new Set(sospechosas)])}`,
+    'Suele ser el encabezado de la sección siguiente arrastrado al extraer del PDF.\n' +
+    '     Compruébalas: si la contaminada es la CORRECTA, el alumno la memoriza mal.');
+
   if(sinExp.length) add(id, 'warn', 'pregunta-sin-explicacion',
     `${sinExp.length} de ${qs.length} pregunta(s) sin \`explicacion\`${muestra(sinExp)}`,
     'Es lo que el estudiante lee al fallar; sin ella la pregunta enseña poco.');

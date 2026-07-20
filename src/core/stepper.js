@@ -17,8 +17,22 @@
 
 const ICON = { play: '▶', pause: '⏸', step: '⏭', back: '‹', reset: '↺' };
 
+/* Dos sabores del mismo motor. El lenguaje importa: en un REPRODUCTOR se
+   "reproduce" y se avanza un "paso"; en unas DIAPOSITIVAS se va al "siguiente".
+   `preset: 'deck'` cambia etiquetas y valores por defecto, no el mecanismo. */
+const PRESETS = {
+  player: {
+    controls: { play: true, step: true, back: false, reset: true, position: 'counter' },
+    labels: { play: ICON.play, pause: ICON.pause, step: ICON.step + ' Paso', back: ICON.back, reset: ICON.reset }
+  },
+  deck: {
+    controls: { play: false, step: true, back: true, reset: false, position: 'dots' },
+    labels: { play: ICON.play, pause: ICON.pause, step: 'Siguiente ›', back: '‹ Anterior', reset: '↺ Otra vez' }
+  }
+};
+
 /* Barra de controles. Solo pinta lo que se pide en `controls`. */
-function barHtml(c, total){
+function barHtml(c, total, L){
   const speedHtml = Array.isArray(c.speed)
     ? '<select class="stp-speed" aria-label="Velocidad">'
       + c.speed.map((s, i) => '<option value="' + s.ms + '"' + (i === 0 ? ' selected' : '') + '>' + s.label + '</option>').join('')
@@ -31,10 +45,10 @@ function barHtml(c, total){
       ? '<span class="stp-dots" aria-hidden="true"></span>'
       : '<span class="stp-pos" aria-live="off">paso <b>0</b>/' + total + '</span>');
   return '<div class="stp-bar">'
-    + (c.play  ? '<button class="stp-btn stp-play" type="button">' + ICON.play + '</button>' : '')
-    + (c.back  ? '<button class="stp-btn stp-back" type="button" aria-label="Anterior">' + ICON.back + '</button>' : '')
-    + (c.step  ? '<button class="stp-btn stp-step" type="button">' + ICON.step + ' Paso</button>' : '')
-    + (c.reset ? '<button class="stp-btn stp-reset" type="button" aria-label="Reiniciar">' + ICON.reset + '</button>' : '')
+    + (c.play  ? '<button class="stp-btn stp-play" type="button">' + L.play + '</button>' : '')
+    + (c.back  ? '<button class="stp-btn stp-back" type="button" aria-label="Anterior">' + L.back + '</button>' : '')
+    + (c.step  ? '<button class="stp-btn stp-step" type="button">' + L.step + '</button>' : '')
+    + (c.reset ? '<button class="stp-btn stp-reset" type="button" aria-label="Reiniciar">' + L.reset + '</button>' : '')
     + speedHtml + pos
     + '</div>';
 }
@@ -42,10 +56,10 @@ function barHtml(c, total){
 /* Monta un reproductor de pasos en `host`. Devuelve un controlador. */
 export function mountStepper(host, spec = {}){
   if(!host) return null;
-  const c = Object.assign(
-    { play: true, step: true, back: false, reset: true, speed: 1600, position: 'counter', idleIndex: -1 },
-    spec.controls || {}
-  );
+  const P = PRESETS[spec.preset] || PRESETS.player;
+  const c = Object.assign({ speed: 1600, idleIndex: spec.preset === 'deck' ? 0 : -1 },
+    P.controls, spec.controls || {});
+  const L = Object.assign({}, P.labels, spec.labels || {});
 
   let steps = typeof spec.steps === 'function' ? spec.steps() : (spec.steps || []);
   let i = c.idleIndex;
@@ -57,7 +71,7 @@ export function mountStepper(host, spec = {}){
     (spec.head ? '<p class="stp-head">' + spec.head + '</p>' : '')
     + '<div class="stp-scene" hidden></div>'
     + '<p class="stp-cap" aria-live="polite"></p>'
-    + barHtml(c, steps.length));
+    + barHtml(c, steps.length, L));
 
   const scene = host.querySelector(':scope > .stp-scene');
   const cap   = host.querySelector(':scope > .stp-cap');
@@ -72,11 +86,15 @@ export function mountStepper(host, spec = {}){
   const atEnd = () => i >= steps.length - 1;
 
   function paintPos(){
+    /* En diapositivas, el botón de avanzar se convierte en "otra vez" al final:
+       sin autoplay, si no, no habría forma de volver a empezar. */
+    const btnStep = bar.querySelector('.stp-step');
+    if(btnStep && !c.play) btnStep.textContent = atEnd() ? L.reset : L.step;
     if(elPos) elPos.innerHTML = 'paso <b>' + Math.max(0, i + 1) + '</b>/' + steps.length;
     if(elDots) elDots.innerHTML = steps.map((_, k) =>
       '<i class="stp-dot' + (k <= i ? ' on' : '') + '"></i>').join('');
     if(btnBack) btnBack.disabled = i <= c.idleIndex;
-    if(btnPlay) btnPlay.textContent = timer ? ICON.pause : (atEnd() ? ICON.reset : ICON.play);
+    if(btnPlay) btnPlay.textContent = timer ? L.pause : (atEnd() ? L.reset : L.play);
   }
 
   /* Pinta el estado del paso `i`. `acc` es un estado acumulado que el tema
@@ -123,7 +141,7 @@ export function mountStepper(host, spec = {}){
     const b = e.target.closest('button');
     if(!b) return;
     if(b.classList.contains('stp-play'))  return play();
-    if(b.classList.contains('stp-step'))  { stop(); return next() || paintPos(); }
+    if(b.classList.contains('stp-step'))  { stop(); if(!c.play && atEnd()){ i = c.idleIndex; return paint(); } return next() || paintPos(); }
     if(b.classList.contains('stp-back'))  { stop(); if(i > c.idleIndex){ i--; paint(); } return; }
     if(b.classList.contains('stp-reset')) { stop(); i = c.idleIndex; return paint(); }
   });

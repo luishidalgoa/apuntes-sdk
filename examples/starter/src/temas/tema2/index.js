@@ -172,8 +172,7 @@ export default {
       steps: ORBITA,
       render: ({ step }) => escenaOrbita(step),
       narrate: ({ step }) => '<b>' + step.t + '.</b> ' + step.d,
-      idleMsg: 'Pulsa ▶ para recorrer la órbita y ver cómo cambia la velocidad.',
-      controls: { back: true, position: 'dots', speed: 1500 }
+      preset: 'deck'                                 // diapositivas: ‹ Anterior / Siguiente ›
     });
   },
   games,

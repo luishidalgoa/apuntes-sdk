@@ -363,6 +363,35 @@ mountStepper(el.querySelector('[data-widget="orbita"]'), {
 - **no devuelve nada** → tú ya pintaste (p.ej. iluminando con clases un SVG que
   ya estaba en la tarjeta). Usa `reset` para limpiar antes de cada paso.
 
+**Dos sabores** (`preset`), mismo motor y distinto lenguaje:
+
+| `preset` | Botones | Para |
+|---|---|---|
+| `'player'` *(por defecto)* | ▶ · ⏭ Paso · ↺ · contador `n/N` | **trazas y algoritmos**: se reproduce y se observa |
+| `'deck'` | ‹ Anterior · Siguiente › · dots | **diapositivas**: se explica un concepto escena a escena |
+
+```js
+mountStepper(host, { steps: ESCENAS, render, narrate, preset: 'deck' });   // 4 líneas
+```
+En `deck` arranca ya en la primera escena, «Anterior» se deshabilita al principio
+y «Siguiente» se vuelve «↺ Otra vez» al final. Puedes ajustar cualquier etiqueta
+suelta con `labels: { step: '…' }`.
+
+> ### Cuándo montar una diapositiva en vez de escribir otro párrafo
+> Es la pregunta importante, y la respuesta no es "cuando quede bonito". Usa un
+> stepper cuando el concepto **cambia con el tiempo o con los pasos**, porque la
+> prosa obliga al lector a simular ese cambio en su cabeza:
+> - **Una secuencia o un protocolo** (qué pasa primero, qué después).
+> - **Una traza**: un algoritmo, un autómata, una petición atravesando capas.
+> - **Un antes/después** que solo se entiende comparando (la misma escena que
+>   acaba bien y mal según una decisión).
+> - **Una causa encadenada**: por qué A provoca B provoca C.
+>
+> **No lo uses** para una clasificación, una definición o una comparación
+> estática: eso es una tabla o una tarjeta, y una diapositiva solo lo entierra
+> detrás de clics. Si al escribir el paso 2 no cambia nada respecto al 1, no era
+> un stepper.
+
 **Opciones de `controls`**: `play`, `step`, `back`, `reset` (booleanos),
 `speed` (número fijo · array `[{ms,label}]` → `<select>` · `{min,max}` → slider),
 `position` (`'counter'` · `'dots'` · `false`), `idleIndex` (`-1` arranca en
@@ -425,6 +454,7 @@ sirve en CI. Detecta, entre otros:
 | **APIs de navegador al importar** | rompen los scripts de línea de comandos |
 | glosario: claves <2 letras o muertas | se ignoran en silencio |
 | examen: `correcta` fuera de `respuestas`, ids repetidos | preguntas rotas |
+| **respuestas contaminadas** (acaban en un nombre de apartado) | basura del PDF arrastrada al importar |
 
 Aun así, **mira estas con el tema abierto** (lo que ninguna herramienta ve):
 
