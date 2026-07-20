@@ -40,7 +40,10 @@ function searchBarHtml(){
 }
 
 /* Acceso discreto al Plan de estudio (árbol de prioridades) desde los hubs: el
-   desplegable "Temas" solo existe dentro de un tema, y el plan es global. */
+   desplegable "Temas" solo existe dentro de un tema, y el plan es global.
+   Va en el hub que LISTA TEMAS: con materias, el de cada materia (la portada es
+   solo un selector); sin materias, la portada, que ya es la lista de temas. Si
+   no, una app de una sola materia se queda sin acceso al plan desde el inicio. */
 function hubToolsHtml(){
   return `
         <div class="hub-tools">
@@ -157,6 +160,7 @@ export const temarioView = {
         <h1>${cfg.title || 'Temario'}</h1>
         <p class="lede">${cfg.lede || 'Un esquema navegable por cada tema: tarjetas, referencias cruzadas, examen y minijuegos.'}</p>
         ${searchBarHtml()}
+        ${hasMaterias() ? '' : hubToolsHtml()}
         ${resumeCardHtml()}
         ${body}
         ${cfg.footer ? `<footer>${cfg.footer}</footer>` : ''}

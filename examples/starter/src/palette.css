@@ -10,3 +10,4 @@
 
 /* bandas de sección (opcional, mismo patrón que en legislación) */
 .band.b-astro{ border-color:#f0d7ac; background:linear-gradient(135deg,#fdf4e3,#fbf9f3); }
+.band.b-orbita{ border-color:#bcd6ef; background:linear-gradient(135deg,#eef5fc,#f8fafd); }

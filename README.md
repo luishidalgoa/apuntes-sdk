@@ -40,6 +40,12 @@ createApp({
 
 **Guía completa paso a paso: [`docs/crear-temario.md`](docs/crear-temario.md).**
 
+> **¿Vas a montar un tema con una IA?** Pásale
+> [`docs/SKILL-crear-tema.md`](docs/SKILL-crear-tema.md) junto con tu material
+> (un PDF, tus apuntes). Es un contrato autosuficiente —manifiesto, recetas de
+> cada patrón, reglas de diseño y checklist de verificación— pensado para que
+> cualquier IA produzca un tema válido **sin conocer el resto del SDK**.
+
 En resumen: clona `examples/starter` (una asignatura mínima que NO es de
 legislación) y sustituye el contenido. Cada tema es una carpeta
 `src/temas/temaN/` con un manifiesto:

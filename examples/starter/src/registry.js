@@ -2,5 +2,6 @@
    manifiesto y sumar una línea aquí. El hub, el examen, las flashcards y los
    deep-links se generan solos a partir de esta lista. */
 import tema1 from './temas/tema1/index.js';
+import tema2 from './temas/tema2/index.js';
 
-export const TEMAS = [tema1];
+export const TEMAS = [tema1, tema2];

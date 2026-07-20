@@ -12,6 +12,18 @@ La plantilla viva es [`examples/starter`](../examples/starter) (una demo mínima
 del *Sistema Solar*, sin nada de legislación). La forma más rápida de empezar es
 **clonarla** y sustituir el contenido.
 
+> **Autoría con IA** — para crear **un tema** concreto, usa
+> [`SKILL-crear-tema.md`](SKILL-crear-tema.md): es el contrato autosuficiente
+> que le pasas a una IA junto con tu material (PDF, apuntes). Este documento que
+> estás leyendo cubre el **montaje de la app**; el skill cubre **cada tema**.
+
+> **Nota si trabajas dentro de este repo**: `examples/starter` depende del SDK
+> con `file:../..`, que npm resuelve como **symlink**. Por eso el starter necesita
+> que el SDK tenga sus propias dependencias instaladas: ejecuta `npm install` en
+> la **raíz del SDK** antes de compilar el starter (si no, falla al resolver
+> `motion`). Quien instale el SDK desde git no tiene este paso: npm baja esa
+> dependencia por él.
+
 ---
 
 ## 1. Anatomía de una app
