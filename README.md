@@ -38,6 +38,15 @@ createApp({
 
 ## Crear una asignatura nueva
 
+```bash
+npx apuntes-crear-app mi-temario --titulo "Mi asignatura"
+cd mi-temario && npm install && npm run dev
+```
+
+Eso te deja una app funcionando (con dos temas de ejemplo, examen, minijuegos y
+glosario) en menos de un minuto. Luego sustituyes el contenido por el tuyo y
+`npm run verify` audita que cumple el contrato del SDK.
+
 **Guía completa paso a paso: [`docs/crear-temario.md`](docs/crear-temario.md).**
 
 > **¿Vas a montar un tema con una IA?** Pásale
