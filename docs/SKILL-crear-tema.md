@@ -443,6 +443,12 @@ Y comprueba, con el tema abierto en el navegador:
       **clicarlos** aparece el rótulo.
 - [ ] **Móvil**: a 375 px no hay desbordamiento horizontal.
 
+> ⚠️ **Antes de dar por malo un resultado, comprueba QUÉ código se está sirviendo.**
+> El dev server puede estar sirviendo una versión cacheada y verás el fallo ya
+> corregido (o al revés). Si algo no cuadra con lo que acabas de editar:
+> `rm -rf node_modules/.vite` y reinicia el servidor. Es un falso negativo muy
+> caro: parece que tu arreglo no funciona cuando sí lo hace.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---

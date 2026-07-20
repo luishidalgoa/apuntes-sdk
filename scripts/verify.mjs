@@ -122,6 +122,34 @@ function revisarManifiesto(t, idsVistos){
   }
 }
 
+/* Revisa `engine.sections` ANTES de renderizar: aquí se ve la CAUSA de las
+   colisiones de ancla, que en el DOM solo se ve como síntoma.
+   `anchorId(base, ap)` devuelve el ancla del artículo cuando `ap` es nulo o
+   vacío → el apartado hereda el id del artículo y se duplica (además de pintar
+   un "null" en pantalla). Lo mismo si dos apartados repiten `n`. */
+function revisarEngine(t){
+  const id = t.id;
+  const secciones = (t.engine && t.engine.sections) || {};
+  const nulos = [], repes = [];
+  for(const [clave, art] of Object.entries(secciones)){
+    if(!art || !Array.isArray(art.apartados)) continue;
+    const vistos = new Set();
+    for(const ap of art.apartados){
+      if(ap.n == null || ap.n === '') nulos.push(clave);
+      else if(vistos.has(String(ap.n))) repes.push(`${clave}.${ap.n}`);
+      else vistos.add(String(ap.n));
+    }
+  }
+  if(nulos.length) add(id, 'error', 'apartado-sin-n',
+    `${nulos.length} apartado(s) con \`n\` nulo o vacío${muestra([...new Set(nulos)])}`,
+    'Su ancla sale igual que la del artículo (anchorId ignora un `n` vacío): id\n' +
+    '     duplicado y un "null" visible. Dale número al apartado, o si es el encabezado\n' +
+    '     del artículo ponlo en `text` en vez de como apartado.');
+  if(repes.length) add(id, 'error', 'apartado-n-repetido',
+    `${repes.length} apartado(s) con \`n\` repetido dentro de su artículo${muestra(repes)}`,
+    'Dos apartados con el mismo número generan la misma ancla.');
+}
+
 function revisarDom(t, box, idsGlobales){
   const id = t.id;
 
@@ -266,6 +294,7 @@ if(!Array.isArray(TEMAS)){
 const idsVistos = new Set(), idsGlobales = new Map();
 for(const t of TEMAS){
   revisarManifiesto(t, idsVistos);
+  revisarEngine(t);
   if(typeof t.renderContent !== 'function') continue;
   const box = document.createElement('div');
   try { t.renderContent(box); }
