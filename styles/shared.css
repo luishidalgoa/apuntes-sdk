@@ -349,7 +349,10 @@ body.repaso .card.revealed .card-head::after{content:"✓";color:var(--tema-acce
 @media (max-width:430px){
   .illus{display:none;}
 }
-/* Las visualizaciones de legislacion (.senviz/.sv-*/.tcviz/.salaviz/.mvviz/.mv-*) se movieron a la app (temario-tai/src/styles/legis.css). El SDK no lleva viz de asignatura. */
+/* Las visualizaciones de legislacion (senviz, sv-*, tcviz, salaviz, mvviz, mv-*)
+   se movieron a la app (src/styles/legis.css). El SDK no lleva viz de asignatura.
+   OJO: al listar selectores con comodin, nunca pongas una barra justo detras del
+   asterisco: esa pareja cierra el comentario aqui mismo. Escribelos sin puntos. */
 .ref-tag{font-family:inherit;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
     letter-spacing:.02em;border-radius:999px;cursor:pointer;margin-left:4px;vertical-align:middle;transition:.15s ease;
     box-shadow:0 1px 2px rgba(0,0,0,.08);padding:1px 7px;border:1px solid transparent;

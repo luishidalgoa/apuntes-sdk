@@ -14,8 +14,8 @@
 
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { resolve, join, extname, relative } from 'node:path';
 
 const RESET = '\x1b[0m', RED = '\x1b[31m', YEL = '\x1b[33m', GRN = '\x1b[32m', DIM = '\x1b[2m', B = '\x1b[1m';
 
@@ -330,7 +330,46 @@ function informe(nTemas){
 }
 
 /* ---------- main ---------- */
+// Comentarios de bloque cerrados por accidente. Un cierre (asterisco pegado a
+// barra) dentro del propio comentario —típico al listar selectores con comodín,
+// como ".sv-" seguido de asterisco y barra— lo termina antes de tiempo y deja el
+// resto como código suelto: esbuild avisa en CADA build y, en JS, rompe el
+// módulo. Ha mordido cuatro veces ya, incluida esta misma función al escribirla:
+// por eso va con comentarios de línea, que no pueden morderse a sí mismos.
+function revisarComentarios(raiz){
+  const exts = new Set(['.css', '.js', '.mjs']);
+  const sospechosas = [];
+  const walk = (dir) => {
+    let entradas = [];
+    try { entradas = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for(const e of entradas){
+      if(e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+      const p = join(dir, e.name);
+      if(e.isDirectory()){ walk(p); continue; }
+      if(!exts.has(extname(e.name))) continue;
+      let txt = ''; try { txt = readFileSync(p, 'utf8'); } catch { continue; }
+      txt.split('\n').forEach((linea, n) => {
+        const abre = linea.indexOf('/*');
+        if(abre === -1) return;
+        /* Dentro del comentario, un cierre precedido de guion o alfanumérico
+           es accidental (el legítimo va tras un espacio o al final de línea). */
+        const resto = linea.slice(abre + 2);
+        const m = resto.match(/[\w-]\*\//);
+        if(m) sospechosas.push(relative(raiz, p).replace(/\\/g, '/') + ':' + (n + 1));
+      });
+    }
+  };
+  walk(raiz);
+  if(sospechosas.length) add('(app)', 'warn', 'comentario-roto',
+    `${sospechosas.length} comentario(s) de bloque se cierran por accidente${muestra(sospechosas)}`,
+    'Un cierre de comentario pegado a texto (asterisco+barra tras una palabra, típico\n' +
+    '     al listar selectores con comodín) termina el comentario antes de tiempo: el\n' +
+    '     resto queda como código suelto. Separa el asterisco de la barra, o reescribe\n' +
+    '     la lista sin barras.');
+}
+
 const okSinDom = pasadaSinDom();
+revisarComentarios(resolve(registryPath, '..', '..'));
 const document = await montarDom();
 
 let TEMAS;
