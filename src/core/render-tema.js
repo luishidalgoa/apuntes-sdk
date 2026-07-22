@@ -150,19 +150,48 @@ export const slugify = (s) => (s || '').toLowerCase().normalize('NFD').replace(/
    guardados. Por eso se puede fijar el prefijo (`anchorPrefix: 'sec-'`) o
    desactivar el ancla entera (`anchor: false`) y seguir usando el helper solo
    para las claves, que es su parte irrenunciable.
+
+   CLAVE Y ANCLA SON DOS IDENTIDADES CON VIDAS DISTINTAS, y en una tarjeta
+   renombrada divergen: la clave se congela en el nombre viejo a propósito (es
+   la convención que salva las marcas), mientras que el ancla puede querer
+   seguir al título actual para que el deep-link diga lo que la tarjeta dice
+   hoy. Derivar el ancla de la clave las ata y resucita el nombre viejo.
+   Ninguna de las dos opciones es gratis, así que se elige con `anchorFrom`:
+     · `'key'` (por defecto) — el ancla NO cambia al renombrar: los deep-links
+       y marcadores guardados siguen valiendo, a cambio de arrastrar el nombre
+       viejo en la URL.
+     · `'title'` — el ancla es legible y va con el título de hoy, pero cada
+       renombrado la cambia y deja **sin efecto el marcapáginas** que el usuario
+       tuviera en esa tarjeta (se guarda por id de ancla, y al no encontrarlo no
+       restaura posición: falla en silencio, como la marca huérfana).
+     · una función `(card, key) => id` para lo que no cubran las dos anteriores.
+   Y como ninguna regla derivada cubre todos los casos —medido sobre 169 anclas
+   reales: derivar de la clave cambia las tarjetas renombradas, y derivar del
+   título rompe la que tiene clave propia porque su título es ambiguo («Árbol B+»
+   slugifica igual que «Árbol B»)—, la tarjeta puede DECLARAR su ancla con
+   `data-anchor-id`, igual que declara su clave. Lo declarado siempre manda.
    Devuelve las claves asignadas, en orden de documento. */
-export function assignCardKeys(root, { slugify: slug = slugify, anchor = true, anchorPrefix } = {}){
+export function assignCardKeys(root, { slugify: slug = slugify, anchor = true, anchorPrefix, anchorFrom = 'key' } = {}){
   const keys = [];
   const usados = new Set([...root.querySelectorAll('[id]')].map(e => e.id));
-  const ancla = (key) => anchorPrefix != null ? anchorPrefix + key : anchorId(key);
+  const conPrefijo = (base) => anchorPrefix != null ? anchorPrefix + base : anchorId(base);
+  const anclaDe = (card, key) => card.getAttribute('data-anchor-id')
+    || (typeof anchorFrom === 'function'
+      ? anchorFrom(card, key)
+      : conPrefijo(anchorFrom === 'title' ? slug(cardTitle(card)) : key));
   root.querySelectorAll('.card').forEach(card => {
     if(card.querySelector('.card, .art-block[id]')) return;   // agrupador: sin clave propia
     const key = card.getAttribute('data-mark-id') || slug(cardTitle(card));
     if(!key) return;
     card.setAttribute('data-mark-id', key);
     const node = card.closest('.node') || card;
-    const id = ancla(key);
-    if(anchor && !node.id && slug(key) === key && !usados.has(id)){ node.id = id; usados.add(id); }
+    const id = anchor ? anclaDe(card, key) : null;
+    /* El ancla solo se pone si es un id usable como selector y está libre: las
+       claves de `renderCard` salen de `sig` y pueden ser cualquier cosa
+       («2015 · ONU»), y una tarjeta con `artNums` ya trae su propia ancla. */
+    if(id && !node.id && /^[A-Za-z][\w-]*$/.test(id) && !usados.has(id)){
+      node.id = id; usados.add(id);
+    }
     keys.push(key);
   });
   return keys;

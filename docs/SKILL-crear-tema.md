@@ -199,16 +199,38 @@ renderContent(el){
 }
 ```
 
-> **Si tu tema ya publica anclas con otro prefijo, díselo.** El helper también
-> pone el ancla del `.node`, y usa el `anchorPrefix` de la app, que es **uno para
-> toda ella**. Si tus tarjetas publican `sec-…` y la app está configurada con
-> `art-`, adoptarlo tal cual **renombra tus anclas en silencio** y rompe los
-> deep-links y marcadores que el usuario tuviera guardados. Pásale el prefijo, o
-> quédate solo con las claves:
+> **Si tu tema ya publica anclas, díselo antes de adoptar el helper.** También
+> pone el ancla del `.node`, con el `anchorPrefix` de la app, que es **uno para
+> toda ella**: si tus tarjetas publican `sec-…` y la app está en `art-`,
+> adoptarlo tal cual **renombra tus anclas en silencio** y rompe los deep-links y
+> marcadores guardados.
 > ```js
-> assignCardKeys(el, { anchorPrefix: 'sec-' });   // tus anclas, tal como las publicas
+> assignCardKeys(el, { anchorPrefix: 'sec-' });   // tu prefijo
 > assignCardKeys(el, { anchor: false });          // solo claves; las anclas las pones tú
 > ```
+
+#### El ancla no es la clave: elige de dónde sale (`anchorFrom`)
+
+La clave se **congela** al renombrar (para no perder las marcas) y el ancla puede
+querer **seguir al título de hoy** (para que la URL diga lo que la tarjeta dice).
+En una tarjeta renombrada divergen, y hay que elegir — ninguna opción es gratis:
+
+| `anchorFrom` | Qué gana | Qué cuesta |
+|---|---|---|
+| `'key'` *(por defecto)* | el ancla **no cambia** al renombrar: deep-links y marcapáginas guardados siguen valiendo | la URL arrastra el nombre viejo |
+| `'title'` | URL legible, acorde al título actual | cada renombrado **deja sin efecto el marcapáginas** de esa tarjeta (se guarda por id de ancla; al no encontrarlo no restaura posición, en silencio) |
+| `(card, key) => id` | lo que no cubran las anteriores | tuyo |
+
+Y como **ninguna regla derivada cubre todos los casos**, la tarjeta puede
+**declarar su ancla** con `data-anchor-id`, igual que declara su clave. Lo
+declarado siempre manda. Medido sobre 169 anclas reales: derivar de la clave
+cambia las tarjetas renombradas, y derivar del título **deja sin ancla** la que
+tiene clave propia porque su título es ambiguo — «Árbol B+» slugifica igual que
+«Árbol B», y el id ya estaba ocupado, así que la tarjeta se queda sin deep-link.
+
+```html
+<div class="card c1" data-mark-id="arbol-b-plus" data-anchor-id="sec-arbol-b-plus">
+```
 
 `assignCardKeys` **respeta la clave que la tarjeta declare** y solo cae al slug
 del título cuando no hay ninguna. Así que **al renombrar una tarjeta, clávale su
