@@ -359,14 +359,22 @@ function revisarClaves(raiz){
     }
   }
 
-  /* Se reescribe siempre (conservando los temas que no se han revisado): así el
-     aviso salta una vez, en el commit del renombrado, y no vuelve. */
+  /* Se reescribe (conservando los temas que no se han revisado): así el aviso
+     salta una vez, en el commit del renombrado, y no vuelve.
+     El inventario cubre TODOS los temas, así que lo reescribe cualquier carril
+     al verificar. Por eso se respeta el fin de línea que ya tenga el fichero: en
+     Windows git lo deja en CRLF, y escribirlo en LF lo marcaba como modificado
+     en cada `verify` aunque el contenido fuera idéntico. Ese cambio fantasma de
+     un fichero compartido acaba colándose en el commit de alguien. */
   const salida = { ...(previo || {}) };
   for(const [tema, ks] of clavesPorTema) salida[tema] = ks;
-  const texto = '{\n' + Object.keys(salida).sort()
-    .map(t => `  ${JSON.stringify(t)}: ${JSON.stringify(salida[t])}`).join(',\n') + '\n}\n';
+  let enDisco = null;
+  try { enDisco = readFileSync(ruta, 'utf8'); } catch { /* aún no existe */ }
+  const eol = enDisco && enDisco.includes('\r\n') ? '\r\n' : '\n';
+  const texto = '{' + eol + Object.keys(salida).sort()
+    .map(t => `  ${JSON.stringify(t)}: ${JSON.stringify(salida[t])}`).join(',' + eol) + eol + '}' + eol;
   try {
-    if(!existsSync(ruta) || readFileSync(ruta, 'utf8') !== texto){
+    if(enDisco !== texto){
       writeFileSync(ruta, texto);
       if(!previo) console.log(`${DIM}· Creado ${CLAVES_FILE} (inventario de claves). Commitéalo: es lo que permite\n  avisar de un renombrado que dejaría huérfanas las marcas del usuario.${RESET}`);
     }

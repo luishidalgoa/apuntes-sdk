@@ -214,6 +214,20 @@ Es fea, y esa fealdad es correcta: la clave es historia, no título. Sirve
 igual para **desempatar dos títulos que slugifican igual** («Árbol B» y
 «Árbol B+» dan los dos `arbol-b`, y compartirían marca).
 
+> **Si tu tema va por datos + `renderCard`** (el camino recomendado), no tienes
+> este problema: la clave sale del número de artículo o del numeral, no del
+> título, así que renombrar no la toca. Solo si algún día cambia el **numeral**
+> de una tarjeta ya publicada, consérvale la identidad con `markId` en su dato:
+> ```js
+> { sig: '4.2', markId: '4.1', name: 'Órganos de gobierno', … }   // era la 4.1
+> ```
+
+**Si montas las tarjetas a mano, asigna la clave solo cuando no la haya.** Un
+`card.setAttribute('data-mark-id', slug(titulo))` incondicional pisa en el render
+la clave que acabas de conservar en el HTML, y la convención deja de funcionar
+sin que nada lo avise. Usa `assignCardKeys`, que ya lo hace bien, o replica su
+regla: `el.getAttribute('data-mark-id') || slug(titulo)`.
+
 `apuntes-verify` vigila las dos caras: da **error** si dos tarjetas comparten
 clave, y **aviso** cuando una clave que existía desaparece (el síntoma de un
 renombrado). Para lo segundo mantiene `.apuntes-claves.json` en la raíz de la

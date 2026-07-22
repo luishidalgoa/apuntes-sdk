@@ -79,7 +79,11 @@ export function renderCard(ctx, card, cls){
   const detail = hasDetail
     ? '<button class="disclosure"><span class="chev">▸</span> ' + discLabel + '</button><div class="det"><div class="det-inner">' + card.artNums.map(k => renderArtRow(ctx, k)).join('') + '</div></div>'
     : '';
-  const markId = hasDetail ? card.artNums[0] : card.sig;   // id estable para "marcar importante"
+  /* Identidad de la tarjeta (marcas, prioridad, subrayados). Sale del número de
+     artículo o del numeral, no del título, así que renombrar no la rompe. Aun
+     así `markId` manda: si un día cambia el numeral de una tarjeta publicada,
+     es la única forma de conservar lo que el usuario tenía guardado. */
+  const markId = card.markId || (hasDetail ? card.artNums[0] : card.sig);
   return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '">'
     + '<div class="card-head"><div class="body">'
     + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span></div>'
