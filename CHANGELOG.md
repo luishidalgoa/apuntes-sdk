@@ -7,6 +7,39 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.3.0
+
+- **Claves de tarjeta estables** — nueva API `assignCardKeys(root)` (+ `cardTitle`,
+  `slugify`). La clave `data-mark-id` de una tarjeta es la IDENTIDAD bajo la que
+  el navegador del usuario guarda su importancia, su prioridad del plan de
+  estudio y sus subrayados. Los temas escritos a mano la derivaban del TÍTULO, así
+  que **renombrar una tarjeta dejaba huérfano lo que el usuario hubiera marcado**,
+  sin error ni síntoma visible (pasó de verdad: «Software de E/S y técnicas» →
+  «Técnicas de E/S»).
+  - `assignCardKeys` **respeta la clave que la tarjeta declare** en su HTML y solo
+    cae al slug del título si no hay ninguna → al renombrar, se clava la clave
+    vieja y no se pierde nada. Sirve también para desempatar dos títulos que
+    slugifican igual («Árbol B» / «Árbol B+»), que hoy comparten marca.
+  - Pone además el ancla `sec-<clave>` en el `.node`, con dos cautelas para no
+    tocar temas que no lo piden: solo si la clave ya tiene forma de slug (las de
+    `renderCard` salen de `sig` y pueden ser «2015 · ONU») y solo si ese id está
+    libre (una tarjeta con `artNums:['97']` ya contiene un `#sec-97` propio).
+  - Contrastado contra las **254 tarjetas reales** de la app: no-op en los 8 temas,
+    y sustituir el bucle propio por el helper da claves idénticas en 118 de 119
+    tarjetas escritas a mano (la excepción, «Árbol B+», es justo la que necesita
+    clave propia).
+- **`apuntes-verify`: dos comprobaciones nuevas**, ambas con 0 avisos sobre los 8
+  temas actuales.
+  - `clave-duplicada` (**error**): dos tarjetas con el mismo `data-mark-id`
+    comparten marca, prioridad y subrayados — marcar una marca la otra.
+  - `clave-perdida` (**aviso**): una clave que existía ya no está. Es lo único que
+    puede cazar un renombrado, porque el daño es invisible mirando solo el DOM de
+    hoy. Se apoya en `.apuntes-claves.json` (raíz de la app, **versionado**, un
+    tema por línea para que no dé conflictos entre carriles): verify lo reescribe
+    solo, así que el aviso salta UNA vez —en el commit del renombrado, diciendo
+    qué clave clavar— y se apaga al commitear el fichero. Nunca salta al añadir
+    contenido.
+
 ## v0.1.43
 
 - **Glosario de ACRÓNIMOS clicables** (nueva API `appConfig.glossary`). La app

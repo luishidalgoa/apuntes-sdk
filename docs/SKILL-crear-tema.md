@@ -173,6 +173,52 @@ tarjeta no es priorizable, ni buscable, ni sale en el plan):
 > obligatorio**. No uses `.label` (el buscador la ignoraba) ni metas el número
 > dentro de `.name`.
 
+#### La clave (`data-mark-id`) es la IDENTIDAD de la tarjeta
+
+Bajo esa clave el navegador del usuario guarda **su importancia, su prioridad en
+el plan de estudio y sus subrayados**. No es un texto decorativo: es un
+identificador. De ahí la única regla que importa:
+
+> **Cambiar la clave = perder lo que el usuario había marcado ahí.** No hay
+> error, no hay aviso en pantalla: la tarjeta simplemente reaparece virgen.
+
+Lo peligroso es derivar la clave del **título**, porque entonces renombrar la
+tarjeta —algo que parece puramente editorial— cambia su identidad. Ocurrió de
+verdad: «Software de E/S y técnicas» pasó a «Técnicas de E/S» y la marca del
+usuario se quedó huérfana bajo la clave vieja.
+
+Si tu tema está escrito a mano, deja que el SDK ponga claves y anclas:
+
+```js
+import { assignCardKeys } from 'apuntes-sdk';
+
+renderContent(el){
+  el.innerHTML = MI_HTML;
+  assignCardKeys(el);   // clave + ancla `sec-<clave>` en cada tarjeta
+  numerarEsquema(el);
+}
+```
+
+`assignCardKeys` **respeta la clave que la tarjeta declare** y solo cae al slug
+del título cuando no hay ninguna. Así que **al renombrar una tarjeta, clávale su
+clave vieja en el HTML** y no se pierde nada:
+
+```html
+<!-- Se llamaba «Software de E/S y técnicas»: la clave se queda como estaba -->
+<div class="card c1" data-mark-id="software-de-e-s-y-tecnicas">
+  <div class="card-head"><div class="body">
+    <div class="row1"><span class="name">Técnicas de E/S</span></div>
+```
+
+Es fea, y esa fealdad es correcta: la clave es historia, no título. Sirve
+igual para **desempatar dos títulos que slugifican igual** («Árbol B» y
+«Árbol B+» dan los dos `arbol-b`, y compartirían marca).
+
+`apuntes-verify` vigila las dos caras: da **error** si dos tarjetas comparten
+clave, y **aviso** cuando una clave que existía desaparece (el síntoma de un
+renombrado). Para lo segundo mantiene `.apuntes-claves.json` en la raíz de la
+app: **commitéalo**, es la memoria de qué claves había.
+
 ### 3.4 Artículo / punto con texto fuente → `renderArticleBlock`
 
 Para material normativo o cualquier texto con apartados numerados citables.
@@ -343,7 +389,8 @@ widget) tienes dos vías, en este orden:
    `window`/`localStorage` en el cuerpo del módulo**.
 
 > Al escribir un widget a medida, **no rompas el contrato**: si es contenido
-> estudiable, envuélvelo en una tarjeta con `data-mark-id`; si es una sección,
+> estudiable, envuélvelo en una tarjeta con `data-mark-id` (o llama a
+> `assignCardKeys(el)` y deja que el SDK lo ponga, §3.3); si es una sección,
 > dale `.band` + `id`.
 
 ### 10.1 Catálogo de componentes
@@ -441,6 +488,8 @@ Si metes el `<button>` DENTRO de `.det`, queda **invisible** (el SDK colapsa
 | El desplegable no se ve ni se puede pulsar | `<button class="disclosure">` dentro de `.det` | sácalo fuera de `.det` |
 | Los scripts de línea de comandos petan | `localStorage`/`window` en el cuerpo del módulo | accede solo dentro de funciones |
 | Un artículo no aparece en su tarjeta | la clave no está en `engine.sections` | revisa `artNums` ↔ `sections` |
+| Renombras una tarjeta y **pierde la marca del usuario** | la clave salía del título | clávale la clave vieja: `data-mark-id="<clave vieja>"` (§3.3) |
+| Marcar una tarjeta marca **otra** a la vez | dos títulos slugifican igual | dale clave propia a una de las dos |
 
 ---
 
@@ -467,6 +516,8 @@ sirve en CI. Detecta, entre otros:
 | `.disclosure` dentro de `.det` | el botón queda invisible |
 | `.band`/`.apartado-head` sin `id` | no agrupan en el plan de estudio |
 | **APIs de navegador al importar** | rompen los scripts de línea de comandos |
+| **dos tarjetas con la misma clave** | comparten marca, prioridad y subrayados |
+| **una clave que desaparece** | un renombrado deja huérfano lo que el usuario marcó |
 | glosario: claves <2 letras o muertas | se ignoran en silencio |
 | examen: `correcta` fuera de `respuestas`, ids repetidos | preguntas rotas |
 | **respuestas contaminadas** (acaban en un nombre de apartado) | basura del PDF arrastrada al importar |
@@ -482,6 +533,8 @@ Y comprueba, con el tema abierto en el navegador:
 - [ ] **Plan de estudio**: tu tema muestra su jerarquía (secciones y puntos), y
       cada nodo se puede priorizar.
 - [ ] **Marcador**: puedes marcar prioridad en una tarjeta y persiste al recargar.
+- [ ] **Si has renombrado una tarjeta ya publicada**: lleva su clave vieja en
+      `data-mark-id` (si no, el usuario pierde lo que tuviera marcado ahí).
 - [ ] **Deep-link**: `#/tema/<id>/<ancla>` abre y hace scroll al sitio correcto.
 - [ ] **Examen**: tus preguntas salen, la correcta puntúa y la explicación se lee.
 - [ ] **Glosario**: la materia tiene su glosario compartido y el tema lo importa

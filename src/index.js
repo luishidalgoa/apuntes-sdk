@@ -71,6 +71,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
 /* API pública para los manifiestos de tema y juegos custom de la app */
 export { esc, CRAYON_FILTERS } from './core/dom.js';
 export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsInto, renderArticleBlock, specialTagChip } from './core/render-tema.js';
+export { assignCardKeys, cardTitle, slugify } from './core/render-tema.js';
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
 export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark } from './core/marks.js';

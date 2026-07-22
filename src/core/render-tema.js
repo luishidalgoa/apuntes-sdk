@@ -100,6 +100,62 @@ export function renderCardTreesInto(root, ctx, groups){
   }
 }
 
+/* ---- Claves estables de tarjeta (temas escritos a mano) ----
+   La clave de una tarjeta (`data-mark-id`) es su IDENTIDAD: bajo ella se guardan
+   la importancia (marks), la prioridad del plan de estudio, los subrayados y el
+   marcapáginas. Derivarla del TÍTULO parece cómodo, pero ata la identidad al
+   texto: al renombrar la tarjeta, todo eso queda huérfano bajo la clave vieja y
+   la tarjeta aparece virgen. Pasó de verdad («Software de E/S y técnicas» →
+   «Técnicas de E/S»).
+   Por eso: si la tarjeta DECLARA `data-mark-id` en su HTML, manda. El slug del
+   título es solo el valor por defecto para las tarjetas que no lo declaran. */
+
+/* Título limpio de una tarjeta. Quita el numeral de esquema (`.secn`), que se
+   inyecta DESPUÉS del render: así la clave no depende de cuándo se llame. */
+export function cardTitle(card){
+  const el = card.querySelector('.card-head .name, .card-head .label');
+  if(!el) return '';
+  const c = el.cloneNode(true);
+  c.querySelectorAll('.secn').forEach(x => x.remove());
+  return (c.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+export const slugify = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/* Da clave y ancla a las tarjetas de un contenido escrito a mano. Por cada
+   `.card` que no sea un agrupador estructural (las que anidan otras tarjetas o
+   artículos no se marcan: solo pliegan):
+     · clave = su `data-mark-id` declarado; si no lo hay, el slug del título
+     · ancla = `<anchorPrefix><clave>` en el `.node` que la envuelve, si no tiene
+   Idempotente y seguro sobre cualquier tema: las tarjetas de `renderCard` ya
+   traen clave y salen intactas. Dos cautelas para no tocar temas que no lo
+   piden — ambas contrastadas contra las 254 tarjetas reales de la app:
+     · el ancla solo se pone si la clave YA tiene forma de slug. Las claves de
+       `renderCard` salen de `sig` y pueden ser cualquier cosa («2015 · ONU»):
+       un `id="sec-2015 · ONU"` no es seleccionable.
+     · y solo si ese id está libre. Una tarjeta con `artNums:['97']` ya contiene
+       un `#sec-97` propio; duplicarlo mandaría los deep-links al sitio erróneo.
+   NO desambigua claves repetidas a propósito: dos tarjetas con la misma clave
+   comparten marca y prioridad, y eso debe verse (lo caza `apuntes-verify`), no
+   taparse con un sufijo que además volvería a ser inestable.
+   Devuelve las claves asignadas, en orden de documento. */
+export function assignCardKeys(root, { slugify: slug = slugify } = {}){
+  const keys = [];
+  const usados = new Set([...root.querySelectorAll('[id]')].map(e => e.id));
+  root.querySelectorAll('.card').forEach(card => {
+    if(card.querySelector('.card, .art-block[id]')) return;   // agrupador: sin clave propia
+    const key = card.getAttribute('data-mark-id') || slug(cardTitle(card));
+    if(!key) return;
+    card.setAttribute('data-mark-id', key);
+    const node = card.closest('.node') || card;
+    const ancla = anchorId(key);
+    if(!node.id && slug(key) === key && !usados.has(ancla)){ node.id = ancla; usados.add(ancla); }
+    keys.push(key);
+  });
+  return keys;
+}
+
 /* ---- Interacción común de tarjetas (disclosure, repaso, desplegar todo) ---- */
 export function bindCardInteractions(root, { signal } = {}){
   root.addEventListener('click', (e) => {

@@ -5,6 +5,9 @@
    Cada comprobación existe porque el fallo correspondiente ocurrió de verdad:
    - ids duplicados            → un deep-link aterrizaba en la tarjeta equivocada
    - .card sin data-mark-id    → invisible para buscador, plan de estudio y marcador
+   - dos tarjetas con la misma clave → marcar una marcaba la otra
+   - una clave que desaparece  → renombrar una tarjeta dejaba huérfana la marca
+                                 del usuario, sin ningún síntoma visible
    - tarjeta sin .name/.label  → el indexador se la saltaba: el tema no salía al buscar
    - .disclosure dentro de .det→ el botón quedaba recortado e inpulsable
    - APIs de navegador al importar → rompía los scripts de línea de comandos
@@ -14,7 +17,7 @@
 
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join, extname, relative } from 'node:path';
 
 const RESET = '\x1b[0m', RED = '\x1b[31m', YEL = '\x1b[33m', GRN = '\x1b[32m', DIM = '\x1b[2m', B = '\x1b[1m';
@@ -30,6 +33,7 @@ const registryUrl = pathToFileURL(registryPath).href;
 /* ---------- hallazgos ---------- */
 const findings = [];   // {tema, level:'error'|'warn', code, msg, hint}
 const glosarioGlobal = new Map();   // clave -> ¿aparece en algún tema?
+const clavesPorTema = new Map();    // temaId -> [claves de marca] (inventario versionado)
 /* Determinantes: si al quitar el sufijo solo queda uno de estos, el nombre del
    apartado ES la respuesta (no hay contaminación). */
 const ARTICULOS = new Set(['el','la','los','las','un','una','unos','unas','del','de','al','su','sus','este','esta','ese','esa','lo']);
@@ -169,14 +173,34 @@ function revisarDom(t, box, idsGlobales){
      reutilizar el mismo ancla sin conflicto (p.ej. `sec-10` en dos leyes). */
 
   /* contrato de las tarjetas (agregado: una línea por tipo de fallo, con ejemplos) */
-  const sinMark = [], sinNombre = [];
+  const sinMark = [], sinNombre = [], porClave = new Map();
   for(const card of box.querySelectorAll('.card')){
     const nombre = card.querySelector('.card-head .name, .card-head .label');
     const tieneHijos = card.querySelector('.art-block[id], .card');
     const rotulo = (txt(nombre) || txt(card)).replace(/\s+/g, ' ').slice(0, 42) || '(sin texto)';
-    if(!card.getAttribute('data-mark-id') && !tieneHijos) sinMark.push(rotulo);
+    const clave = card.getAttribute('data-mark-id');
+    if(!clave && !tieneHijos) sinMark.push(rotulo);
+    if(clave){ if(!porClave.has(clave)) porClave.set(clave, []); porClave.get(clave).push(rotulo); }
     if(!nombre) sinNombre.push(txt(card).replace(/\s+/g, ' ').slice(0, 42) || '(sin texto)');
   }
+
+  /* Dos tarjetas con la MISMA clave son la misma tarjeta para todo lo que
+     guarda estado: comparten importancia, prioridad y subrayados. Pasa al
+     derivar la clave del título y tener dos títulos que slugifican igual
+     («Árbol B» y «Árbol B+»). */
+  for(const [clave, rotulos] of porClave){
+    if(rotulos.length < 2) continue;
+    add(id, 'error', 'clave-duplicada',
+      `${rotulos.length} tarjetas comparten la clave \`${clave}\`${muestra(rotulos)}`,
+      'Comparten importancia, prioridad del plan de estudio y subrayados: marcar una\n' +
+      '     marca la otra. Ponle a una un `data-mark-id="…"` propio en su HTML.');
+  }
+  /* Inventario de claves del tema (identidades bajo las que hay estado guardado
+     en el navegador del usuario). Lo consume `revisarClaves`. */
+  const claves = new Set(porClave.keys());
+  for(const sel of ['.art-block[id]', '.band[id]', '.apartado-head[id]'])
+    for(const e of box.querySelectorAll(sel)) claves.add(e.id);
+  clavesPorTema.set(id, [...claves].sort());
   if(sinMark.length) add(id, 'error', 'card-sin-markid',
     `${sinMark.length} tarjeta(s) sin \`data-mark-id\`${muestra(sinMark)}`,
     'Sin él no se puede marcar prioridad, no se indexa y no sale en el plan de estudio.\n' +
@@ -299,6 +323,56 @@ function revisarDom(t, box, idsGlobales){
     'Es lo que el estudiante lee al fallar; sin ella la pregunta enseña poco.');
 }
 
+/* ---------- inventario de claves: detectar RENOMBRADOS ----------
+   La clave de una tarjeta es la identidad bajo la que el navegador del usuario
+   guarda su importancia, su prioridad y sus subrayados. Si la clave se deriva
+   del título, renombrar la tarjeta cambia la clave y todo eso queda huérfano:
+   la tarjeta aparece virgen y no hay ni un error ni una traza. Es invisible
+   para cualquier comprobación que solo mire el DOM de HOY.
+   Por eso se guarda el inventario de claves en un fichero versionado y se
+   compara con el de la última vez. Salta SOLO cuando una clave desaparece —
+   nunca al añadir contenido — y se apaga sola en cuanto se commitea el fichero
+   actualizado, así que no hay aviso que se quede gritando de fondo. */
+const CLAVES_FILE = '.apuntes-claves.json';
+
+function revisarClaves(raiz){
+  const ruta = join(raiz, CLAVES_FILE);
+  let previo = null;
+  try { previo = JSON.parse(readFileSync(ruta, 'utf8')); } catch { previo = null; }
+
+  if(previo){
+    for(const [tema, antes] of Object.entries(previo)){
+      const ahora = clavesPorTema.get(tema);
+      if(!ahora) continue;                       // tema no revisado en esta pasada
+      const set = new Set(ahora);
+      const perdidas = antes.filter(k => !set.has(k));
+      if(!perdidas.length) continue;
+      const nuevas = ahora.filter(k => !antes.includes(k));
+      const pista = nuevas.length
+        ? 'Si es un RENOMBRADO, la marca del usuario se queda en la clave vieja y la\n' +
+          `     tarjeta aparece sin marcar. Consérvale la identidad poniéndole en su HTML\n` +
+          `     \`data-mark-id="${perdidas[0]}"\` (la clave vieja). Claves nuevas${muestra(nuevas)}.`
+        : 'Si has borrado ese contenido es lo esperado. Si no, algo cambió el título del\n' +
+          '     que sale la clave: ponle `data-mark-id="<clave vieja>"` para conservarla.';
+      add(tema, 'warn', 'clave-perdida',
+        `${perdidas.length} clave(s) que existían ya no están${muestra(perdidas)}`, pista);
+    }
+  }
+
+  /* Se reescribe siempre (conservando los temas que no se han revisado): así el
+     aviso salta una vez, en el commit del renombrado, y no vuelve. */
+  const salida = { ...(previo || {}) };
+  for(const [tema, ks] of clavesPorTema) salida[tema] = ks;
+  const texto = '{\n' + Object.keys(salida).sort()
+    .map(t => `  ${JSON.stringify(t)}: ${JSON.stringify(salida[t])}`).join(',\n') + '\n}\n';
+  try {
+    if(!existsSync(ruta) || readFileSync(ruta, 'utf8') !== texto){
+      writeFileSync(ruta, texto);
+      if(!previo) console.log(`${DIM}· Creado ${CLAVES_FILE} (inventario de claves). Commitéalo: es lo que permite\n  avisar de un renombrado que dejaría huérfanas las marcas del usuario.${RESET}`);
+    }
+  } catch { /* checkout de solo lectura: el resto de la verificación sigue valiendo */ }
+}
+
 /* ---------- informe ---------- */
 function informe(nTemas){
   const errores = findings.filter(f => f.level === 'error');
@@ -399,6 +473,8 @@ for(const t of TEMAS){
   }
   revisarDom(t, box, idsGlobales);
 }
+
+revisarClaves(resolve(registryPath, '..', '..'));
 
 /* Claves de glosario que no aparecen en NINGÚN tema: esas sí están muertas. */
 const muertas = [...glosarioGlobal].filter(([, visto]) => !visto).map(([k]) => k);
