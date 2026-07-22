@@ -199,6 +199,17 @@ renderContent(el){
 }
 ```
 
+> **Si tu tema ya publica anclas con otro prefijo, díselo.** El helper también
+> pone el ancla del `.node`, y usa el `anchorPrefix` de la app, que es **uno para
+> toda ella**. Si tus tarjetas publican `sec-…` y la app está configurada con
+> `art-`, adoptarlo tal cual **renombra tus anclas en silencio** y rompe los
+> deep-links y marcadores que el usuario tuviera guardados. Pásale el prefijo, o
+> quédate solo con las claves:
+> ```js
+> assignCardKeys(el, { anchorPrefix: 'sec-' });   // tus anclas, tal como las publicas
+> assignCardKeys(el, { anchor: false });          // solo claves; las anclas las pones tú
+> ```
+
 `assignCardKeys` **respeta la clave que la tarjeta declare** y solo cae al slug
 del título cuando no hay ninguna. Así que **al renombrar una tarjeta, clávale su
 clave vieja en el HTML** y no se pierde nada:
@@ -581,6 +592,11 @@ Y comprueba, con el tema abierto en el navegador:
 > corregido (o al revés). Si algo no cuadra con lo que acabas de editar:
 > `rm -rf node_modules/.vite` y reinicia el servidor. Es un falso negativo muy
 > caro: parece que tu arreglo no funciona cuando sí lo hace.
+>
+> La variante mala: **tras subir la versión del SDK**, el pre-bundle viejo sigue
+> cacheado y un import del export nuevo casca con
+> `SyntaxError: … does not provide an export named 'xxx'`. El síntoma **acusa al
+> SDK recién publicado** y no es suyo: mismo arreglo, `rm -rf node_modules/.vite`.
 
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 

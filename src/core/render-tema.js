@@ -143,18 +143,26 @@ export const slugify = (s) => (s || '').toLowerCase().normalize('NFD').replace(/
    NO desambigua claves repetidas a propósito: dos tarjetas con la misma clave
    comparten marca y prioridad, y eso debe verse (lo caza `apuntes-verify`), no
    taparse con un sufijo que además volvería a ser inestable.
+
+   El ancla usa el `anchorPrefix` de la app, que es UNO para toda ella. Un tema
+   cuyas anclas publicadas usen otro prefijo las vería cambiar de nombre en
+   silencio, y con ellas los deep-links y marcadores que el usuario tuviera
+   guardados. Por eso se puede fijar el prefijo (`anchorPrefix: 'sec-'`) o
+   desactivar el ancla entera (`anchor: false`) y seguir usando el helper solo
+   para las claves, que es su parte irrenunciable.
    Devuelve las claves asignadas, en orden de documento. */
-export function assignCardKeys(root, { slugify: slug = slugify } = {}){
+export function assignCardKeys(root, { slugify: slug = slugify, anchor = true, anchorPrefix } = {}){
   const keys = [];
   const usados = new Set([...root.querySelectorAll('[id]')].map(e => e.id));
+  const ancla = (key) => anchorPrefix != null ? anchorPrefix + key : anchorId(key);
   root.querySelectorAll('.card').forEach(card => {
     if(card.querySelector('.card, .art-block[id]')) return;   // agrupador: sin clave propia
     const key = card.getAttribute('data-mark-id') || slug(cardTitle(card));
     if(!key) return;
     card.setAttribute('data-mark-id', key);
     const node = card.closest('.node') || card;
-    const ancla = anchorId(key);
-    if(!node.id && slug(key) === key && !usados.has(ancla)){ node.id = ancla; usados.add(ancla); }
+    const id = ancla(key);
+    if(anchor && !node.id && slug(key) === key && !usados.has(id)){ node.id = id; usados.add(id); }
     keys.push(key);
   });
   return keys;
