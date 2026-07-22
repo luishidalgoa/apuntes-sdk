@@ -466,6 +466,24 @@ dominio tuyo), `.goTo(n)`, `.destroy()`.
 > marcos…) los montas **tú** en el tema; cuando cambien, llama a `.reload()`.
 > El stepper solo se encarga del transporte (▶ ⏭ ‹ ↺).
 
+**Para animar el movimiento entre pasos, `transition` NO sirve.** `render()`
+regenera la escena entera, así que en cada paso el elemento es **nuevo**: no hay
+valor anterior del que transicionar y el navegador lo pinta ya en su sitio. Lo
+que sí corre al crearse un elemento es una **animación**. Pasa las dos posiciones
+como custom properties en línea y anímalas con `@keyframes`:
+
+```js
+render: ({ step }) =>
+  `<line class="aguja" style="--x0:${xDe(step.desde)}px;--x1:${xDe(step.hasta)}px" … />`
+```
+```css
+.aguja{ animation: desliza .5s ease both; }
+@keyframes desliza{ from{ x: var(--x0); } to{ x: var(--x1); } }
+@media (prefers-reduced-motion: reduce){ .aguja{ animation: none; } }
+```
+Lo animado es `x`; las custom properties solo aportan los extremos, así que no
+hace falta registrarlas con `@property`. Respeta siempre `prefers-reduced-motion`.
+
 **Patrón obligatorio del desplegable**: el botón va **FUERA** de `.det`.
 
 ```html
@@ -490,6 +508,8 @@ Si metes el `<button>` DENTRO de `.det`, queda **invisible** (el SDK colapsa
 | Un artículo no aparece en su tarjeta | la clave no está en `engine.sections` | revisa `artNums` ↔ `sections` |
 | Renombras una tarjeta y **pierde la marca del usuario** | la clave salía del título | clávale la clave vieja: `data-mark-id="<clave vieja>"` (§3.3) |
 | Marcar una tarjeta marca **otra** a la vez | dos títulos slugifican igual | dale clave propia a una de las dos |
+| Una narración sale entera mal, o se come el texto de delante | ternario concatenado a un string: `'de ' + a ? x : y` se agrupa como `('de '+a) ? x : y`, y `'de '+a` es siempre cierto | paréntesis SIEMPRE: `'de ' + (a ? x : y)`, o sácalo a una variable |
+| El movimiento entre pasos no se anima | `transition` sobre un elemento que `render()` acaba de recrear | `@keyframes` con las posiciones en custom properties (§10.1) |
 
 ---
 
