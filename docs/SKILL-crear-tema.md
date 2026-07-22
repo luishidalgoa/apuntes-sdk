@@ -221,16 +221,36 @@ En una tarjeta renombrada divergen, y hay que elegir — ninguna opción es grat
 | `'title'` | URL legible, acorde al título actual | cada renombrado **deja sin efecto el marcapáginas** de esa tarjeta (se guarda por id de ancla; al no encontrarlo no restaura posición, en silencio) |
 | `(card, key) => id` | lo que no cubran las anteriores | tuyo |
 
-Y como **ninguna regla derivada cubre todos los casos**, la tarjeta puede
-**declarar su ancla** con `data-anchor-id`, igual que declara su clave. Lo
-declarado siempre manda. Medido sobre 169 anclas reales: derivar de la clave
-cambia las tarjetas renombradas, y derivar del título **deja sin ancla** la que
-tiene clave propia porque su título es ambiguo — «Árbol B+» slugifica igual que
-«Árbol B», y el id ya estaba ocupado, así que la tarjeta se queda sin deep-link.
+**`anchorFrom: 'title'` slugifica con el `slugify` que le pases**, no con el del
+SDK. Si tu tema tiene el suyo —porque su materia genera títulos que el genérico
+no distingue—, pásaselo y el ancla saldrá bien:
+
+```js
+assignCardKeys(el, { slugify, anchorPrefix: 'sec-', anchorFrom: 'title' });
+```
+
+Importa más de lo que parece: con el `slugify` genérico, «Árbol B+» da `arbol-b`,
+que ya ocupa «Árbol B», así que la guarda de ids libres la salta y **la tarjeta
+se queda sin ancla y sin deep-link**, en silencio. Con un `slugify` que convierta
+el `+` antes de barrer lo no alfanumérico, conviven `sec-arbol-b` y
+`sec-arbol-b-plus`. Medido sobre 169 anclas reales: **0 diferencias, 0 sin ancla**.
+
+Para lo que **ningún `slugify` puede resolver** —el renombrado, donde el título
+de hoy ya no es el de ayer— la tarjeta puede **declarar su ancla** con
+`data-anchor-id`, igual que declara su clave. Lo declarado siempre manda:
 
 ```html
-<div class="card c1" data-mark-id="arbol-b-plus" data-anchor-id="sec-arbol-b-plus">
+<!-- Se llamaba «Software de E/S y técnicas». La clave salva las marcas;
+     el ancla, el marcapáginas y los deep-links. Son dos identidades. -->
+<div class="card c1"
+     data-mark-id="software-de-e-s-y-tecnicas"
+     data-anchor-id="sec-software-de-e-s-y-tecnicas">
 ```
+
+> **Al renombrar una tarjeta publicada, conserva las DOS.** `data-mark-id` salva
+> la importancia y la prioridad; `data-anchor-id`, el marcapáginas y los enlaces.
+> Conservar solo la primera deja el renombrado a medias, y la mitad que falta
+> falla en silencio.
 
 `assignCardKeys` **respeta la clave que la tarjeta declare** y solo cae al slug
 del título cuando no hay ninguna. Así que **al renombrar una tarjeta, clávale su
