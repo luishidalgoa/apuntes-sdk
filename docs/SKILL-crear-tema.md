@@ -703,6 +703,36 @@ cuya lección era saber leerla.
 > —argumentos raros, mayúsculas, espacios de más, campos vacíos, HTML en el
 > input— y pide a alguien que no lo escribió que teclee. Ahí es donde sale.
 
+#### Varias instancias del mismo widget: comprobar que no se contaminan
+
+Cuando la misma página monta **varias instancias de un widget con estado**
+(varios simuladores, varios steppers, varias tablas filtrables), verificar que
+cada una *funciona* **no basta**: hay que verificar que son **independientes**.
+«Cada uno funciona» no implica «cada uno es suyo», y con estado interno menos.
+
+**Cómo se prueba:** opera en una instancia y comprueba que **las demás no han
+cambiado**. Ejecuta en la primera, vuelve a la segunda y compara su salida con la
+que daba antes — debe ser **idéntica**. Buscas una diferencia que no debería
+existir, así que la comparación tiene que ser exacta, no «parece igual».
+
+**Los tres modos de fallo que lo provocan**, los tres visibles leyendo el código
+una vez que sabes qué buscar:
+
+| Síntoma | Causa |
+|---|---|
+| Operar en una cambia **todas** | El estado está en el **ámbito del módulo** (`const st = {...}` fuera de la factoría) en vez de crearse por instancia |
+| Actúa siempre sobre la **primera** | Selectores desde `document` (`document.querySelector('.out')`) en vez de desde el **host** (`host.querySelector`) |
+| Un clic dispara **varias** | Listener delegado en `document` sin acotar al contenedor de la instancia |
+
+**Por qué se escapa:** montar N instancias y verlas pintadas da sensación de
+haberlo probado. El fallo no está en el render — está en la **primera
+interacción**, que es justo lo que no se mira cuando solo compruebas que
+aparecen.
+
+Y **esta comprobación no necesita navegador**: monta el HTML real con varias
+instancias sobre linkedom, opera en una y compara el `textContent` de la otra.
+No es de las que hay que delegar.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---
