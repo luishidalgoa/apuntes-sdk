@@ -9,6 +9,7 @@
 import { allExamenes, normalizarExamen } from '../core/examen-oficial.js';
 import { openExam } from './examen.js';
 import { config } from '../config.js';
+import { materiasWithTemas } from '../registry.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -48,9 +49,11 @@ export const oficialesViewFactory = {
   create(){
     let ac = null;
     return {
-      mount(root){
+      mount(root, route){
         const cfg = config();
         const lista = allExamenes();
+        const mat = route && route.materiaId
+          ? (materiasWithTemas().find(x => x.id === route.materiaId) || null) : null;
         ac = new AbortController();
 
         const oficiales = lista.length ? `
@@ -61,15 +64,15 @@ export const oficialesViewFactory = {
 
         root.innerHTML = `<div class="wrap view-examenes">
           <nav class="controls" aria-label="Navegación">
-            <div class="nav-left"><a class="btn ghost" href="#/">← Temario</a></div>
+            <div class="nav-left"><a class="btn ghost" href="${mat ? '#/materia/' + esc(mat.id) : '#/'}">← ${mat ? esc(mat.label) : 'Temario'}</a></div>
           </nav>
-          <h1>Exámenes</h1>
+          <h1>Exámenes${mat ? ' · ' + esc(mat.label) : ''}</h1>
           <h2 class="ex-sec">Banco de preguntas</h2>
-          <p class="ex-sub">${esc(cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.')}</p>
+          <p class="ex-sub">${esc(cfg.examLede || 'Preguntas filtrables por tema y bloque, con temporizador opcional.')}</p>
           <div class="ofi-lista">
-            <a class="ofi-card" href="#" data-exam>
+            <a class="ofi-card" href="#" data-exam data-materia="${mat ? esc(mat.id) : ''}">
               <div class="ofi-cab"><span class="ofi-tit">Practicar por temas</span></div>
-              <div class="ofi-datos"><span>eliges materia, tema y cuántas preguntas</span></div>
+              <div class="ofi-datos"><span>${mat ? 'solo ' + esc(mat.label) + ' · eliges tema y cuántas preguntas' : 'eliges materia, tema y cuántas preguntas'}</span></div>
             </a>
           </div>
           ${oficiales}
@@ -79,7 +82,7 @@ export const oficialesViewFactory = {
           const a = e.target.closest('[data-exam]');
           if(!a) return;
           e.preventDefault();
-          openExam({});
+          openExam({ materiaId: a.getAttribute('data-materia') || null });
         }, { signal: ac.signal });
 
         window.scrollTo(0, 0);

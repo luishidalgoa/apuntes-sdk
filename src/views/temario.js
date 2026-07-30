@@ -110,14 +110,18 @@ function examCardHtml(cfg, materiaId){
    de un elemento. Sin exámenes declarados, no se pinta nada. */
 /* UNA sola puerta a los exámenes. Antes había dos tarjetas (banco y oficiales)
    y obligaban a decidir entre ellas desde fuera, sin haber visto ninguna. */
-function examenesCardHtml(cfg){
+function examenesCardHtml(cfg, materiaId){
   const n = allExamenes().length;
   const kicker = n ? `Banco por temas · ${n} convocatoria${n === 1 ? '' : 's'} oficial${n === 1 ? '' : 'es'}` : 'Banco único · todos los temas';
   const desc = n
     ? 'Practica por temas o haz un examen oficial entero, con su orden y su tiempo.'
     : (cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.');
+  /* Desde una materia el destino es el MISMO índice, acotado: si aquí abriera
+     el overlay directamente, las convocatorias oficiales no tendrían puerta
+     para quien entra por la materia — que es como se navega casi siempre. */
+  const destino = materiaId ? `#/examenes/${materiaId}` : '#/examenes';
   return `
-            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#/examenes">
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="${destino}">
               <div class="mc-icon" data-icon="exam" data-depth="46"></div>
               <div class="tema-body" data-depth="22">
                 <div class="tema-k">${kicker}</div>
@@ -209,7 +213,7 @@ export const materiaView = {
         ${searchBarHtml()}
         ${hubToolsHtml()}
         ${temaCardsHtml(m.temas)}
-        <div class="temas">${examCardHtml(cfg, m.id)}</div>
+        <div class="temas">${examenesCardHtml(cfg, m.id)}</div>
       </div>`;
     wireHub(root);
   }
