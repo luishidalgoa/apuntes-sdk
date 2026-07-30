@@ -640,6 +640,27 @@ Y comprueba, con el tema abierto en el navegador:
 > `SyntaxError: … does not provide an export named 'xxx'`. El síntoma **acusa al
 > SDK recién publicado** y no es suyo: mismo arreglo, `rm -rf node_modules/.vite`.
 
+#### Verificar con un panel de navegador oculto
+
+Si el panel del navegador no está a la vista, **la página no compone frames**, y
+eso rompe tres cosas de golpe — todas con el mismo disfraz: parecen defectos del
+contenido que acabas de escribir.
+
+| Síntoma | Qué pasa de verdad |
+|---|---|
+| El *screenshot* expira | Sin frames no hay imagen. **Mide el DOM en su lugar**: para verificar estructura y estado es más fiable que una captura. |
+| `innerWidth`/`innerHeight` a **0**, anchos absurdos | Sin viewport, toda medida de geometría es basura. Fija el tamaño explícito (`{width:1280, height:900}`) y **comprueba `innerWidth > 0` antes de medir**. |
+| Un valor animado se queda en su estado inicial (`max-height: 0`) | La transición nunca avanza. **Comprueba el ESTADO** —clases, `aria-expanded`, existencia de nodos—, no el valor que la animación debería haber cambiado. |
+
+Dos reglas que ahorran el rato:
+- **Si el mismo síntoma aparece en TODAS las tarjetas**, es el entorno, no tu
+  cambio.
+- **`getComputedStyle` sobre un nodo desconectado devuelve vacío**: tras un clic
+  que re-renderiza, vuelve a consultar el DOM antes de medir.
+
+Y una clase transitoria (el `flash` del aterrizaje de un deep-link vive ~300 ms)
+hay que muestrearla **pronto**: medida a 1,5 s da `false` y parece que no ocurre.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---
