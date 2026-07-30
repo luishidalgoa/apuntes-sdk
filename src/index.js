@@ -88,3 +88,5 @@ export { mountSearch, openSearch, closeSearch, SEARCH_ICON } from './core/search
 export { buildIndex, warmIndex, invalidateIndex, searchContent } from './core/content-index.js';
 export { bindScrollReveal, unbindScrollReveal } from './core/scroll-reveal.js';
 export { bindMateriaCards, MATERIA_ICONS } from './core/materia-cards.js';
+export { setExamenes, allExamenes, examenById, normalizarExamen, corregir } from './core/examen-oficial.js';
+export { mountExamenHoja } from './views/examen-hoja.js';
