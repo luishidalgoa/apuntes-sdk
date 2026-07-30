@@ -44,7 +44,37 @@ function indexTema(tema, ti){
   // artículos (.art-block). Los art-blocks se indexan como entradas propias
   // (búsqueda a nivel de artículo; su detalle vive en .arts-list, no en .det,
   // así que el bucle de cards no lo captura). `bandTitle` es correcto por orden.
-  box.querySelectorAll('.band, .node, .art-block[id]').forEach((el) => {
+  box.querySelectorAll('.band, .node, .art-block[id], .cheat').forEach((el) => {
+    /* Chuletas (`.cheat`): rejillas de datos sueltos —plazos, cifras, mayorías—
+       que viven FUERA de las tarjetas, así que ningún otro recorrido las veía y
+       eran invisibles al buscador. Y son justo lo que se teclea: «3 meses»,
+       «silencio», «mayoría absoluta». Se indexa UNA entrada por chuleta, no una
+       por fila: 57 filas darían 57 resultados titulados «10 días», que es ruido
+       —y ocho resultados idénticos no dicen cuál mirar—. Con el texto de todas
+       sus celdas dentro, buscar cualquier dato la encuentra igual, y el
+       resultado se presenta con el título de la chuleta, que sí orienta. */
+    if(el.classList.contains('cheat')){
+      const tEl = el.querySelector('h3, h4, .cheat-title');
+      const title = clean(tEl && tEl.textContent);
+      if(!title) return;
+      /* Los NÚMEROS van delante, todos juntos, y las glosas después. El texto se
+         recorta a 700 como el del resto, y una chuleta larga lo agota: la de
+         plazos del Título I perdía «3 meses» —su última fila— y no salía al
+         buscarlo, que es el caso que justifica indexarlas. Con los datos por
+         delante, el recorte solo puede comerse prosa. */
+      const celdas = [...el.querySelectorAll('.cell')];
+      const numeros = celdas.map(c => clean((c.querySelector('.n') || {}).textContent)).filter(Boolean);
+      const glosas = celdas.map(c => clean((c.querySelector('.t') || {}).textContent)).filter(Boolean);
+      entries.push({
+        temaId: tema.id, temaNum: num, temaK: tema.k, bloque: blLabel, kind: 'card',
+        num: '',
+        title,
+        text: clean([numeros.join(' · '), glosas.join(' · ')].filter(Boolean).join(' — ') || el.textContent).slice(0, 700),
+        anchor: el.id || (el.querySelector('[id]') || {}).id || '',
+        path: crumb + 'Tema ' + num + (bandTitle ? ' › ' + bandTitle : '')
+      });
+      return;
+    }
     if(el.classList.contains('art-block')){
       const artTitle = clean((el.querySelector('.art-title') || {}).textContent);
       if(!artTitle) return;
