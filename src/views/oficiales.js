@@ -17,7 +17,10 @@ function fichaHtml(crudo){
     ex.plantilla === 'ausente' ? '<span class="ofi-sello sin">sin plantilla · no corrige</span>' : '',
     ex.plantilla === 'parcial' ? '<span class="ofi-sello sin">' + ex.sinPlantilla + ' sin respuesta</span>' : '',
     ex.preguntas.some(q => q.anulada)
-      ? '<span class="ofi-sello an">' + ex.preguntas.filter(q => q.anulada).length + ' anuladas</span>' : ''
+      ? '<span class="ofi-sello an">' + ex.preguntas.filter(q => q.anulada).length + ' anuladas</span>' : '',
+    /* El descuento se anuncia en la ficha porque cambia CÓMO se hace el examen,
+       no solo la nota: conviene saberlo antes de empezar, no al corregir. */
+    ex.penalizacion ? '<span class="ofi-sello pen">penaliza 1/' + Math.round(1 / ex.penalizacion) + '</span>' : ''
   ].filter(Boolean).join('');
   const corregibles = ex.preguntas.filter(q => !q.anulada).length;
   return `

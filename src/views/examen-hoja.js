@@ -25,6 +25,14 @@ const LETRAS = ['a', 'b', 'c', 'd', 'e', 'f'];
    se lee como descuido y resta credibilidad a la nota que hay al lado. */
 function plural(n, sing, plu){ return n + ' ' + (n === 1 ? sing : (plu || sing + 's')); }
 
+/* «1/3» en vez de «0.3333»: el criterio oficial se expresa en fracción y así se
+   reconoce al leerlo en la convocatoria. */
+function fraccion(p){
+  const inv = 1 / p;
+  return Number.isInteger(Math.round(inv * 1000) / 1000) || Math.abs(inv - Math.round(inv)) < 1e-9
+    ? '1/' + Math.round(inv) : String(p);
+}
+
 function mmss(seg){
   const m = Math.floor(seg / 60), s = seg % 60;
   return m + ':' + String(s).padStart(2, '0');
@@ -154,10 +162,19 @@ export function mountExamenHoja(host, examen, opts = {}){
       + '<div class="exh-marc">'
       +   '<span class="exh-m ok"><b>' + r.ok + '</b> ' + (r.ok === 1 ? 'acierto' : 'aciertos') + '</span>'
       +   '<span class="exh-m mal"><b>' + r.mal + '</b> ' + (r.mal === 1 ? 'fallo' : 'fallos') + '</span>'
-      +   '<span class="exh-m bl"><b>' + r.blanco + '</b> en blanco</span>'
+      +   '<span class="exh-m bl"><b>' + r.blanco + '</b> en blanco'
+      +     (r.penaliza ? ' <i>· no penalizan</i>' : '') + '</span>'
       +   (r.anuladas ? '<span class="exh-m an"><b>' + r.anuladas + '</b> ' + (r.anuladas === 1 ? 'anulada' : 'anuladas') + '</span>' : '')
       +   (r.sinDato ? '<span class="exh-m sd"><b>' + r.sinDato + '</b> sin plantilla</span>' : '')
       + '</div>'
+      + (r.penaliza
+        ? '<p class="exh-formula">Puntuación directa <b>' + r.directa.toFixed(2) + '</b> '
+          + '<span class="exh-cuenta">= ' + r.ok + ' aciertos − ' + r.mal + '/' + Math.round(1 / r.penaliza)
+          + ' (' + r.descuento.toFixed(2) + ' de descuento)</span></p>'
+          + '<p class="exh-consejo">Cada fallo descuenta <b>' + fraccion(r.penaliza) + '</b> de acierto, '
+          + 'así que contestar al azar entre cuatro opciones no compensa: '
+          + '<b>dejar en blanco es una decisión, no una renuncia.</b></p>'
+        : '')
       + '<p class="exh-nota-fin">Sobre ' + plural(r.corregibles, 'pregunta') + ' corregible'
       + (r.corregibles === 1 ? '' : 's') + ' · <b>' + nota + '</b> / 10'
       + (r.anuladas ? ' · las anuladas no cuentan' : '') + '</p>'

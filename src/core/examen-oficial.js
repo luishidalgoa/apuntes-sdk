@@ -55,6 +55,15 @@ export function normalizarExamen(ex){
        respuestas que pueden moverse no es lo mismo que con respuestas cerradas.
        Lo que más cambia entre provisional y definitiva son las anulaciones. */
     provisional: !!ex.provisional,
+    /* Penalizacion por error, en fracción del valor de un acierto. El examen
+       real de TAI descuenta E/3, y eso NO es un detalle de puntuación: con un
+       tercio de descuento, contestar al azar entre cuatro opciones tiene
+       esperanza CERO, así que dejar en blanco pasa a ser una decisión legítima
+       en vez de una renuncia. Un simulador que solo cuenta aciertos enseña lo
+       contrario —a rellenarlo todo—, que es justo el hábito que arruina un
+       examen con descuento. Es propiedad de CADA convocatoria: sus criterios
+       de corrección se publican por proceso. */
+    penalizacion: ex.penalizacion != null ? ex.penalizacion : null,
     preguntas: test,
     reservas,
     /* Estado de la plantilla, que decide si la corrección es honesta:
@@ -69,7 +78,11 @@ export function normalizarExamen(ex){
    Las anuladas salen del total en vez de contar como fallo, y las que no tienen
    plantilla se cuentan aparte: no son ni aciertos ni fallos, son desconocidas. */
 export function corregir(examen, marcadas){
-  const penaliza = config().examPenalty != null ? config().examPenalty : 0;
+  /* Manda la del examen; `examPenalty` de la app queda como respaldo para las
+     que no la declaren. Sin ninguna de las dos, no se penaliza. */
+  const penaliza = examen.penalizacion != null
+    ? examen.penalizacion
+    : (config().examPenalty != null ? config().examPenalty : 0);
   let ok = 0, mal = 0, blanco = 0, anuladas = 0, sinDato = 0;
   const detalle = [];
   for(const q of examen.preguntas){
@@ -84,6 +97,13 @@ export function corregir(examen, marcadas){
     detalle.push({ n: q.n, estado: acierto ? 'ok' : 'mal', marcada, correcta: q.correcta });
   }
   const corregibles = ok + mal + blanco;
-  const nota = corregibles ? (ok - mal * penaliza) / corregibles * 10 : null;
-  return { ok, mal, blanco, anuladas, sinDato, corregibles, nota, detalle };
+  /* Puntuacion DIRECTA: la del acta, y puede ser negativa si se ha disparado a
+     ciegas. No se recorta a 0 porque ver el número en rojo es la lección. */
+  const descuento = mal * penaliza;
+  const directa = ok - descuento;
+  /* La nota sobre 10 sí tiene suelo: un «-1,2 / 10» no significa nada para
+     nadie, mientras que la directa negativa sí. */
+  const nota = corregibles ? Math.max(0, directa / corregibles * 10) : null;
+  return { ok, mal, blanco, anuladas, sinDato, corregibles,
+    penaliza, descuento, directa, nota, detalle };
 }
