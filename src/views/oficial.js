@@ -18,12 +18,12 @@ export const oficialViewFactory = {
         /* Volver a donde se vino: con varios exámenes el índice es el paso
            anterior real; con uno solo ese índice no existe y llevaría a una
            pantalla que el usuario no ha visto nunca. */
-        const varios = false;   // ya no hay indice: la puerta es el modal
+        const varios = allExamenes().length > 0;
         root.innerHTML = '<div class="wrap view-oficial">'
           + '<nav class="controls" aria-label="Navegación del examen">'
           +   '<div class="nav-left">'
           +     '<a class="btn ghost" href="' + (varios ? '#/examenes' : '#/') + '">← '
-          +       (varios ? 'Exámenes' : 'Temario') + '</a>'
+          +       (varios ? 'Exámenes oficiales' : 'Temario') + '</a>'
           +   '</div>'
           + '</nav>'
           + '<div id="oficialHost"></div>'

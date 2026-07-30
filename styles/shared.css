@@ -615,12 +615,3 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
 .view-examenes .ex-sec{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin:26px 0 2px;}
 .view-examenes .ex-sec:first-of-type{margin-top:16px;}
 .view-examenes .ex-sub{margin:0 0 10px;color:var(--ink-soft);font-size:14px;max-width:62ch;}
-/* Convocatorias oficiales dentro del modal de examen */
-.exam-ofi{display:grid;gap:6px;margin-top:2px;}
-.exam-ofi-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;
-  padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:none;cursor:pointer;
-  font:inherit;color:inherit;transition:.15s ease;}
-.exam-ofi-row:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent);}
-.exam-ofi-t{font-weight:700;font-size:14px;}
-.exam-ofi-d{grid-column:1;font-size:12px;color:var(--ink-soft);}
-.exam-ofi-go{grid-row:1 / span 2;align-self:center;color:var(--ink-faint);}

@@ -113,23 +113,14 @@ function showExamSetup(initialTema){
      intermedia. Elegir una es lo único que navega —un examen oficial dura dos
      horas y necesita ruta propia para compartirse y retomarse—, así que el
      modal se cierra al saltar. */
-  const oficiales = allExamenes();
-  const oficialesHtml = oficiales.length
+  /* Un solo botón, no la lista: el modal es para configurar el banco por temas.
+     Enumerar aquí las convocatorias competía con eso y crecerá con cada examen
+     nuevo — la lista con sus fichas tiene su propia vista. */
+  const nOficiales = allExamenes().length;
+  const oficialesHtml = nOficiales
     ? '<p class="exam-setup-label">¿O un examen oficial completo?</p>'
-      + '<div class="exam-ofi">' + oficiales.map(o => {
-          const ex = normalizarExamen(o);
-          const corregibles = ex.preguntas.filter(q => !q.anulada).length;
-          const notas = [
-            ex.preguntas.length + ' preguntas',
-            corregibles !== ex.preguntas.length ? 'corrige sobre ' + corregibles : '',
-            ex.provisional ? 'plantilla provisional' : '',
-            ex.penalizacion ? 'penaliza 1/' + Math.round(1 / ex.penalizacion) : ''
-          ].filter(Boolean).join(' · ');
-          return '<button class="exam-ofi-row" type="button" data-oficial="' + esc(ex.id) + '">'
-            + '<span class="exam-ofi-t">' + esc(ex.titulo) + '</span>'
-            + '<span class="exam-ofi-d">' + esc(notas) + '</span>'
-            + '<span class="exam-ofi-go">→</span></button>';
-        }).join('') + '</div>'
+      + '<div class="opts"><button class="btn" id="examVerOficiales" type="button">'
+      + 'Ver las ' + nOficiales + ' convocatorias →</button></div>'
     : '';
 
   examBody.innerHTML =
@@ -147,12 +138,10 @@ function showExamSetup(initialTema){
     + oficialesHtml
     + '</div>';
 
-  examBody.querySelectorAll('[data-oficial]').forEach(b => {
-    b.addEventListener('click', () => {
-      const id = b.getAttribute('data-oficial');
-      closeExam();                       // el overlay no debe quedar detrás de la ruta
-      location.hash = '#/oficial/' + id;
-    });
+  const verOfi = examBody.querySelector('#examVerOficiales');
+  if(verOfi) verOfi.addEventListener('click', () => {
+    closeExam();                         // el overlay no debe quedar detrás de la ruta
+    location.hash = '#/examenes';
   });
 
   const allCb = examBody.querySelector('#examTemaAll');
