@@ -691,6 +691,30 @@ dos defectos invisibles en la fuente: columnas desalineadas (`slice` en vez de
 `padEnd`) y decimales con punto donde el locale usa coma — justo en una salida
 cuya lección era saber leerla.
 
+##### Puede fabricar un fallo que no existe (y esto es lo peligroso)
+
+**El falso negativo te frena; el falso positivo te hace romper cosas.** El
+primero cuesta tiempo, el segundo cuesta **código correcto**: te lleva a
+«arreglar» algo que funcionaba.
+
+Ocurrió con un sandbox gobernado por dos `<select>`: la prueba daba «mismo
+dominio» en **todos** los casos y parecía un fallo de la lógica. No lo era.
+**linkedom no retiene `selected` en options creadas por `innerHTML`**, así que
+`value` sale `undefined` — y `undefined === undefined` cuela por la primera rama.
+Un valor ausente disfrazado de coincidencia.
+
+> **La señal para reconocerlo en caliente: si TODOS los casos dan el mismo
+> resultado, sospecha del arnés antes que del código.** Un fallo real suele ser
+> selectivo —algunos casos bien, otros mal—; que la matriz entera colapse a una
+> sola respuesta apunta a que la entrada nunca llegó. Es la hermana de «si el
+> síntoma sale en todas las tarjetas, es el entorno».
+
+**La salida no es rodearlo, es quitar la dependencia.** Cuando la lógica viva
+detrás de controles de formulario, **sácala a una función pura y prueba esa** —
+el DOM simulado miente más cuanto más te acercas a los `<select>`. Extraer
+`veredicto(origen, destino, confianza)` permitió verificar la matriz 4×4 entera
+sin tocar el DOM, y de paso dejó la regla de negocio aislada y testeable.
+
 > **Pero el corolario importa tanto como la técnica: linkedom prueba que la
 > lógica hace lo que crees; no prueba que lo que creías fuera lo correcto.**
 > Quien escribe las pruebas recorre los caminos que diseñó. En ese mismo
