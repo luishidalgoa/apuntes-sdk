@@ -222,6 +222,17 @@ body.bookmark-placing #temaContent .art-block:hover{
 .tree::before{content:"";position:absolute;left:9px;top:0;bottom:30px;width:2px;background:linear-gradient(180deg,transparent,var(--rule) 8%,var(--rule) 92%,transparent);}
 .node{position:relative;margin:13px 0;}
 .node::before{content:"";position:absolute;left:-21px;top:36px;width:18px;height:2px;background:var(--rule);}
+/* En movil la sangria del arbol se come el contenido: son 38px por nivel
+   (8 de margen + 30 de padding) y los temas anidan hasta 3, asi que a 375px
+   las tarjetas mas profundas se quedaban en 229 de ancho — el 39% del viewport
+   gastado en sangria decorativa. Aqui baja a 17px por nivel: la jerarquia se
+   sigue leyendo (hay escalon y linea vertical) y el contenido recupera 63px.
+   La linea y la ramita se recolocan a la vez; si tocas una, las tres. */
+@media (max-width:560px){
+  .tree{margin-left:3px;padding-left:14px;}
+  .tree::before{left:4px;}
+  .node::before{left:-10px;width:8px;}
+}
 
 /* Modo bloques: estilos de las secciones que genera renderSectionsInto /
    renderArticleBlock. El color viene de --accent (lo fija el contenedor de la
