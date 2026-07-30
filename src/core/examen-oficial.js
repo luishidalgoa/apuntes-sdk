@@ -49,6 +49,12 @@ export function normalizarExamen(ex){
     modelo: ex.modelo || '',
     minutos: ex.minutos || null,
     fuente: ex.fuente || '',
+    /* Plantilla PROVISIONAL: el proceso de alegaciones sigue abierto y las
+       respuestas pueden cambiar. Es un eje distinto de `plantilla` —ahí se mide
+       si HAY respuestas, aquí si son FIRMES—, y las dos importan: estudiar con
+       respuestas que pueden moverse no es lo mismo que con respuestas cerradas.
+       Lo que más cambia entre provisional y definitiva son las anulaciones. */
+    provisional: !!ex.provisional,
     preguntas: test,
     reservas,
     /* Estado de la plantilla, que decide si la corrección es honesta:

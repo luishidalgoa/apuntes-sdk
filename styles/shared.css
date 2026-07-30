@@ -588,3 +588,4 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
   .exh-ops{margin-left:0;}
   .exh-nota{margin-left:0;}
 }
+.exh-aviso.prov{border-left-color:#b8860b;background:color-mix(in srgb,#b8860b 6%,transparent);}

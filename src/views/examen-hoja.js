@@ -75,6 +75,14 @@ export function mountExamenHoja(host, examen, opts = {}){
         + (examen.sinPlantilla === 1 ? 'quedará' : 'quedarán') + ' sin corregir.</p>'
       : '');
 
+  /* Aviso aparte del anterior: aquí sí hay respuestas y sí se corrige, pero no
+     son firmes. Va en tono distinto (no bloquea nada) y menciona las
+     anulaciones porque es lo que más se mueve tras las alegaciones. */
+  const avisoProvisional = examen.provisional
+    ? '<p class="exh-aviso prov">Plantilla <b>provisional</b>: el plazo de alegaciones sigue abierto, '
+      + 'así que alguna respuesta puede cambiar y es habitual que se anulen preguntas.</p>'
+    : '';
+
   host.innerHTML = '<div class="exh">'
     + '<header class="exh-head">'
     +   '<div class="exh-tit"><b>' + esc(examen.titulo) + '</b>'
@@ -84,6 +92,7 @@ export function mountExamenHoja(host, examen, opts = {}){
     +     '<span class="exh-cron" id="exhCron">0:00</span>'
     +   '</div>'
     + '</header>'
+    + avisoProvisional
     + avisoPlantilla
     + '<div class="exh-lista">' + examen.preguntas.map(q => pintarPregunta(q, marcadas, dudosas)).join('') + '</div>'
     + '<div class="exh-pie">'
