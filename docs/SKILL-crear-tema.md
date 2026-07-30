@@ -679,6 +679,30 @@ Dos reglas que ahorran el rato:
 Y una clase transitoria (el `flash` del aterrizaje de un deep-link vive ~300 ms)
 hay que muestrearla **pronto**: medida a 1,5 s da `false` y parece que no ocurre.
 
+#### Probar lógica interactiva sin navegador (linkedom)
+
+**`linkedom` no es solo para validar HTML: sirve para probar lógica interactiva.**
+Monta el módulo sobre un DOM de linkedom y ejecuta **sesiones completas** —varios
+comandos o pasos seguidos— comprobando el estado **después de cada paso**, no solo
+el render inicial. Es la respuesta cuando no puedes usar el navegador.
+
+Encuentra lo que leer el código no enseña. En un simulador de terminal destapó
+dos defectos invisibles en la fuente: columnas desalineadas (`slice` en vez de
+`padEnd`) y decimales con punto donde el locale usa coma — justo en una salida
+cuya lección era saber leerla.
+
+> **Pero el corolario importa tanto como la técnica: linkedom prueba que la
+> lógica hace lo que crees; no prueba que lo que creías fuera lo correcto.**
+> Quien escribe las pruebas recorre los caminos que diseñó. En ese mismo
+> simulador todas las sesiones pasaban, y aun así `mount /dev/sdb1 /mnt/datos`
+> —una ruta plausible que al autor no se le ocurrió— respondía «orden no
+> encontrada», culpando al comando cuando el fallo era del argumento. En una
+> herramienta para aprender, **un error que señala mal enseña algo falso**.
+>
+> Por eso: cuando termines tus sesiones, prueba **entradas que no diseñaste**
+> —argumentos raros, mayúsculas, espacios de más, campos vacíos, HTML en el
+> input— y pide a alguien que no lo escribió que teclee. Ahí es donde sale.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---
