@@ -443,6 +443,24 @@ const games = [
   que el CSS mande; no fijes tamaños.
 - `reveal` en bandas y tarjetas activa la animación de entrada.
 
+### Busca las asimetrías, no solo los huecos
+
+Al revisar un tema ya escrito, el defecto fácil de ver es «falta contenido». El
+que se escapa es **el mismo tipo de contenido recibiendo tratos distintos**:
+enterrado en un pie de letra pequeña aquí, con tarjeta propia allá. Nadie lo
+reporta como fallo —está todo— pero al estudiar solo se encuentra la mitad.
+
+El síntoma se caza comparando el temario original consigo mismo: **si la fuente
+dedica un punto a lo mismo en tres bloques, tu tema debería darles el mismo
+rango**. Pasó de verdad: los comandos de procesos tenían tarjeta, los de memoria
+vivían en un pie al final de un desplegable —invisibles si no lo abrías— y los de
+módulos no existían. Ninguna revisión de «¿falta algo?» lo habría encontrado.
+
+Y al desenterrar, añade a cada dato **el matiz que lo hace útil en vez de
+memorizable**: no «`free -h` muestra la memoria», sino que la columna que importa
+es *available* y no *free*. Es la diferencia entre una lista que se olvida y algo
+que se entiende una vez.
+
 ---
 
 ## 10. Escape hatch — cuando los helpers no llegan
