@@ -108,20 +108,20 @@ function examCardHtml(cfg, materiaId){
    es una sesión larga con ruta propia. Si solo hay uno, entra directo; si hay
    varios, lleva al índice — así no se esconde el único que exista tras una lista
    de un elemento. Sin exámenes declarados, no se pinta nada. */
-function oficialesCardHtml(){
-  const lista = allExamenes();
-  if(!lista.length) return '';
-  const destino = lista.length === 1 ? `#/oficial/${lista[0].id}` : '#/oficiales';
-  const kicker = lista.length === 1 ? 'Convocatoria completa' : `${lista.length} convocatorias`;
-  const desc = lista.length === 1
-    ? 'El examen oficial entero, en una hoja y con su tiempo — como en la oposición.'
-    : 'Exámenes oficiales de convocatorias reales, enteros y con su tiempo — como en la oposición.';
+/* UNA sola puerta a los exámenes. Antes había dos tarjetas (banco y oficiales)
+   y obligaban a decidir entre ellas desde fuera, sin haber visto ninguna. */
+function examenesCardHtml(cfg){
+  const n = allExamenes().length;
+  const kicker = n ? `Banco por temas · ${n} convocatoria${n === 1 ? '' : 's'} oficial${n === 1 ? '' : 'es'}` : 'Banco único · todos los temas';
+  const desc = n
+    ? 'Practica por temas o haz un examen oficial entero, con su orden y su tiempo.'
+    : (cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.');
   return `
-            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="${destino}">
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#/examenes">
               <div class="mc-icon" data-icon="exam" data-depth="46"></div>
               <div class="tema-body" data-depth="22">
                 <div class="tema-k">${kicker}</div>
-                <div class="tema-title">Exámenes oficiales</div>
+                <div class="tema-title">Exámenes</div>
                 <div class="tema-desc">${desc}</div>
               </div>
               <div class="tema-arrow" data-depth="34">→</div>
@@ -177,8 +177,8 @@ export const temarioView = {
     const cfg = config();
     const body = hasMaterias()
       ? `<div class="temas">${materiasWithTemas().map(materiaCardHtml).join('')}</div>
-         <div class="temas">${examCardHtml(cfg)}${oficialesCardHtml()}</div>`
-      : `${temaCardsHtml(allTemas())}<div class="temas">${examCardHtml(cfg)}${oficialesCardHtml()}</div>`;
+         <div class="temas">${examenesCardHtml(cfg)}</div>`
+      : `${temaCardsHtml(allTemas())}<div class="temas">${examenesCardHtml(cfg)}</div>`;
     root.innerHTML = `
       <div class="wrap">
         <p class="eyebrow">${cfg.eyebrow || ''}</p>
@@ -209,7 +209,7 @@ export const materiaView = {
         ${searchBarHtml()}
         ${hubToolsHtml()}
         ${temaCardsHtml(m.temas)}
-        <div class="temas">${examCardHtml(cfg, m.id)}${oficialesCardHtml()}</div>
+        <div class="temas">${examCardHtml(cfg, m.id)}</div>
       </div>`;
     wireHub(root);
   }

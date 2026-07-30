@@ -1,9 +1,14 @@
-/* Índice de exámenes oficiales: `#/oficiales`.
+/* Índice ÚNICO de exámenes: `#/examenes`.
 
-   Existe solo cuando hay más de uno. Con uno solo, la tarjeta del hub entra
-   directa al examen — un índice de un elemento es un clic de peaje. */
+   Una sola puerta para las dos formas de examinarse. Desde fuera son lo mismo
+   —«quiero hacer preguntas»— y solo se distinguen al elegir: el banco por temas
+   se filtra y sirve para estudiar un punto; una convocatoria oficial entra
+   entera y sirve para ensayar el examen. Dos tarjetas en la portada obligaban a
+   entender esa diferencia ANTES de entrar, que es justo al revés. */
 
 import { allExamenes, normalizarExamen } from '../core/examen-oficial.js';
+import { openExam } from './examen.js';
+import { config } from '../config.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -11,7 +16,7 @@ const esc = (s) => String(s == null ? '' : s)
 function fichaHtml(crudo){
   const ex = normalizarExamen(crudo);
   /* Los avisos van AQUÍ y no solo dentro del examen: lo que decide si merece la
-     pena empezar uno de 110 minutos es saber antes si corrige y si es firme. */
+     pena empezar uno de dos horas es saber antes si corrige y si es firme. */
   const sellos = [
     ex.provisional ? '<span class="ofi-sello prov">plantilla provisional</span>' : '',
     ex.plantilla === 'ausente' ? '<span class="ofi-sello sin">sin plantilla · no corrige</span>' : '',
@@ -41,18 +46,44 @@ function fichaHtml(crudo){
 
 export const oficialesViewFactory = {
   create(){
+    let ac = null;
     return {
       mount(root){
+        const cfg = config();
         const lista = allExamenes();
-        if(!lista.length){ location.hash = '#/'; return; }
-        root.innerHTML = `<div class="wrap view-oficiales">
-          <p class="volver-row"><a class="volver" href="#/">← Volver</a></p>
-          <h1>Exámenes oficiales</h1>
-          <p class="lede">Convocatorias reales, enteras y en su orden. No se trocean por temas:
-            lo que entrena un examen oficial es justo el conjunto y el reparto que no eliges.</p>
-          <div class="ofi-lista">${lista.map(fichaHtml).join('')}</div>
+        ac = new AbortController();
+
+        const oficiales = lista.length ? `
+          <h2 class="ex-sec">Convocatorias oficiales</h2>
+          <p class="ex-sub">Exámenes reales, enteros y en su orden. No se trocean por temas:
+            lo que entrenan es justo el conjunto y el reparto que no eliges.</p>
+          <div class="ofi-lista">${lista.map(fichaHtml).join('')}</div>` : '';
+
+        root.innerHTML = `<div class="wrap view-examenes">
+          <nav class="controls" aria-label="Navegación">
+            <div class="nav-left"><a class="btn ghost" href="#/">← Temario</a></div>
+          </nav>
+          <h1>Exámenes</h1>
+          <h2 class="ex-sec">Banco de preguntas</h2>
+          <p class="ex-sub">${esc(cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.')}</p>
+          <div class="ofi-lista">
+            <a class="ofi-card" href="#" data-exam>
+              <div class="ofi-cab"><span class="ofi-tit">Practicar por temas</span></div>
+              <div class="ofi-datos"><span>eliges materia, tema y cuántas preguntas</span></div>
+            </a>
+          </div>
+          ${oficiales}
         </div>`;
+
+        root.addEventListener('click', (e) => {
+          const a = e.target.closest('[data-exam]');
+          if(!a) return;
+          e.preventDefault();
+          openExam({});
+        }, { signal: ac.signal });
+
         window.scrollTo(0, 0);
+        return () => { if(ac){ ac.abort(); ac = null; } };
       }
     };
   }

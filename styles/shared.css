@@ -612,3 +612,6 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
   border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 4%,transparent);}
 .exh-m.bl i{font-style:normal;opacity:.7;font-size:12px;}
 .ofi-sello.pen{border-color:#b3261e;color:#8c1d18;}
+.view-examenes .ex-sec{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin:26px 0 2px;}
+.view-examenes .ex-sec:first-of-type{margin-top:16px;}
+.view-examenes .ex-sub{margin:0 0 10px;color:var(--ink-soft);font-size:14px;max-width:62ch;}
