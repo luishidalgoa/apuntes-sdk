@@ -589,3 +589,20 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
   .exh-nota{margin-left:0;}
 }
 .exh-aviso.prov{border-left-color:#b8860b;background:color-mix(in srgb,#b8860b 6%,transparent);}
+
+/* ---- Índice de examenes oficiales ---- */
+.ofi-lista{display:grid;gap:10px;margin:18px 0 30px;}
+.ofi-card{display:block;padding:13px 15px;border:1px solid var(--line);border-radius:12px;
+  text-decoration:none;color:inherit;transition:.15s ease;background:var(--card,transparent);}
+.ofi-card:hover{border-color:var(--accent);transform:translateY(-1px);
+  box-shadow:0 6px 18px -10px rgba(0,0,0,.35);}
+.ofi-cab{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;}
+.ofi-tit{font-weight:700;font-size:15.5px;}
+.ofi-mod{font-size:11.5px;color:var(--ink-faint);border:1px solid var(--line);border-radius:999px;padding:1px 7px;}
+.ofi-datos{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:13px;color:var(--ink-soft);}
+.ofi-flojo{font-style:italic;opacity:.75;}
+.ofi-sellos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.ofi-sello{font-size:11px;border-radius:999px;padding:2px 8px;border:1px solid var(--line);}
+.ofi-sello.prov{border-color:#b8860b;color:#8a6508;background:color-mix(in srgb,#b8860b 8%,transparent);}
+.ofi-sello.sin{border-color:#b3261e;color:#8c1d18;background:color-mix(in srgb,#b3261e 7%,transparent);}
+.ofi-sello.an{background:color-mix(in srgb,var(--ink) 6%,transparent);}

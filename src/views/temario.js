@@ -5,6 +5,7 @@ import { getLatestBookmark, clearBookmark, anchorLabel, relTime } from '../core/
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { bindMateriaCards } from '../core/materia-cards.js';
 import { openExam } from './examen.js';
+import { allExamenes } from '../core/examen-oficial.js';
 import { openStudyPlan } from '../core/studyplan.js';
 
 /* Portada y hubs. Con `appConfig.materias`, la portada (#/) es un SELECTOR de
@@ -103,6 +104,30 @@ function examCardHtml(cfg, materiaId){
             </a>`;
 }
 
+/* Tarjeta de exámenes oficiales completos. NAVEGA (no abre overlay): cada examen
+   es una sesión larga con ruta propia. Si solo hay uno, entra directo; si hay
+   varios, lleva al índice — así no se esconde el único que exista tras una lista
+   de un elemento. Sin exámenes declarados, no se pinta nada. */
+function oficialesCardHtml(){
+  const lista = allExamenes();
+  if(!lista.length) return '';
+  const destino = lista.length === 1 ? `#/oficial/${lista[0].id}` : '#/oficiales';
+  const kicker = lista.length === 1 ? 'Convocatoria completa' : `${lista.length} convocatorias`;
+  const desc = lista.length === 1
+    ? 'El examen oficial entero, en una hoja y con su tiempo — como en la oposición.'
+    : 'Exámenes oficiales de convocatorias reales, enteros y con su tiempo — como en la oposición.';
+  return `
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="${destino}">
+              <div class="mc-icon" data-icon="exam" data-depth="46"></div>
+              <div class="tema-body" data-depth="22">
+                <div class="tema-k">${kicker}</div>
+                <div class="tema-title">Exámenes oficiales</div>
+                <div class="tema-desc">${desc}</div>
+              </div>
+              <div class="tema-arrow" data-depth="34">→</div>
+            </a>`;
+}
+
 /* Agrupa una lista de temas por `bloque` (si alguno lo declara); si no, un solo
    grupo sin cabecera. Genérico y acotado a los temas que se le pasen (para poder
    agrupar SOLO los de una materia). */
@@ -152,8 +177,8 @@ export const temarioView = {
     const cfg = config();
     const body = hasMaterias()
       ? `<div class="temas">${materiasWithTemas().map(materiaCardHtml).join('')}</div>
-         <div class="temas">${examCardHtml(cfg)}</div>`
-      : `${temaCardsHtml(allTemas())}<div class="temas">${examCardHtml(cfg)}</div>`;
+         <div class="temas">${examCardHtml(cfg)}${oficialesCardHtml()}</div>`
+      : `${temaCardsHtml(allTemas())}<div class="temas">${examCardHtml(cfg)}${oficialesCardHtml()}</div>`;
     root.innerHTML = `
       <div class="wrap">
         <p class="eyebrow">${cfg.eyebrow || ''}</p>
@@ -184,7 +209,7 @@ export const materiaView = {
         ${searchBarHtml()}
         ${hubToolsHtml()}
         ${temaCardsHtml(m.temas)}
-        <div class="temas">${examCardHtml(cfg, m.id)}</div>
+        <div class="temas">${examCardHtml(cfg, m.id)}${oficialesCardHtml()}</div>
       </div>`;
     wireHub(root);
   }

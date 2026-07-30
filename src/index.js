@@ -18,6 +18,7 @@ import { applyTabletMode } from './core/tablet.js';
 import { temarioView, materiaView } from './views/temario.js';
 import { temaViewFactory } from './views/tema.js';
 import { oficialViewFactory } from './views/oficial.js';
+import { oficialesViewFactory } from './views/oficiales.js';
 import { mountExamOverlay } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountHighlight } from './core/highlight.js';
@@ -66,7 +67,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
 
   createRouter({
     root: viewRoot,
-    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory, oficial: oficialViewFactory },
+    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory, oficial: oficialViewFactory, oficiales: oficialesViewFactory },
     ctx: {}
   });
 }
@@ -94,3 +95,4 @@ export { bindMateriaCards, MATERIA_ICONS } from './core/materia-cards.js';
 export { setExamenes, allExamenes, examenById, normalizarExamen, corregir } from './core/examen-oficial.js';
 export { mountExamenHoja } from './views/examen-hoja.js';
 export { oficialViewFactory } from './views/oficial.js';
+export { oficialesViewFactory } from './views/oficiales.js';
