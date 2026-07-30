@@ -14,8 +14,11 @@ export function parseHash(){
   if(seg.length === 0) return { name: 'hub' };
   if(seg[0] === 'materia' && seg[1]) return { name: 'materia', materiaId: seg[1] };
   if(seg[0] === 'tema' && seg[1]) return { name: 'tema', temaId: seg[1], anchor: seg.slice(2).join('/') || null };
-  /* 'examen' ya NO es una ruta: el examen es un overlay (openExam). Un enlace
-     antiguo #/examen cae en la portada sin romper. */
+  /* Un examen oficial SI es ruta propia: es una sesion larga que se comparte y
+     se retoma por enlace, no un overlay que se abre y se cierra. */
+  if(seg[0] === 'oficial' && seg[1]) return { name: 'oficial', examenId: seg[1] };
+  /* 'examen' ya NO es una ruta: el examen por temas es un overlay (openExam).
+     Un enlace antiguo #/examen cae en la portada sin romper. */
   return { name: 'hub' };
 }
 
@@ -23,6 +26,7 @@ export function href(route){
   if(route.name === 'hub') return '#/';
   if(route.name === 'materia') return '#/materia/' + route.materiaId;
   if(route.name === 'tema') return '#/tema/' + route.temaId + (route.anchor ? '/' + route.anchor : '');
+  if(route.name === 'oficial') return '#/oficial/' + route.examenId;
   return '#/';
 }
 

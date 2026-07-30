@@ -17,6 +17,7 @@ import { installEscapeHandler } from './core/modal-stack.js';
 import { applyTabletMode } from './core/tablet.js';
 import { temarioView, materiaView } from './views/temario.js';
 import { temaViewFactory } from './views/tema.js';
+import { oficialViewFactory } from './views/oficial.js';
 import { mountExamOverlay } from './views/examen.js';
 import { mountRefPreview } from './exam/preview.js';
 import { mountHighlight } from './core/highlight.js';
@@ -25,6 +26,7 @@ import { mountStudyPlan } from './core/studyplan.js';
 import { mountSearch } from './core/search-ui.js';
 import { setConfig } from './config.js';
 import { setRegistry } from './registry.js';
+import { setExamenes } from './core/examen-oficial.js';
 
 /* Tiñe el chrome del navegador (barra superior de Safari iOS, Android) con el
    papel de la app: inyecta <meta name="theme-color"> con el token --paper
@@ -43,6 +45,7 @@ function ensureThemeColor(){
 export function createApp(appConfig, temas, { mountEl } = {}){
   setConfig(appConfig);
   setRegistry(temas);
+  setExamenes(appConfig.examenes || []);   // examenes oficiales completos (opcional)
   ensureThemeColor();
 
   const app = mountEl || document.getElementById('app');
@@ -63,7 +66,7 @@ export function createApp(appConfig, temas, { mountEl } = {}){
 
   createRouter({
     root: viewRoot,
-    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory },
+    views: { hub: temarioView, materia: materiaView, tema: temaViewFactory, oficial: oficialViewFactory },
     ctx: {}
   });
 }
@@ -90,3 +93,4 @@ export { bindScrollReveal, unbindScrollReveal } from './core/scroll-reveal.js';
 export { bindMateriaCards, MATERIA_ICONS } from './core/materia-cards.js';
 export { setExamenes, allExamenes, examenById, normalizarExamen, corregir } from './core/examen-oficial.js';
 export { mountExamenHoja } from './views/examen-hoja.js';
+export { oficialViewFactory } from './views/oficial.js';
