@@ -757,6 +757,28 @@ Y **esta comprobación no necesita navegador**: monta el HTML real con varias
 instancias sobre linkedom, opera en una y compara el `textContent` de la otra.
 No es de las que hay que delegar.
 
+#### Comprueba el conjunto, no el caso que te señalan
+
+Cuando te reportan un dato malo, **lista ese mismo campo en todos los ficheros
+hermanos antes de darlo por cerrado**: si llegó ahí por copia, estará en más
+sitios. Y al revés, **poner los registros en fila —un índice, una tabla, un
+listado— hace que un valor repetido cante**; de uno en uno no se ve.
+
+> **Un dato inventado que se replica es peor que el original: cuantas más veces
+> aparece, más parece verificado.**
+
+Pasó con el tiempo de un examen. Se puso `minutos: 110` por asunción, sin
+verificarlo, y al montar el examen siguiente se copió la cabecera entera. Cuando
+se reportó el primero, arreglar solo ese habría dejado el otro — y el segundo
+respaldaba al primero por el mero hecho de coincidir. Se cazó por las dos vías a
+la vez: listando el campo en los tres ficheros, y viendo las tres fichas en fila
+en un índice recién hecho. Las dos mitades de la misma idea.
+
+Y el fondo es el mismo que el de `correcta: null`: **el modelo tiene que poder
+decir «no lo sé»**. Un tiempo inventado no es un dato cosmético — entrena un
+ritmo que no es el del examen, y quien lo usa no tiene forma de saberlo porque
+el número parece oficial. Mejor un hueco declarado que un valor verosímil.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---
