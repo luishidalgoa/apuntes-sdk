@@ -9,6 +9,10 @@ import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
 import { openRefPreview } from '../exam/preview.js';
 import { registerLayer } from '../core/modal-stack.js';
+import { allExamenes, normalizarExamen } from '../core/examen-oficial.js';
+
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const EXAM_TIME_LIMIT = 45;
 
@@ -104,6 +108,30 @@ function showExamSetup(initialTema){
   }
   const selCount = hasInitial ? countTema(TEMA_GROUPS.find(g => g.id === initialTema)) : total;
 
+  /* Convocatorias oficiales DENTRO del modal: la decisión «banco por temas o
+     examen real» se toma aquí, que es donde ya estás, y no en una pantalla
+     intermedia. Elegir una es lo único que navega —un examen oficial dura dos
+     horas y necesita ruta propia para compartirse y retomarse—, así que el
+     modal se cierra al saltar. */
+  const oficiales = allExamenes();
+  const oficialesHtml = oficiales.length
+    ? '<p class="exam-setup-label">¿O un examen oficial completo?</p>'
+      + '<div class="exam-ofi">' + oficiales.map(o => {
+          const ex = normalizarExamen(o);
+          const corregibles = ex.preguntas.filter(q => !q.anulada).length;
+          const notas = [
+            ex.preguntas.length + ' preguntas',
+            corregibles !== ex.preguntas.length ? 'corrige sobre ' + corregibles : '',
+            ex.provisional ? 'plantilla provisional' : '',
+            ex.penalizacion ? 'penaliza 1/' + Math.round(1 / ex.penalizacion) : ''
+          ].filter(Boolean).join(' · ');
+          return '<button class="exam-ofi-row" type="button" data-oficial="' + esc(ex.id) + '">'
+            + '<span class="exam-ofi-t">' + esc(ex.titulo) + '</span>'
+            + '<span class="exam-ofi-d">' + esc(notas) + '</span>'
+            + '<span class="exam-ofi-go">→</span></button>';
+        }).join('') + '</div>'
+    : '';
+
   examBody.innerHTML =
     '<div class="exam-setup">'
     + '<p class="exam-setup-label">¿De qué temas quieres examinarte?</p>'
@@ -116,7 +144,16 @@ function showExamSetup(initialTema){
     + '<div class="opts exam-time-opts"><button class="btn" data-timed="0">Sin temporizador</button><button class="btn" data-timed="1">⏱ Con temporizador (45s/pregunta)</button></div>'
     + '<p class="exam-setup-label">¿Cuántas preguntas?</p>'
     + '<div class="opts"><button class="btn" data-n="10">10</button><button class="btn" data-n="20">20</button><button class="btn" data-n="0">Todas (<span id="examPoolCount">' + selCount + '</span>)</button></div>'
+    + oficialesHtml
     + '</div>';
+
+  examBody.querySelectorAll('[data-oficial]').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.getAttribute('data-oficial');
+      closeExam();                       // el overlay no debe quedar detrás de la ruta
+      location.hash = '#/oficial/' + id;
+    });
+  });
 
   const allCb = examBody.querySelector('#examTemaAll');
   const temaCbs = [...examBody.querySelectorAll('.exam-tema-cb')];

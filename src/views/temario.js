@@ -116,12 +116,11 @@ function examenesCardHtml(cfg, materiaId){
   const desc = n
     ? 'Practica por temas o haz un examen oficial entero, con su orden y su tiempo.'
     : (cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.');
-  /* Desde una materia el destino es el MISMO índice, acotado: si aquí abriera
-     el overlay directamente, las convocatorias oficiales no tendrían puerta
-     para quien entra por la materia — que es como se navega casi siempre. */
-  const destino = materiaId ? `#/examenes/${materiaId}` : '#/examenes';
+  /* Abre el MODAL, no una pantalla intermedia: la elección entre banco por temas
+     y convocatoria oficial se hace dentro, que es donde ya estás. Solo elegir
+     una convocatoria navega (el examen oficial necesita ruta propia). */
   return `
-            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="${destino}">
+            <a class="tema-card mc-3d" style="--accent:var(--ink)" href="#" role="button" data-exam data-materia="${esc(materiaId || '')}">
               <div class="mc-icon" data-icon="exam" data-depth="46"></div>
               <div class="tema-body" data-depth="22">
                 <div class="tema-k">${kicker}</div>
