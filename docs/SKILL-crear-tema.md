@@ -779,6 +779,18 @@ decir «no lo sé»**. Un tiempo inventado no es un dato cosmético — entrena 
 ritmo que no es el del examen, y quien lo usa no tiene forma de saberlo porque
 el número parece oficial. Mejor un hueco declarado que un valor verosímil.
 
+> **Pero poner los datos en fila no basta si eliges el eje de antemano.** La
+> tabla enseña lo que la agrupación deja ver, así que agrupar por la hipótesis
+> que ya tienes la confirma sola. Pasó justo después de escribir esta regla:
+> cuatro exámenes tabulados, agrupados por «plantilla definitiva vs provisional»
+> para explicar cuántas preguntas anulaba cada uno — y el contraejemplo estaba
+> **en la propia tabla**, en una fila que no encajaba. El eje que separaba los
+> datos era otro (el tipo de convocatoria, con 80 preguntas frente a 50).
+>
+> Antes de dar por buena una lectura: **busca la fila que no encaja y prueba a
+> agrupar por otra columna**. Y con pocos casos, dilo — dos de cada lado son una
+> sospecha, no un patrón.
+
 Si alguna falla, es casi seguro un incumplimiento del contrato (§3) — repasa §11.
 
 ---
