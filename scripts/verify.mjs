@@ -335,10 +335,25 @@ function revisarDom(t, box, idsGlobales){
    actualizado, así que no hay aviso que se quede gritando de fondo. */
 const CLAVES_FILE = '.apuntes-claves.json';
 
+/* Referencia contra la que se comparan las claves: la versión COMMITEADA, no la
+   del disco. El fichero del disco lo reescribe este mismo script, así que tras
+   un renombrado la primera pasada ya lo ha actualizado y la siguiente compara
+   contra las claves nuevas — el aviso sale entonces con los nombres invertidos,
+   proponiendo como «clave vieja» la que acabas de estrenar. Lo commiteado es
+   además lo correcto conceptualmente: son las claves bajo las que el usuario
+   tiene guardadas sus marcas, y commitear el inventario es la forma de aceptar
+   el cambio. Sin git (o con el fichero aún sin versionar) cae al disco. */
+function baseDeClaves(raiz, ruta){
+  const g = spawnSync('git', ['show', 'HEAD:./' + CLAVES_FILE], { cwd: raiz, encoding: 'utf8' });
+  if(g.status === 0 && g.stdout){
+    try { return JSON.parse(g.stdout); } catch { /* commiteado pero ilegible */ }
+  }
+  try { return JSON.parse(readFileSync(ruta, 'utf8')); } catch { return null; }
+}
+
 function revisarClaves(raiz){
   const ruta = join(raiz, CLAVES_FILE);
-  let previo = null;
-  try { previo = JSON.parse(readFileSync(ruta, 'utf8')); } catch { previo = null; }
+  const previo = baseDeClaves(raiz, ruta);
 
   if(previo){
     for(const [tema, antes] of Object.entries(previo)){
@@ -365,11 +380,16 @@ function revisarClaves(raiz){
      al verificar. Por eso se respeta el fin de línea que ya tenga el fichero: en
      Windows git lo deja en CRLF, y escribirlo en LF lo marcaba como modificado
      en cada `verify` aunque el contenido fuera idéntico. Ese cambio fantasma de
-     un fichero compartido acaba colándose en el commit de alguien. */
-  const salida = { ...(previo || {}) };
-  for(const [tema, ks] of clavesPorTema) salida[tema] = ks;
+     un fichero compartido acaba colándose en el commit de alguien.
+     OJO: lo que se escribe parte del fichero EN DISCO, no de `previo` —que
+     ahora viene de git—. Partir de git borraría del inventario los temas que
+     otro carril haya verificado y aún no haya commiteado. */
   let enDisco = null;
   try { enDisco = readFileSync(ruta, 'utf8'); } catch { /* aún no existe */ }
+  let previoDisco = null;
+  try { previoDisco = JSON.parse(enDisco); } catch { previoDisco = null; }
+  const salida = { ...(previoDisco || previo || {}) };
+  for(const [tema, ks] of clavesPorTema) salida[tema] = ks;
   const eol = enDisco && enDisco.includes('\r\n') ? '\r\n' : '\n';
   const texto = '{' + eol + Object.keys(salida).sort()
     .map(t => `  ${JSON.stringify(t)}: ${JSON.stringify(salida[t])}`).join(',' + eol) + eol + '}' + eol;
