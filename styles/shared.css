@@ -615,3 +615,20 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
 .view-examenes .ex-sec{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin:26px 0 2px;}
 .view-examenes .ex-sec:first-of-type{margin-top:16px;}
 .view-examenes .ex-sub{margin:0 0 10px;color:var(--ink-soft);font-size:14px;max-width:62ch;}
+
+/* ---- Enumeraciones a) b) c) en el CUERPO DE TEORÍA ----
+   Hermana de la del panel literal, no la misma: alli los items son parrafos de
+   ley y piden aire; aqui son resumenes de una linea, asi que van compactos. Con
+   muchos items (art. 14 tiene 12 limites, EBEP-14 diecisiete derechos) la lista
+   se hace muy alta, y por eso pasa a dos columnas en pantalla ancha. */
+div.ap-txt,div.atxt{display:block;}
+.ap-intro{display:block;margin-bottom:5px;}
+.ap-abc{list-style:none;margin:0;padding:0;display:grid;gap:3px 18px;}
+.ap-abc li{position:relative;padding-left:22px;line-height:1.45;}
+.ap-abc .ap-m{position:absolute;left:0;top:0;font-weight:700;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;font-size:.94em;}
+@media (min-width:780px){
+  .ap-abc{grid-template-columns:repeat(2,minmax(0,1fr));}
+  /* Con pocos items, dos columnas dejan una fila coja: mejor una sola. */
+  .ap-abc:has(li:nth-child(-n+3):last-child){grid-template-columns:1fr;}
+}

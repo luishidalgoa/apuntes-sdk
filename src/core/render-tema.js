@@ -4,6 +4,7 @@
      ctx = { sections, source, labelFor(key), keySplit:'first'|'last',
              sourceDigitFallback, specialTags?, external? } */
 import { anchorId, config } from '../config.js';
+import { listData } from './enum-list.js';
 
 export function linkify(text, refs){
   if(!refs || !text) return text;
@@ -26,6 +27,26 @@ export function specialTagChip(ctx, dataRef, holder){
   return '<button class="susp-tag" data-ref="' + dataRef + '" type="button" aria-label="Ver etiqueta"><span class="ico">' + icon + '</span>' + labels + '</button>';
 }
 
+/* Cuerpo de teoría: si el párrafo lleva una enumeración a) b) c)…, se trocea
+   en lista. Tres cuidados que vienen del formato real:
+     · Se trocea DESPUÉS de `linkify`, sobre el HTML ya generado. Hacerlo antes
+       obligaría a repartir `refs` por ítem, y el marcador nunca cae dentro de
+       una etiqueta con el contenido actual.
+     · El contenedor pasa de `<span>` a `<div>` cuando hay lista: un `<ul>`
+       dentro de un inline es anidamiento inválido y el navegador lo reordena.
+       Sin lista se queda en `<span>`, para no cambiar lo que ya funciona.
+     · La lista es COMPACTA, distinta de la del panel literal: aquí los ítems
+       son resúmenes de una línea, no párrafos de ley. */
+function cuerpoApartado(html, cls = 'ap-txt', pre = ''){
+  const list = listData(html);
+  if(!list) return '<span class="' + cls + '">' + pre + html + '</span>';
+  return '<div class="' + cls + '">'
+    + (pre || list.intro ? '<span class="ap-intro">' + pre + list.intro + '</span>' : '')
+    + '<ol class="ap-abc">'
+    + list.items.map(it => '<li><span class="ap-m">' + it.disp + '</span>' + it.text + '</li>').join('')
+    + '</ol></div>';
+}
+
 export function renderArticleBlock(ctx, num){
   const art = ctx.sections[String(num)];
   if(!art) return '';
@@ -36,7 +57,7 @@ export function renderArticleBlock(ctx, num){
     ).join('');
   } else {
     noAp = true;
-    apsHtml = '<div class="apartado"><span class="ap-txt">' + linkify(art.text, art.refs) + '</span>' + specialTagChip(ctx, String(num), art) + '</div>';
+    apsHtml = '<div class="apartado">' + cuerpoApartado(linkify(art.text, art.refs)) + specialTagChip(ctx, String(num), art) + '</div>';
   }
   return '<div class="art-block' + (noAp ? ' no-ap' : '') + '" id="' + anchorId(num) + '">'
     + '<div class="art-block-head"><button class="art-num" data-ref="' + num + '" type="button" title="Ver texto literal">' + num + '</button><span class="art-title">' + art.title + '</span></div>'
@@ -63,11 +84,11 @@ export function renderArtRow(ctx, key){
       + '<button class="art-hd-num" data-ref="' + key + '" type="button" title="Ver texto literal">' + label + '</button>'
       + '<span class="art-hd-title">' + art.title + '</span></div>';
     const rows = art.apartados.map(ap =>
-      '<div class="art" id="' + anchorId(key, ap.n) + '"><button class="anum" data-ref="' + key + '.' + ap.n + '" type="button" title="Ver texto literal">' + ap.n + '</button><span class="atxt">' + linkify(ap.text, ap.refs) + '</span></div>'
+      '<div class="art" id="' + anchorId(key, ap.n) + '"><button class="anum" data-ref="' + key + '.' + ap.n + '" type="button" title="Ver texto literal">' + ap.n + '</button>' + cuerpoApartado(linkify(ap.text, ap.refs), 'atxt') + '</div>'
     ).join('');
     return '<div class="art-group" id="' + anchorId(key) + '">' + head + rows + '</div>';
   }
-  return '<div class="art" id="' + anchorId(key) + '"><button class="anum" data-ref="' + key + '" type="button" title="Ver texto literal">' + label + '</button><span class="atxt"><b>' + art.title + '.</b> ' + linkify(art.text, art.refs) + '</span></div>';
+  return '<div class="art" id="' + anchorId(key) + '"><button class="anum" data-ref="' + key + '" type="button" title="Ver texto literal">' + label + '</button>' + cuerpoApartado(linkify(art.text, art.refs), 'atxt', '<b>' + art.title + '.</b> ') + '</div>';
 }
 
 export function renderCard(ctx, card, cls){
