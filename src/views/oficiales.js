@@ -24,8 +24,14 @@ function fichaHtml(crudo){
     ex.preguntas.some(q => q.anulada)
       ? '<span class="ofi-sello an">' + ex.preguntas.filter(q => q.anulada).length + ' anuladas</span>' : '',
     /* El descuento se anuncia en la ficha porque cambia CÓMO se hace el examen,
-       no solo la nota: conviene saberlo antes de empezar, no al corregir. */
-    ex.penalizacion ? '<span class="ofi-sello pen">penaliza 1/' + Math.round(1 / ex.penalizacion) + '</span>' : ''
+       no solo la nota: conviene saberlo antes de empezar, no al corregir.
+       Y su AUSENCIA también se anuncia: callar cuando no se sabe deja al usuario
+       sin poder distinguir «este examen no penaliza» de «no sabemos si penaliza»,
+       y la nota le sale más generosa que la real sin ninguna señal. Es el mismo
+       fallo que un dato inventado, en su versión silenciosa. */
+    ex.penalizacion
+      ? '<span class="ofi-sello pen">penaliza 1/' + Math.round(1 / ex.penalizacion) + '</span>'
+      : '<span class="ofi-sello nopen">penalización sin verificar · corrige sin descuento</span>'
   ].filter(Boolean).join('');
   const corregibles = ex.preguntas.filter(q => !q.anulada).length;
   return `

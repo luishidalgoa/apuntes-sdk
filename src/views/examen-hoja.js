@@ -174,7 +174,12 @@ export function mountExamenHoja(host, examen, opts = {}){
           + '<p class="exh-consejo">Cada fallo descuenta <b>' + fraccion(r.penaliza) + '</b> de acierto, '
           + 'así que contestar al azar entre cuatro opciones no compensa: '
           + '<b>dejar en blanco es una decisión, no una renuncia.</b></p>'
-        : '')
+        /* Sin penalización verificada la nota sale MÁS ALTA que la real y no es
+           comparable con la de un examen que sí la declara. Decirlo aquí, junto
+           al número, es lo único que evita que se lea como una nota buena. */
+        : '<p class="exh-consejo aviso">Este examen corrige <b>sin descuento por error</b> '
+          + 'porque su criterio de penalización no está verificado. La nota sale '
+          + '<b>más alta que la real</b> y no es comparable con la de los exámenes que sí lo declaran.</p>')
       + '<p class="exh-nota-fin">Sobre ' + plural(r.corregibles, 'pregunta') + ' corregible'
       + (r.corregibles === 1 ? '' : 's') + ' · <b>' + nota + '</b> / 10'
       + (r.anuladas ? ' · las anuladas no cuentan' : '') + '</p>'
