@@ -779,6 +779,27 @@ el DOM simulado miente más cuanto más te acercas a los `<select>`. Extraer
 `veredicto(origen, destino, confianza)` permitió verificar la matriz 4×4 entera
 sin tocar el DOM, y de paso dejó la regla de negocio aislada y testeable.
 
+##### El comprobador se equivoca de dos formas distintas
+
+Arriba está la primera: el arnés que **fabrica errores inexistentes**. El gemelo
+es el que **da un resultado incorrecto sobre datos correctos, por una suposición
+implícita suya**. Al verificar los recorridos de un árbol dibujado en SVG, un
+comprobador dio el inorden por erróneo porque asumía que **un hijo único es el
+izquierdo**. No lo es: en un SVG **la lateralidad está en la geometría, no en el
+orden de los elementos** — un hijo es izquierdo o derecho según su `x` respecto
+al padre. La tarjeta estaba bien; el comprobador no.
+
+> **Señal de alarma: si la comprobación contradice a un contenido que lleva
+> tiempo publicado, sospecha del comprobador antes que del contenido.** El
+> contenido lo ha leído alguien; el comprobador lo acabas de escribir. Y al
+> revés: que confirme lo que esperabas no lo valida.
+
+**Corolario práctico: una comprobación solo vale para lo que mide.** Reconstruir
+padres, hijos y alturas desde un SVG no necesita lateralidad y sale bien; en
+cuanto entra el inorden, esa misma reconstrucción es insuficiente **sin que nada
+cambie en el código**. Antes de reutilizar un comprobador, comprueba que lo que
+ahora mides cabe en lo que él sabe distinguir.
+
 > **Pero el corolario importa tanto como la técnica: linkedom prueba que la
 > lógica hace lo que crees; no prueba que lo que creías fuera lo correcto.**
 > Quien escribe las pruebas recorre los caminos que diseñó. En ese mismo
