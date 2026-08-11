@@ -468,8 +468,8 @@ cola juntas dejan de confundirse; árbol y grafo se explican por oposición. Y l
 regla dura: **si la tarjeta afirma «ni A implica B ni B implica A», hacen falta
 DOS contraejemplos, uno por dirección.** Un ejemplo que cumpla las dos
 propiedades no demuestra nada y encima sugiere lo contrario del texto — pasó de
-verdad con «lleno» y «completo», y el dibujo llevaba meses contradiciendo a su
-propia tarjeta sin que nadie lo notara.
+verdad con «lleno» y «completo», y el dibujo estuvo **un mes en producción**
+contradiciendo a su propia tarjeta sin que nadie lo notara.
 
 **5 · Un `truco` da una prueba aplicable, no un recordatorio.** Bueno: «para
 descartar que sea estricto basta encontrar un nodo con un único hijo». Malo:
