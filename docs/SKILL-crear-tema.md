@@ -883,6 +883,43 @@ ahora mides cabe en lo que él sabe distinguir.
 > —argumentos raros, mayúsculas, espacios de más, campos vacíos, HTML en el
 > input— y pide a alguien que no lo escribió que teclee. Ahí es donde sale.
 
+##### Medir el estado por defecto no es medir la escena
+
+Una escena interactiva tiene tantos dibujos como estados, y el que ves al abrir
+la tarjeta suele ser **el más pequeño**. En una escena de árbol de búsqueda, el
+nodo que se inserta cuelga un nivel **por debajo** del más profundo — y solo
+aparece al pulsar «Inserta». Dimensionar el lienzo con lo que había en pantalla
+dejó ese nodo fuera, sin que ningún estado visible lo delatara.
+
+Los dos carriles medimos la misma escena incompleta el mismo día, por caminos
+distintos: uno al dimensionar, el otro al auditar. **El margen sobrante era de 46
+unidades en los tres estados de búsqueda y de 6 en el de inserción**, así que el
+único estado que decidía el alto era el que no se veía sin pulsar.
+
+> **Y la trampa peor: los estados no son independientes.** Un barrido que pulsa
+> los botones en orden cambia el modo por el camino, así que a partir de ahí mide
+> las acciones siguientes **sobre el modo equivocado**. Pasó al verificar esto:
+> ocho estados salieron correctos y ninguno era el que importaba, porque el
+> «Inserta» se midió sobre el árbol degenerado, que no dibuja el nodo nuevo.
+> Un barrido en secuencia **no visita lo que cree visitar**.
+>
+> Recorre el **producto** de las dimensiones (modo × acción), reponiendo el modo
+> antes de cada acción, y comprueba los límites en **todos** los estados — no en
+> el primero ni en el último.
+
+##### La media query que copias puede quedar muerta
+
+`@media` **no añade especificidad**: entre dos reglas de un mismo selector decide
+el **orden**. Una media query colocada *antes* de la regla base no anula nada.
+
+Pasa al reutilizar: se añade un selector a una media query que ya existe y
+funciona, sin mirar dónde está la base del selector nuevo. Ocurrió con dos
+selectores **en la misma línea** — uno con su base 5 líneas antes (vivo) y otro
+con la suya 16 líneas después (muerto). El síntoma es de los malos: la línea está
+escrita, se lee bien, y no hace nada.
+
+Compruébalo en el navegador con `getComputedStyle`, no leyendo el CSS.
+
 #### Varias instancias del mismo widget: comprobar que no se contaminan
 
 Cuando la misma página monta **varias instancias de un widget con estado**
