@@ -525,6 +525,50 @@ que se entiende una vez.
   que el CSS mande; no fijes tamaños.
 - `reveal` en bandas y tarjetas activa la animación de entrada.
 
+#### El `viewBox` de un SVG cambia el tamaño que declaras, en los dos ejes
+
+Dentro de un SVG **nada de lo que escribes está en píxeles**: está en unidades de
+`viewBox`, y el navegador las multiplica por `ancho_real / ancho_del_viewBox`. Un
+diagrama de `viewBox="0 0 520 …"` metido en los 286 px que deja una tarjeta en
+móvil se dibuja a escala **0,55**: un `font-size:12` se ve a **6,6 px**. Pasó, y el
+texto afectado era el que llevaba la lección, no la decoración.
+
+El número declarado **solo coincide con el real cuando la escala es 1**, y eso
+suele pasar únicamente en el ancho grande. Al dar por buena una medida, di
+siempre **el par y el ancho**: «declarado 13, real 11,6 a 375 px».
+
+Y tiene un gemelo horizontal que es peor: **el ancho del texto también vive en
+unidades de `viewBox`**. Una frase que ocupa 370 unidades en un lienzo de 320 se
+sale por los dos lados y **desaparece sin dejar rastro** — no hay `overflow` que
+lo delate, ni consola que se queje, ni nada que se vea raro. Comprueba que
+`getBBox().x + width` cabe en el ancho del `viewBox`, y si es prosa, sácala del
+SVG al `figcaption`: el SVG es para lo que tiene coordenadas.
+
+Dos salidas cuando un diagrama no cabe: subir el `font-size` en unidades de
+`viewBox` (rápido, pero desajusta la tarjeta si esa clase es compartida) o partir
+la figura en varios SVG más pequeños (cambia la escala de verdad). La segunda
+suele ser la buena cuando hay dos cosas que comparar.
+
+#### Reserva la altura **por bloque**, no en el contenedor
+
+Si al pulsar cambia un texto, reserva su altura o la página pega un salto. Pero
+un solo `min-height` en el contenedor **solo estabiliza el borde exterior**: por
+dentro los bloques siguen deslizándose unos contra otros, y el salto que ves al
+comparar dos opciones sigue ahí. Reserva **cada bloque que varíe**; entonces el
+contenedor no necesita reserva propia.
+
+Dos formas de medir mal la reserva, las dos ocurridas:
+
+- **Medir con la reserva puesta** — mides la reserva, no el contenido. Ponla a
+  `0`, recorre todos los estados, y quédate con el máximo.
+- **Medir antes de que asiente la fuente web** — con la tipografía de repuesto
+  las alturas salen distintas. Espera a `document.fonts.ready`; sin eso salió un
+  salto de 21 px que no existía.
+
+Y comprueba que la reserva sigue haciendo algo: si el **mínimo** del contenido ya
+la supera, esa línea no reserva nada. Es el tipo de código que se hereda como si
+funcionara.
+
 ---
 
 ## 10. Escape hatch — cuando los helpers no llegan
@@ -690,6 +734,27 @@ sirve en CI. Detecta, entre otros:
 | glosario: claves <2 letras o muertas | se ignoran en silencio |
 | examen: `correcta` fuera de `respuestas`, ids repetidos | preguntas rotas |
 | **respuestas contaminadas** (acaban en un nombre de apartado) | basura del PDF arrastrada al importar |
+| **escena muda**: mando de ≥2 controles y ningún `[aria-live]` cerca | quien no ve la pantalla oye que pulsó un botón y nada más |
+| **motor propio**: temporizador que se repite sin `mountStepper` | reimplementa el motor y suele dejar fuera la narración |
+
+### Una escena que cambia al pulsar tiene que decir qué cambió
+
+Marcar el botón activo con `aria-pressed` dice **cuál está pulsado**; no dice
+**qué pasó**. Falta la otra mitad: una región viva en el bloque que se reescribe.
+
+```html
+<div class="cnc-info" role="status" aria-live="polite">…</div>   <!-- se sustituye -->
+<div class="cli-out"  role="log"    aria-live="polite"></div>    <!-- se le añaden líneas -->
+```
+
+`status` para un valor que se reemplaza, `log` para uno al que se van añadiendo
+líneas. Ponla en el bloque **entero** que responde a lo que acabas de pulsar: si
+la respuesta son tres piezas (el valor, qué mide y por qué), anunciar solo la
+definición lee la explicación sin decir el resultado.
+
+Si la escena tiene **pasos**, no la montes a mano: `mountStepper` ya trae los
+controles, el contador, la guarda del temporizador y el `aria-live` — y lo único
+que se olvida al hacerlo a mano es justo lo que no se ve probando con el ratón.
 
 Aun así, **mira estas con el tema abierto** (lo que ninguna herramienta ve):
 

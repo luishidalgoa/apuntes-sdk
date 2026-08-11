@@ -157,8 +157,58 @@ function revisarEngine(t){
     'Dos apartados con el mismo número generan la misma ancla.');
 }
 
+/* CHROME del SDK: botones que trae la app, no la escena del tema. */
+const ES_CHROME = /\b(mark-btn|disclosure|stp-[\w-]+|exam-[\w-]+|acro|search-[\w-]+|sp-[\w-]+|nav-[\w-]+|btn-fav)\b/;
+
+/* La "escena" de una botonera: su tarjeta si la tiene, y si NO la tiene (hay
+   reproductores que cuelgan directos del wrap) los ancestros inmediatos, con
+   tope para no tragarse la seccion entera y dar por buena una region viva ajena. */
+function escenaDe(nodo, box){
+  for(let e = nodo; e && e !== box; e = e.parentElement)
+    if(e.classList && e.classList.contains('card')) return e;
+  let e = nodo, saltos = 0;
+  while(e.parentElement && e.parentElement !== box && saltos < 3){ e = e.parentElement; saltos++; }
+  return e;
+}
+
 function revisarDom(t, box, idsGlobales){
   const id = t.id;
+
+  /* ESCENA MUDA: mando de >=2 controles propios y nada que anuncie el cambio.
+     Se busca en TODO el tema, no tarjeta por tarjeta: los reproductores mas
+     grandes que encontramos no estaban dentro de ninguna `.card`. Tampoco se
+     exige `aria-pressed` — un mando de acciones (play, siguiente) no lo lleva,
+     y es justo el caso que se colaba. */
+  const mudas = [], vistas = new Set();
+  const controles = [...box.querySelectorAll('button, select, [role="button"]')]
+    .filter(c => !ES_CHROME.test(c.getAttribute('class') || ''))
+    /* `data-ref` es una referencia a un articulo: LLEVA a otro sitio, no reescribe
+       nada aqui. Un tema de Legislacion tiene decenas y las conte como escenas las
+       dos veces que mire esto a mano. Lo que descarta no es su clase, es que sean
+       navegacion: el destino ya se anuncia al aterrizar. */
+    .filter(c => !c.hasAttribute('data-ref'));
+  const porPadre = new Map();
+  for(const c of controles){
+    const p = c.parentElement; if(!p) continue;
+    if(!porPadre.has(p)) porPadre.set(p, []);
+    porPadre.get(p).push(c);
+  }
+  for(const [padre, grupo] of porPadre){
+    if(grupo.length < 2) continue;
+    const escena = escenaDe(padre, box);
+    if(vistas.has(escena)) continue;
+    vistas.add(escena);
+    if(escena.querySelector('[aria-live]')) continue;
+    const nombre = (escena.querySelector('.name')?.textContent || '').trim()
+      || (escena.getAttribute('class') || '').split(' ')[0] || '(sin nombre)';
+    mudas.push(nombre.slice(0, 34) + ' ×' + grupo.length);
+  }
+  if(mudas.length) add(id, 'warn', 'escena-muda',
+    `${mudas.length} escena(s) cambian al pulsar sin anunciar el cambio${muestra(mudas)}`,
+    'Quien no ve la pantalla oye que ha pulsado un boton y nada mas: el texto que\n' +
+    '     cambia al lado no se anuncia. Pon la region viva en el bloque que se reescribe\n' +
+    '     ENTERO — `role="status" aria-live="polite"` si se sustituye un valor,\n' +
+    '     `role="log"` si se le van añadiendo lineas.');
 
   /* ids duplicados (dentro del tema y contra el resto de la app) */
   const locales = [...box.querySelectorAll('[id]')].map(e => e.id);
@@ -470,8 +520,48 @@ function revisarComentarios(raiz){
     '     la lista sin barras.');
 }
 
+/* Un motor de pasos casero: temporizador que se repite y ningun `mountStepper`.
+   Reprogramarse con setTimeout cuenta igual que setInterval — es la forma que se
+   me escapo la primera vez que busque esto a mano. */
+function revisarMotores(raiz){
+  const sospechosos = [];
+  const walk = (dir) => {
+    let entradas = [];
+    try { entradas = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for(const e of entradas){
+      if(e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+      const p = join(dir, e.name);
+      if(e.isDirectory()){ walk(p); continue; }
+      if(extname(e.name) !== '.js' && extname(e.name) !== '.mjs') continue;
+      let txt = ''; try { txt = readFileSync(p, 'utf8'); } catch { continue; }
+      if(/mountStepper/.test(txt)) continue;
+      const sinComentarios = txt.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+      let motivo = null;
+      if(/\bsetInterval\s*\(/.test(sinComentarios)) motivo = 'setInterval';
+      else {
+        /* setTimeout(tick, …) donde `tick` es una funcion de este mismo fichero
+           que vuelve a llamar a setTimeout: es un bucle, no un retardo suelto. */
+        for(const m of sinComentarios.matchAll(/setTimeout\s*\(\s*([A-Za-z_$][\w$]*)/g)){
+          const nombre = m[1];
+          const cuerpo = new RegExp('function\\s+' + nombre + '\\s*\\([\\s\\S]{0,900}?setTimeout');
+          if(cuerpo.test(sinComentarios)){ motivo = 'setTimeout que se reprograma'; break; }
+        }
+      }
+      if(motivo) sospechosos.push(relative(raiz, p).replace(/\\/g, '/') + ' (' + motivo + ')');
+    }
+  };
+  walk(raiz);
+  if(sospechosos.length) add('(app)', 'warn', 'motor-propio',
+    `${sospechosos.length} modulo(s) mueven pasos con su propio temporizador${muestra(sospechosos)}`,
+    'Un reproductor a mano reimplementa lo que ya da `mountStepper` (controles,\n' +
+    '     contador, guarda del timer si la vista se re-renderiza) y suele dejarse fuera\n' +
+    '     lo unico que no se ve al probar con el raton: el `aria-live` que narra el paso.\n' +
+    '     Si la escena tiene pasos, montala con `mountStepper`.');
+}
+
 const okSinDom = pasadaSinDom();
 revisarComentarios(resolve(registryPath, '..', '..'));
+revisarMotores(resolve(registryPath, '..', '..'));
 const document = await montarDom();
 
 let TEMAS;
