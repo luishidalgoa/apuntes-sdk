@@ -435,15 +435,69 @@ const games = [
 
 ## 9. Reglas de diseño
 
-- **Colores**: solo variables de la paleta (`var(--t1)`, `var(--tema-accent)`).
-  **Nunca** un hex a pelo en el contenido — rompe el modo oscuro y la coherencia.
-- **Clases de color por sección** (`b-estructura`, `c1`): defínelas en el
-  `palette.css` de la app, no con estilos en línea.
-- **Jerarquía tipográfica**: la da el SDK. Usa `<h2>` en bandas/apartados y deja
-  que el CSS mande; no fijes tamaños.
-- `reveal` en bandas y tarjetas activa la animación de entrada.
+### 9.1 Qué hace que una tarjeta enseñe
 
-### Busca las asimetrías, no solo los huecos
+Estas siete salieron de rediseñar temas con el usuario delante, y están ordenadas
+por lo que más cambió el resultado. Valen para cualquier materia: la primera se
+escribió sobre tipos abstractos de datos y se aplica igual a un articulado.
+
+**1 · Busca la regla que sustituye a memorizar la lista — y que sea el criterio
+real.** «Cada TAD se define por la operación que tiene que ser rápida, y esa
+exigencia elige la estructura» sustituye a ocho pares que había que memorizar:
+ahora se deducen. Y «¿cómo llegas al siguiente elemento?» sustituye a las
+etiquetas *lineal / no lineal / tabular*, con la ventaja de que **se puede
+aplicar a un caso que el alumno no haya visto nunca**. Una regla inventada para
+que rime no sirve: tiene que ser aquello por lo que las cosas de verdad se
+distinguen.
+
+**2 · Una tabla que empareja dos abstracciones no enseña nada.** «Set → árbol
+rojo-negro · tabla hash» va de algo que no se ve a algo que tampoco. Cada fila
+necesita **un ejemplo con datos dentro**. Y ojo con lo que cuenta como ejemplo:
+una frase del tipo «como la agenda del móvil» **no lo es** — el lector pide *ver
+la cosa con datos*, no que le digan dónde la ha visto antes. Es la corrección
+que más enderezó este trabajo, y llegó sobre una versión que ya tenía «ejemplos»
+en prosa.
+
+**3 · Interactivo cuando la idea es un proceso.** El hash no se entiende leyendo
+que «se calcula la posición»: se entiende pulsando tres claves y viendo que cada
+una enciende otra cubeta. Para decidir cuándo merece la pena, §10.1 tiene el
+criterio y `mountStepper` la herramienta.
+
+**4 · Contraste y contraejemplo, mejor que ejemplos que cumplen todo.** Pila y
+cola juntas dejan de confundirse; árbol y grafo se explican por oposición. Y la
+regla dura: **si la tarjeta afirma «ni A implica B ni B implica A», hacen falta
+DOS contraejemplos, uno por dirección.** Un ejemplo que cumpla las dos
+propiedades no demuestra nada y encima sugiere lo contrario del texto — pasó de
+verdad con «lleno» y «completo», y el dibujo llevaba meses contradiciendo a su
+propia tarjeta sin que nadie lo notara.
+
+**5 · Un `truco` da una prueba aplicable, no un recordatorio.** Bueno: «para
+descartar que sea estricto basta encontrar un nodo con un único hijo». Malo:
+«recuerda que perfecto es el más exigente».
+
+**6 · Modelo real antes que metáfora.** Ctrl+Z no es *como* una pila: **es** una
+pila. Una analogía es un andamio —útil para subir, y se cae cuando llegan los
+casos raros—; el modelo real aguanta todas las piezas del tema. Si la metáfora
+es lo que la cosa modela de verdad (Active Directory y un grupo de empresas), no
+estás comparando: estás nombrando.
+
+**7 · Decide qué se queda fuera, y dilo.** Dos tarjetas vecinas no pueden
+dibujar lo mismo: si una dibuja estructuras concretas con datos, la otra dibuja
+formas genéricas. Si las dos hacen lo mismo, la pregunta «¿para qué están las
+dos?» no tiene respuesta y sobra una.
+
+#### El flujo, que importa tanto como las reglas
+
+- **Enseña el rediseño embebido y espera el visto bueno antes de aplicarlo.**
+  Evita trabajo tirado, y el que revisa ve el resultado, no una descripción.
+- Cuando pregunten «¿hay más cosas útiles que cambiar?», responde con una
+  **auditoría ordenada por impacto y una recomendación**, no con una lista plana.
+- Dos comprobaciones que han encontrado agujeros reales cada vez que se han
+  hecho: **¿el repaso final cubre todos los apartados?** (dos temas lo tenían a
+  medias) y **¿el `desc` nombra lo que luego se pregunta?** — si no, es un hueco
+  de contenido disfrazado de problema de diseño.
+
+#### Busca las asimetrías, no solo los huecos
 
 Al revisar un tema ya escrito, el defecto fácil de ver es «falta contenido». El
 que se escapa es **el mismo tipo de contenido recibiendo tratos distintos**:
@@ -460,6 +514,16 @@ Y al desenterrar, añade a cada dato **el matiz que lo hace útil en vez de
 memorizable**: no «`free -h` muestra la memoria», sino que la columna que importa
 es *available* y no *free*. Es la diferencia entre una lista que se olvida y algo
 que se entiende una vez.
+
+### 9.2 Reglas visuales
+
+- **Colores**: solo variables de la paleta (`var(--t1)`, `var(--tema-accent)`).
+  **Nunca** un hex a pelo en el contenido — rompe el modo oscuro y la coherencia.
+- **Clases de color por sección** (`b-estructura`, `c1`): defínelas en el
+  `palette.css` de la app, no con estilos en línea.
+- **Jerarquía tipográfica**: la da el SDK. Usa `<h2>` en bandas/apartados y deja
+  que el CSS mande; no fijes tamaños.
+- `reveal` en bandas y tarjetas activa la animación de entrada.
 
 ---
 
