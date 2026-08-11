@@ -534,7 +534,12 @@ function revisarMotores(raiz){
       if(e.isDirectory()){ walk(p); continue; }
       if(extname(e.name) !== '.js' && extname(e.name) !== '.mjs') continue;
       let txt = ''; try { txt = readFileSync(p, 'utf8'); } catch { continue; }
-      if(/mountStepper/.test(txt)) continue;
+      /* NO se indulta al fichero por mencionar `mountStepper`. Un modulo puede
+         montar una escena con el motor del SDK y llevar otra a mano — pasa de
+         verdad — y entonces el temporizador casero sigue teniendo su problema.
+         Ademas la mencion colaba desde un comentario HTML dentro de una
+         plantilla, que no es comentario para JS: el comentario que reconocia el
+         motor casero era justo lo que apagaba el aviso del motor casero. */
       const sinComentarios = txt.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
       let motivo = null;
       if(/\bsetInterval\s*\(/.test(sinComentarios)) motivo = 'setInterval';

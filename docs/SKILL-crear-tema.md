@@ -735,7 +735,7 @@ sirve en CI. Detecta, entre otros:
 | examen: `correcta` fuera de `respuestas`, ids repetidos | preguntas rotas |
 | **respuestas contaminadas** (acaban en un nombre de apartado) | basura del PDF arrastrada al importar |
 | **escena muda**: mando de ≥2 controles y ningún `[aria-live]` cerca | quien no ve la pantalla oye que pulsó un botón y nada más |
-| **motor propio**: temporizador que se repite sin `mountStepper` | reimplementa el motor y suele dejar fuera la narración |
+| **motor propio**: un temporizador que se repite en un módulo de tema | reimplementa el motor y suele dejar fuera la narración y la guarda |
 
 ### Una escena que cambia al pulsar tiene que decir qué cambió
 
@@ -755,6 +755,12 @@ definición lee la explicación sin decir el resultado.
 Si la escena tiene **pasos**, no la montes a mano: `mountStepper` ya trae los
 controles, el contador, la guarda del temporizador y el `aria-live` — y lo único
 que se olvida al hacerlo a mano es justo lo que no se ve probando con el ratón.
+
+**Son dos defectos distintos, no uno.** Darle voz a un reproductor casero cierra
+su mudez, pero **no** arregla que su temporizador siga corriendo si la vista se
+re-renderiza. Por eso `motor-propio` avisa aunque la escena ya narre, y por eso
+no indulta a un módulo por mencionar `mountStepper`: uno puede montar una escena
+con el motor del SDK y llevar otra a mano en el mismo fichero.
 
 Aun así, **mira estas con el tema abierto** (lo que ninguna herramienta ve):
 
