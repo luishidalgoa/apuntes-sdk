@@ -10,11 +10,49 @@ import { registerLayer } from '../core/modal-stack.js';
 let overlay, titleEl, bodyEl, gotoBtn;
 let currentTarget = null;
 
-/* Busca qué tema puede resolver el `articulo` de una pregunta.
-   Devuelve {tema, key} o null si ningún tema lo cubre. */
-export function resolveQuestionRef(q){
-  if(!q.articulo) return null;
-  const key = String(q.articulo);
+/* Referencias de una pregunta, SIEMPRE como lista.
+
+   Una pregunta puede resolverse con mas de un punto del temario, y es lo normal
+   en cuanto el enunciado tiene distractores: uno da la correcta y otros son los
+   que permiten descartar. Declarar solo el primero deja fuera justo la mitad del
+   razonamiento.
+
+   Formatos admitidos, del mas corto al mas explicito:
+     articulo:  '53'                                   ← una sola, como hasta hoy
+     articulos: ['53.2', '30.2']                       ← varias, heredan `temaId`
+     articulos: [{ ref:'53.2', nota:'da la correcta' },
+                 { ref:'30.2', temaId:'leg-tema1' }]   ← con su tema o su nota
+
+   `nota` importa mas de lo que parece: cuatro botones iguales obligan a abrirlos
+   todos para saber cual responde y cuales descartan, que es volver a una lista
+   sin criterio. Es opcional, pero con varias referencias casi siempre merece la
+   pena. */
+export function questionRefs(q){
+  const lista = Array.isArray(q.articulos) && q.articulos.length
+    ? q.articulos
+    : (q.articulo ? [q.articulo] : []);
+  return lista.map(x => (x && typeof x === 'object')
+    ? { ref: String(x.ref != null ? x.ref : x.articulo || ''), temaId: x.temaId || q.temaId || '', nota: x.nota || '' }
+    : { ref: String(x), temaId: q.temaId || '', nota: '' })
+    .filter(r => r.ref);
+}
+
+/* Rotulo legible de una referencia. Una clave con prefijo («LODP-9») ya se lee
+   como cita; anteponerle «art.» da «art. LODP-9», que no lo dice nadie. */
+export function refLabel(ref){
+  const r = String(ref || '');
+  return /^[A-Za-zÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑ]*-/.test(r) ? r : ('art. ' + r);
+}
+
+/* Busca qué tema puede resolver una referencia. Acepta la pregunta entera (usa
+   su primera referencia) o una referencia ya normalizada de `questionRefs`. */
+export function resolveQuestionRef(qOrRef){
+  const r = (qOrRef && qOrRef.ref !== undefined)
+    ? qOrRef
+    : (questionRefs(qOrRef || {})[0] || null);
+  if(!r) return null;
+  const q = { temaId: r.temaId };
+  const key = String(r.ref);
   /* PRIMERO el tema de la propia pregunta. Sin esto gana el primero del registro,
      y con claves planas («37») dos materias distintas la reclaman: el art. 37 de
      la Constitucion y el 37 de la Ley de Transparencia. El fallo no se parece a
@@ -50,20 +88,27 @@ function anchorFor(tema, key){
   return anchorId(base, ap);
 }
 
-export function openRefPreview(q){
-  const resolved = resolveQuestionRef(q);
+/* `i` elige cual de las referencias se abre (por defecto la primera). */
+export function openRefPreview(q, i){
+  const refs = questionRefs(q);
+  const r = refs[i || 0] || refs[0] || null;
+  const resolved = r ? resolveQuestionRef(r) : null;
   if(resolved){
     const { tema, key } = resolved;
     const content = buildPanelContent(tema.engine, key);
     const crossNote = (q.temaId && q.temaId !== tema.id)
       ? '<p><span class="sp-pill">Contenido de ' + tema.titulo + '</span></p>' : '';
+    /* La nota dice QUE PAPEL juega esta referencia en la pregunta —da la
+       correcta, descarta un distractor—, que es lo que no se deduce de abrir el
+       articulo: el texto legal es el mismo sirva para lo que sirva. */
+    const nota = (r && r.nota) ? '<p class="sp-nota">' + r.nota + '</p>' : '';
     titleEl.textContent = content.title;
-    bodyEl.innerHTML = crossNote + content.body;
+    bodyEl.innerHTML = crossNote + nota + content.body;
     currentTarget = '#/tema/' + tema.id + '/' + anchorFor(tema, key);
     gotoBtn.style.display = '';
     gotoBtn.setAttribute('href', currentTarget);
   } else {
-    titleEl.textContent = (q.articulo ? q.articulo + ' · ' : '') + 'fuera del temario actual';
+    titleEl.textContent = ((r && r.ref) ? r.ref + ' · ' : '') + 'fuera del temario actual';
     bodyEl.innerHTML =
       '<p><span class="sp-pill">Fuera del esquema</span></p>'
       + '<p>Este contenido todavía no está desarrollado en ningún Tema del temario.</p>'

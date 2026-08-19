@@ -7,7 +7,7 @@
 import { allTemas, temasOfMateria, bloqueOf, hasBloques, materiaOf, hasMaterias } from '../registry.js';
 import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
-import { openRefPreview } from '../exam/preview.js';
+import { openRefPreview, questionRefs, refLabel } from '../exam/preview.js';
 import { registerLayer } from '../core/modal-stack.js';
 import { examenesPorTipo, normalizarExamen } from '../core/examen-oficial.js';
 
@@ -304,11 +304,16 @@ function paintAnswered(st, q){
     '<p class="exam-result ' + (isCorrect ? 'ok' : 'bad') + '">' + (st.userIdx === -1 ? '⏱ Tiempo agotado' : (isCorrect ? '✓ Correcto' : '✗ Incorrecto')) + '</p>'
     + (q.explicacion ? '<p class="exam-explain">' + q.explicacion + '</p>' : '')
     + '<div class="exam-actions">'
-    + (q.articulo ? '<button class="btn small" type="button" id="examRefBtn">→ Ver en el temario</button>' : '')
+    /* Un boton POR REFERENCIA y rotulado con ella. Con una sola se lee igual que
+       antes; con varias, el rotulo generico obligaria a abrirlas todas para
+       saber cual es cual. */
+    + questionRefs(q).map((r, i) => '<button class="btn small" type="button" data-ref-i="' + i + '"'
+        + (r.nota ? ' title="' + String(r.nota).replace(/"/g, '&quot;') + '"' : '') + '>→ '
+        + (questionRefs(q).length > 1 ? refLabel(r.ref) : 'Ver en el temario') + '</button>').join('')
     + '<button class="btn small" id="examAskBtn">💬 Preguntar dudas</button>'
     + '</div><div class="exam-ai" id="examAi" style="display:none"></div>';
-  const refBtn = fb.querySelector('#examRefBtn');
-  if(refBtn) refBtn.addEventListener('click', () => openRefPreview(q));
+  fb.querySelectorAll('[data-ref-i]').forEach(b =>
+    b.addEventListener('click', () => openRefPreview(q, parseInt(b.getAttribute('data-ref-i'), 10))));
   const userAnswer = st.userIdx === -1 ? null : st.opts[st.userIdx];
   fb.querySelector('#examAskBtn').addEventListener('click', () => {
     const aiBox = fb.querySelector('#examAi');
@@ -348,7 +353,7 @@ function renderExamResults(){
     + '<p class="exam-score">' + score + ' / ' + pool.length + ' correctas</p>'
     + (wrongList.length
         ? '<p class="exam-wrong-head">Para repasar:</p><ul class="exam-wrong-list">' + wrongList.map((q, wi) =>
-            '<li>' + q.pregunta + ' → <b>' + q.correcta + '</b>' + (q.articulo ? ' <button class="btn small" type="button" data-wrong-idx="' + wi + '">→ art. ' + q.articulo + '</button>' : '') + '</li>'
+            '<li>' + q.pregunta + ' → <b>' + q.correcta + '</b>' + questionRefs(q).map((r, ri) => ' <button class="btn small" type="button" data-wrong-idx="' + wi + '" data-ref-i="' + ri + '">→ ' + refLabel(r.ref) + '</button>').join('') + '</li>'
           ).join('') + '</ul>'
         : '<p>¡Sin fallos!</p>')
     + '<div class="exam-results-actions">'
@@ -358,7 +363,9 @@ function renderExamResults(){
   const reviewBtn = examBody.querySelector('#examReviewBtn');
   if(reviewBtn) reviewBtn.addEventListener('click', () => { examState.index = examState.pool.length - 1; renderExamQuestion(); });
   examBody.querySelectorAll('[data-wrong-idx]').forEach(btn => {
-    btn.addEventListener('click', () => openRefPreview(wrongList[parseInt(btn.getAttribute('data-wrong-idx'), 10)]));
+    btn.addEventListener('click', () => openRefPreview(
+      wrongList[parseInt(btn.getAttribute('data-wrong-idx'), 10)],
+      parseInt(btn.getAttribute('data-ref-i') || '0', 10)));
   });
 }
 

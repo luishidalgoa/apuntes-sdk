@@ -545,7 +545,29 @@ try {
   ({ splitKey } = await import('../src/core/panels.js'));
 } catch { /* sin el modulo se usa el corte simple: peor, pero no calla la regla */ }
 
-function revisarRefs(TEMAS){
+/* Los EXAMENES no viven en el registro (los declara la app con `setExamenes`),
+   asi que auditar solo `t.questions` deja fuera justo donde mas referencias hay.
+   Se buscan por convencion en una carpeta `examenes/` junto al registro, y se
+   DICE cuantos se han auditado: una comprobacion que cubre la mitad sin avisar
+   es peor que ninguna, porque se lee como si cubriera todo. */
+async function cargarExamenes(registryPath){
+  const dir = resolve(registryPath, '..', 'examenes');
+  if(!existsSync(dir)) return { examenes: [], dir: null };
+  const out = [];
+  let entradas = [];
+  try { entradas = readdirSync(dir, { withFileTypes: true }); } catch { return { examenes: [], dir: null }; }
+  for(const e of entradas){
+    if(e.isDirectory() || !/\.(js|mjs)$/.test(e.name)) continue;
+    try {
+      const mod = await import(pathToFileURL(join(dir, e.name)).href);
+      const ex = mod.default || mod.examen;
+      if(ex && Array.isArray(ex.preguntas)) out.push({ id: ex.id || e.name, preguntas: ex.preguntas });
+    } catch { /* un examen que no importa ya lo cazan otras comprobaciones */ }
+  }
+  return { examenes: out, dir };
+}
+
+function revisarRefs(TEMAS, EXAMENES){
   /* Prefijos REALES: los que aparecen en las claves declaradas, no una lista
      adivinada. Si manana una materia usa otro, esto lo aprende solo. */
   const prefijos = new Set();
@@ -578,10 +600,26 @@ function revisarRefs(TEMAS){
   };
 
   const malEscritas = [], sinDesarrollar = [], ambiguas = [];
-  for(const t of TEMAS){
+  /* Un examen no pertenece a ningun tema, asi que su `t.id` es su propio id y no
+     puede desempatar una clave ambigua: por eso ahi el aviso SI sale. */
+  const fuentes = [...TEMAS, ...(EXAMENES || []).map(e => ({ id: e.id, questions: e.preguntas, esExamen: true }))];
+  for(const t of fuentes){
+    /* TODAS las referencias, no solo la principal. Auditar `articulo` y dejar
+       `articulos` sin mirar seria comprobar la mitad — y la mitad que se deja
+       fuera es justo la que se añade despues, cuando ya nadie vuelve a revisar. */
+    const refsDe = (q) => {
+      const lista = Array.isArray(q.articulos) && q.articulos.length
+        ? q.articulos : (q.articulo ? [q.articulo] : []);
+      /* Cada entrada puede traer SU temaId; perderlo aqui daria un falso
+         «ambigua» en cuanto alguien lo use para desempatar una clave plana. */
+      return lista.map(x => (x && typeof x === 'object')
+        ? { ref: String(x.ref != null ? x.ref : ''), temaId: x.temaId || q.temaId || '' }
+        : { ref: String(x), temaId: q.temaId || '' })
+        .filter(r => r.ref);
+    };
     for(const q of (t.questions || [])){
-      if(!q.articulo) continue;
-      const k = String(q.articulo);
+      for(const rr of refsDe(q)){
+        const k = rr.ref;
       /* AMBIGUA: mas de un tema reclama la clave. Con claves planas pasa de
          verdad — el «37» es un articulo de la Constitucion y otro de la Ley de
          Transparencia — y entonces gana el primero del registro. No es una
@@ -594,7 +632,8 @@ function revisarRefs(TEMAS){
         const [b] = splitKey(k, x.engine && x.engine.keySplit);
         return !!secs[b];
       }).map(x => x.id);
-      if(duenos.length > 1 && duenos.indexOf(t.id) === -1)
+      const desempata = t.esExamen ? (rr.temaId || '') : t.id;
+      if(duenos.length > 1 && duenos.indexOf(desempata) === -1)
         ambiguas.push(`${t.id} · "${k}" → ${duenos.join(' o ')}`);
       if(resuelve(k)) continue;
 
@@ -620,6 +659,7 @@ function revisarRefs(TEMAS){
       if(m && !prefijos.has(m[1] + '-')){ malEscritas.push(`${t.id} · "${k}"`); continue; }
       /* 4. Bien escrita y sin destino: decision, no error. */
       sinDesarrollar.push(`${t.id} · "${k}"`);
+      }
     }
   }
 
@@ -721,7 +761,8 @@ for(const t of TEMAS){
   revisarDom(t, box, idsGlobales);
 }
 
-revisarRefs(TEMAS);
+const { examenes: EXAMENES, dir: dirEx } = await cargarExamenes(registryPath);
+revisarRefs(TEMAS, EXAMENES);
 revisarClaves(resolve(registryPath, '..', '..'));
 
 /* Claves de glosario que no aparecen en NINGÚN tema: esas sí están muertas. */

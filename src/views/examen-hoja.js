@@ -15,7 +15,7 @@
 */
 
 import { corregir } from '../core/examen-oficial.js';
-import { openRefPreview } from '../exam/preview.js';
+import { openRefPreview, questionRefs, refLabel } from '../exam/preview.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -209,18 +209,22 @@ export function mountExamenHoja(host, examen, opts = {}){
          —acertar por eliminacion no es saber por que— y en las que no tienen
          plantilla, donde la explicacion es lo unico que queda. */
       const q = examen.preguntas.find(x => x.n === d.n);
-      if(q && (q.explicacion || q.articulo)){
+      const refs = q ? questionRefs(q) : [];
+      if(q && (q.explicacion || refs.length)){
         const pie = document.createElement('div');
         pie.className = 'exh-tras';
         pie.innerHTML = (q.explicacion ? '<p class="exh-expl">' + esc(q.explicacion) + '</p>' : '')
-          + (q.articulo ? '<div class="exh-acc"><button class="btn small exh-ref" type="button"'
-            + ' data-n="' + d.n + '">→ Ver en el temario</button></div>' : '');
+          + (refs.length ? '<div class="exh-acc">' + refs.map((r, i) =>
+            '<button class="btn small exh-ref" type="button" data-n="' + d.n + '" data-ref-i="' + i + '"'
+            + (r.nota ? ' title="' + esc(r.nota) + '"' : '') + '>→ '
+            + (refs.length > 1 ? esc(refLabel(r.ref)) : 'Ver en el temario') + '</button>').join('')
+            + '</div>' : '');
         art.appendChild(pie);
       }
     }
     host.querySelectorAll('.exh-ref').forEach(b => b.addEventListener('click', () => {
       const q = examen.preguntas.find(x => String(x.n) === b.getAttribute('data-n'));
-      if(q) openRefPreview(q);
+      if(q) openRefPreview(q, parseInt(b.getAttribute('data-ref-i') || '0', 10));
     }, { signal: ac.signal }));
     host.querySelectorAll('input[type=radio]').forEach(i => { i.disabled = true; });
     caja.scrollIntoView({ behavior: 'smooth', block: 'start' });

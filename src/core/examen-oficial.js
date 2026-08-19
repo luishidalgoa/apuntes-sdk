@@ -47,6 +47,7 @@ export function normalizarExamen(ex){
        puede pintar. Se caian aqui en silencio: el examen declaraba la referencia
        de sus 40 preguntas y el boton no salia en ninguna, sin error ninguno. */
     articulo: q.articulo || '',
+    articulos: Array.isArray(q.articulos) ? q.articulos : null,
     temaId: q.temaId || ''
   }));
   const test = preguntas.filter(q => !q.reserva);

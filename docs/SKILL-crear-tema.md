@@ -415,6 +415,49 @@ const questions = [
 - `explicacion` es obligatoria en la práctica: es lo que se estudia al fallar.
 - `articulo` es opcional pero muy recomendable: habilita "ir a la teoría".
 
+### 7.1 La referencia apunta a lo que RESUELVE la pregunta
+
+No al punto que el enunciado menciona. **No es lo mismo**, y confundirlo manda al
+lector a leer un artículo que ya conocía en vez de al que le faltaba.
+
+Casos reales, todos del mismo examen:
+
+| Pregunta | Cita el enunciado | La resuelve de verdad |
+|---|---|---|
+| El amparo y la objeción de conciencia | art. 53 | **53.2 + 30.2** |
+| Requisitos para ser Presidente | art. 99.3 | **99.3** acierta · **102.1, 102.2, 105.b** descartan |
+| Derechos de la Sección 2.ª | Sección 2.ª | **33, 28.2, 29** |
+
+Cuando hacen falta varios —uno da la correcta y otros permiten descartar—,
+**decláralos todos** con `articulos`:
+
+```js
+{ pregunta: '…',
+  articulo: '53.2',                                  // la principal, compatible
+  articulos: [
+    { ref: '53.2', nota: 'da la correcta: el amparo alcanza a la objeción' },
+    { ref: '30.2', nota: 'descarta la b): el procedimiento preferente no' }
+  ] }
+```
+
+`articulos` admite también la forma corta `['53.2', '30.2']`, y cada entrada
+puede llevar su `temaId` si vive en otra materia.
+
+**La `nota` no es decoración.** Cuatro botones iguales obligan a abrirlos todos
+para saber cuál responde y cuáles descartan — que es volver a una lista sin
+criterio, el defecto que persigue toda la §9.1. El texto legal es el mismo sirva
+para lo que sirva; lo que no se deduce de leerlo es **qué papel juega aquí**.
+
+> **Esto aplica CADA VEZ que se añade una pregunta**, no en una revisión final.
+> Buscar el punto que resuelve exige leer el temario con la pregunta delante, y
+> eso solo es barato mientras la tienes en la cabeza.
+
+Y ojo con las **claves planas** (`'37'`) cuando hay varias materias: el mismo
+número existe en dos leyes distintas y el enlace abre un artículo real que no es
+el tuyo, sin ningún síntoma. Declara `temaId` (el banco lo pone solo; un examen
+hay que declararlo) o usa la clave con prefijo. `npm run verify` lo avisa como
+`ref-ambigua`.
+
 ---
 
 ## 8. Minijuegos — `games` *(opcional)*
