@@ -591,15 +591,23 @@ function revisarRefs(TEMAS, EXAMENES){
      planas. Sin esta segunda vuelta la regla acusaba a seis referencias que en la
      app funcionan — comprobar la mitad del mecanismo es peor que no comprobarlo,
      porque el aviso parece autoridad. */
-  const resuelve = (key) => {
-    if(directo(key)) return true;
+  /* Devuelve null si no resuelve, '' si resuelve directo, o el prefijo que hubo
+     que QUITAR para que resolviera. Esa tercera respuesta importa: quitar
+     prefijos solo lo hace la app si los declara en `externalPrefixes`, y verify
+     no puede leer esa config (vive en el arranque de la app, no en el registro).
+     Dando por bueno cualquier prefijo derivado de las claves, la regla decia que
+     `LOTC-8` resolvia cuando en la app no lo hace: un falso NEGATIVO, que es el
+     peor error de un comprobador porque no deja rastro. */
+  const comoResuelve = (key) => {
+    if(directo(key)) return '';
     for(const p of prefijos){
-      if(String(key).indexOf(p) === 0 && directo(String(key).slice(p.length))) return true;
+      if(String(key).indexOf(p) === 0 && directo(String(key).slice(p.length))) return p;
     }
-    return false;
+    return null;
   };
+  const resuelve = (key) => comoResuelve(key) !== null;
 
-  const malEscritas = [], sinDesarrollar = [], ambiguas = [];
+  const malEscritas = [], sinDesarrollar = [], ambiguas = [], dependenPrefijo = [];
   /* Un examen no pertenece a ningun tema, asi que su `t.id` es su propio id y no
      puede desempatar una clave ambigua: por eso ahi el aviso SI sale. */
   const fuentes = [...TEMAS, ...(EXAMENES || []).map(e => ({ id: e.id, questions: e.preguntas, esExamen: true }))];
@@ -635,7 +643,9 @@ function revisarRefs(TEMAS, EXAMENES){
       const desempata = t.esExamen ? (rr.temaId || '') : t.id;
       if(duenos.length > 1 && duenos.indexOf(desempata) === -1)
         ambiguas.push(`${t.id} · "${k}" → ${duenos.join(' o ')}`);
-      if(resuelve(k)) continue;
+      const via = comoResuelve(k);
+      if(via){ dependenPrefijo.push(`${t.id} · "${k}" (quitando «${via}»)`); }
+      if(via !== null) continue;
 
       /* 1. Espacios: NINGUNA clave declarada lleva ninguno. Ademas se puede
             sugerir la buena reordenando los trozos («13 LODP» → «LODP-13»). */
@@ -668,6 +678,16 @@ function revisarRefs(TEMAS, EXAMENES){
     'La clave no tiene la forma que usa el motor, asi que «Ver en el temario» NO\n' +
     '     SE PINTA: sin error y sin hueco, la pregunta se ve perfecta y pierde su\n' +
     '     enlace. Donde sale una flecha, esa es la clave que si resuelve.');
+  if(dependenPrefijo.length) add('(app)', 'warn', 'ref-prefijo-externo',
+    `${dependenPrefijo.length} referencia(s) solo resuelven si la app declara ese prefijo: ${[...new Set(dependenPrefijo)].map(x => '«' + x + '»').join(', ')}`,
+    'Estas claves NO existen tal cual: resolverian quitandoles el prefijo, y eso\n' +
+    '     solo lo hace la app si el prefijo esta en `externalPrefixes` (config que este\n' +
+    '     script no puede leer). Dos cosas que comprobar, y la segunda es la\n' +
+    '     traicionera: (1) que el prefijo este declarado; (2) que quitarlo lleve a LA\n' +
+    '     MISMA norma. «CE-62» → el 62 de un tema con los articulos de la\n' +
+    '     Constitucion es correcto; «LOTC-8» → el 8 de ese mismo tema NO lo es, porque\n' +
+    '     el 8 de la LOTC no es el 8 de la CE. Ahi declarar el prefijo empeora las\n' +
+    '     cosas: cambia «sin boton» por «boton al articulo equivocado».');
   if(ambiguas.length) add('(app)', 'warn', 'ref-ambigua',
     `${ambiguas.length} referencia(s) las reclaman dos temas y gana el orden del registro${muestra(ambiguas)}`,
     'Dos materias usan la misma clave plana (el «37» de la Constitucion y el de la\n' +
