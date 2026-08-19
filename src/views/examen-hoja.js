@@ -15,6 +15,7 @@
 */
 
 import { corregir } from '../core/examen-oficial.js';
+import { openRefPreview } from '../exam/preview.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -193,7 +194,25 @@ export function mountExamenHoja(host, examen, opts = {}){
         const buena = art.querySelectorAll('.exh-op')[d.correcta];
         if(buena) buena.classList.add('era');
       }
+      /* La explicacion y el enlace al temario salen AL CORREGIR, nunca antes:
+         durante el examen serian la respuesta a un clic de distancia, y lo que
+         se ensaya aqui es justo hacerlo sin ayuda. Van tambien en las acertadas
+         —acertar por eliminacion no es saber por que— y en las que no tienen
+         plantilla, donde la explicacion es lo unico que queda. */
+      const q = examen.preguntas.find(x => x.n === d.n);
+      if(q && (q.explicacion || q.articulo)){
+        const pie = document.createElement('div');
+        pie.className = 'exh-tras';
+        pie.innerHTML = (q.explicacion ? '<p class="exh-expl">' + esc(q.explicacion) + '</p>' : '')
+          + (q.articulo ? '<div class="exh-acc"><button class="btn small exh-ref" type="button"'
+            + ' data-n="' + d.n + '">→ Ver en el temario</button></div>' : '');
+        art.appendChild(pie);
+      }
     }
+    host.querySelectorAll('.exh-ref').forEach(b => b.addEventListener('click', () => {
+      const q = examen.preguntas.find(x => String(x.n) === b.getAttribute('data-n'));
+      if(q) openRefPreview(q);
+    }, { signal: ac.signal }));
     host.querySelectorAll('input[type=radio]').forEach(i => { i.disabled = true; });
     caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if(typeof opts.onCorregido === 'function') opts.onCorregido(r);

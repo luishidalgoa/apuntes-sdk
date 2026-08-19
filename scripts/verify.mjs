@@ -520,6 +520,109 @@ function revisarComentarios(raiz){
     '     la lista sin barras.');
 }
 
+/* Referencia de una pregunta al temario (`q.articulo`) que no resuelve.
+
+   El fallo no da sintoma: si la clave no casa, el boton «Ver en el temario»
+   simplemente NO SE PINTA. Ni error, ni hueco, ni nada raro — la pregunta se ve
+   perfecta y pierde su enlace. Es el mismo perfil que el glosario muerto.
+
+   Y separa DOS cosas que parecen la misma, porque una es un error y la otra una
+   decision:
+     · `ref-mal-escrita`  la clave no tiene el formato del motor («13 LODP» en vez
+                          de «LODP-13», o «75.3» cuando la buena es «CE-75.3»).
+     · `ref-sin-desarrollar` la clave esta bien puesta pero ese articulo aun no se
+                          desarrolla en ningun tema. No hay nada que arreglar: el
+                          modal lo dice y la explicacion sigue enseñando.
+   Sin esa separacion el aviso saldria en los dos casos, y un aviso que salta por
+   decisiones deliberadas se aprende a ignorar — con el se van tambien los reales. */
+/* El `splitKey` DE VERDAD, no una copia. Duplicarlo costo un falso positivo de
+   124 referencias: `keySplit` no es un separador sino un MODO ('last' = partir
+   por el ultimo punto), y la copia lo uso como separador, asi que ninguna clave
+   con apartado se partia. Verify vive dentro del paquete, asi que puede
+   importarlo por ruta relativa aunque `exports` no publique el subpath. */
+let splitKey = (k) => { const i = String(k).indexOf('.'); return i === -1 ? [String(k), null] : [String(k).slice(0, i), String(k).slice(i + 1)]; };
+try {
+  ({ splitKey } = await import('../src/core/panels.js'));
+} catch { /* sin el modulo se usa el corte simple: peor, pero no calla la regla */ }
+
+function revisarRefs(TEMAS){
+  /* Prefijos REALES: los que aparecen en las claves declaradas, no una lista
+     adivinada. Si manana una materia usa otro, esto lo aprende solo. */
+  const prefijos = new Set();
+  let hayClavesPlanas = false;
+  for(const t of TEMAS){
+    for(const k of Object.keys((t.engine && t.engine.sections) || {})){
+      const m = String(k).match(/^([A-Za-zÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑ]*)-/);
+      if(m) prefijos.add(m[1] + '-'); else hayClavesPlanas = true;
+    }
+  }
+  const directo = (key) => {
+    for(const t of TEMAS){
+      const secs = (t.engine && t.engine.sections) || {};
+      const [base] = splitKey(key, t.engine && t.engine.keySplit);
+      if(secs[base]) return true;
+    }
+    return false;
+  };
+  /* El motor tambien resuelve QUITANDO el prefijo (`externalPrefixes`): una clave
+     `CE-62` de una materia con prefijos apunta al `62` de otra que usa claves
+     planas. Sin esta segunda vuelta la regla acusaba a seis referencias que en la
+     app funcionan — comprobar la mitad del mecanismo es peor que no comprobarlo,
+     porque el aviso parece autoridad. */
+  const resuelve = (key) => {
+    if(directo(key)) return true;
+    for(const p of prefijos){
+      if(String(key).indexOf(p) === 0 && directo(String(key).slice(p.length))) return true;
+    }
+    return false;
+  };
+
+  const malEscritas = [], sinDesarrollar = [];
+  for(const t of TEMAS){
+    for(const q of (t.questions || [])){
+      if(!q.articulo) continue;
+      const k = String(q.articulo);
+      if(resuelve(k)) continue;
+
+      /* 1. Espacios: NINGUNA clave declarada lleva ninguno. Ademas se puede
+            sugerir la buena reordenando los trozos («13 LODP» → «LODP-13»). */
+      if(/\s/.test(k)){
+        const trozos = k.split(/\s+/).filter(Boolean);
+        const pref = trozos.find(x => prefijos.has(x + '-'));
+        const num = trozos.find(x => /^[0-9]/.test(x));
+        const sug = (pref && num) ? pref + '-' + num : null;
+        malEscritas.push(`${t.id} · "${k}"` + (sug && resuelve(sug) ? ` → "${sug}"` : ''));
+        continue;
+      }
+      /* 2. Prefijo olvidado: si la MISMA clave resuelve anteponiendole uno de los
+            prefijos reales, no es un articulo sin desarrollar — es que falta el
+            prefijo. Este es el caso que la forma sola no distingue, porque hay
+            materias con claves planas donde «75.3» tambien seria valido. */
+      let sugerida = null;
+      for(const p of prefijos){ if(resuelve(p + k)){ sugerida = p + k; break; } }
+      if(sugerida){ malEscritas.push(`${t.id} · "${k}" → "${sugerida}"`); continue; }
+      /* 3. Prefijo inventado: lleva uno que no usa ninguna materia. */
+      const m = k.match(/^([A-Za-zÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑ]*)-/);
+      if(m && !prefijos.has(m[1] + '-')){ malEscritas.push(`${t.id} · "${k}"`); continue; }
+      /* 4. Bien escrita y sin destino: decision, no error. */
+      sinDesarrollar.push(`${t.id} · "${k}"`);
+    }
+  }
+
+  if(malEscritas.length) add('(app)', 'warn', 'ref-mal-escrita',
+    `${malEscritas.length} referencia(s) de pregunta no casan con el formato de claves${muestra(malEscritas)}`,
+    'La clave no tiene la forma que usa el motor, asi que «Ver en el temario» NO\n' +
+    '     SE PINTA: sin error y sin hueco, la pregunta se ve perfecta y pierde su\n' +
+    '     enlace. Donde sale una flecha, esa es la clave que si resuelve.');
+  if(sinDesarrollar.length) add('(app)', 'warn', 'ref-sin-desarrollar',
+    `${sinDesarrollar.length} referencia(s) apuntan a articulos que ningun tema desarrolla${muestra(sinDesarrollar)}`,
+    'Estan BIEN escritas: el problema no es la clave sino que ese articulo aun no\n' +
+    '     tiene tarjeta. No hay nada que corregir en la pregunta — el modal lo dice\n' +
+    '     («fuera del temario actual») y la explicacion sigue enseñando. Sale como\n' +
+    '     aviso para que la lista de lo que falta por desarrollar no haya que\n' +
+    '     mantenerla a mano.');
+}
+
 /* Un motor de pasos casero: temporizador que se repite y ningun `mountStepper`.
    Reprogramarse con setTimeout cuenta igual que setInterval — es la forma que se
    me escapo la primera vez que busque esto a mano. */
@@ -597,6 +700,7 @@ for(const t of TEMAS){
   revisarDom(t, box, idsGlobales);
 }
 
+revisarRefs(TEMAS);
 revisarClaves(resolve(registryPath, '..', '..'));
 
 /* Claves de glosario que no aparecen en NINGÚN tema: esas sí están muertas. */

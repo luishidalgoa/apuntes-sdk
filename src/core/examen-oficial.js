@@ -42,7 +42,12 @@ export function normalizarExamen(ex){
     correcta: q.correcta == null ? null : q.correcta,
     anulada: !!q.anulada,
     reserva: !!q.reserva,
-    explicacion: q.explicacion || ''
+    explicacion: q.explicacion || '',
+    /* `articulo` y `temaId` viajan hasta la vista o el enlace al temario no se
+       puede pintar. Se caian aqui en silencio: el examen declaraba la referencia
+       de sus 40 preguntas y el boton no salia en ninguna, sin error ninguno. */
+    articulo: q.articulo || '',
+    temaId: q.temaId || ''
   }));
   const test = preguntas.filter(q => !q.reserva);
   const reservas = preguntas.filter(q => q.reserva);
