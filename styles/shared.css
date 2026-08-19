@@ -590,7 +590,13 @@ body.tablet-mode .sort-bucket{font-size:14.5px;padding:13px 12px;}
 }
 .exh-aviso.prov{border-left-color:#b8860b;background:color-mix(in srgb,#b8860b 6%,transparent);}
 
-/* ---- Índice de examenes oficiales ---- */
+/* ---- Índice de examenes completos (oficiales + simulacros) ---- */
+/* El encabezado de seccion separa por PROCEDENCIA de las respuestas, no por
+   orden: en una convocatoria la correcta la marco el tribunal, en un simulacro
+   se dedujo de la norma. Por eso lleva su propio subtitulo y no solo un rotulo. */
+.ofi-h2{font-size:17px;margin:26px 0 0;}
+.ofi-h2:first-of-type{margin-top:6px;}
+.ofi-h2 + .ex-sub{margin-top:6px;}
 .ofi-lista{display:grid;gap:10px;margin:18px 0 30px;}
 .ofi-card{display:block;padding:13px 15px;border:1px solid var(--line);border-radius:12px;
   text-decoration:none;color:inherit;transition:.15s ease;background:var(--card,transparent);}

@@ -9,7 +9,7 @@ import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
 import { openRefPreview } from '../exam/preview.js';
 import { registerLayer } from '../core/modal-stack.js';
-import { allExamenes, normalizarExamen } from '../core/examen-oficial.js';
+import { examenesPorTipo, normalizarExamen } from '../core/examen-oficial.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -116,11 +116,18 @@ function showExamSetup(initialTema){
   /* Un solo botón, no la lista: el modal es para configurar el banco por temas.
      Enumerar aquí las convocatorias competía con eso y crecerá con cada examen
      nuevo — la lista con sus fichas tiene su propia vista. */
-  const nOficiales = allExamenes().length;
-  const oficialesHtml = nOficiales
-    ? '<p class="exam-setup-label">¿O un examen oficial completo?</p>'
+  /* El recuento se dice por separado porque no son lo mismo: llamar
+     «convocatorias» a un simulacro le presta una autoridad que no tiene. */
+  const nReales = examenesPorTipo('oficial').length;
+  const nSimulados = examenesPorTipo('simulacro').length;
+  const cuenta = [
+    nReales ? nReales + (nReales === 1 ? ' convocatoria' : ' convocatorias') : '',
+    nSimulados ? nSimulados + (nSimulados === 1 ? ' simulacro' : ' simulacros') : ''
+  ].filter(Boolean).join(' y ');
+  const oficialesHtml = (nReales + nSimulados)
+    ? '<p class="exam-setup-label">¿O un examen completo, de principio a fin?</p>'
       + '<div class="opts"><button class="btn" id="examVerOficiales" type="button">'
-      + 'Ver las ' + nOficiales + ' convocatorias →</button></div>'
+      + 'Ver ' + cuenta + ' →</button></div>'
     : '';
 
   examBody.innerHTML =

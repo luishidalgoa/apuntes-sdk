@@ -6,7 +6,7 @@
    entera y sirve para ensayar el examen. Dos tarjetas en la portada obligaban a
    entender esa diferencia ANTES de entrar, que es justo al revés. */
 
-import { allExamenes, normalizarExamen } from '../core/examen-oficial.js';
+import { examenesPorTipo, normalizarExamen } from '../core/examen-oficial.js';
 import { config } from '../config.js';
 import { materiasWithTemas } from '../registry.js';
 
@@ -31,7 +31,12 @@ function fichaHtml(crudo){
        fallo que un dato inventado, en su versión silenciosa. */
     ex.penalizacion
       ? '<span class="ofi-sello pen">penaliza 1/' + Math.round(1 / ex.penalizacion) + '</span>'
-      : '<span class="ofi-sello nopen">penalización sin verificar · corrige sin descuento</span>'
+      /* «Sin verificar» solo tiene sentido si HAY un criterio oficial que
+         verificar. En un simulacro no lo hay, asi que ese texto inventaria una
+         deuda inexistente y ademas insinuaria que el examen es oficial. */
+      : (ex.tipo === 'simulacro'
+        ? '<span class="ofi-sello nopen">sin descuento por error</span>'
+        : '<span class="ofi-sello nopen">penalización sin verificar · corrige sin descuento</span>')
   ].filter(Boolean).join('');
   const corregibles = ex.preguntas.filter(q => !q.anulada).length;
   return `
@@ -56,22 +61,39 @@ export const oficialesViewFactory = {
     return {
       mount(root, route){
         const cfg = config();
-        const lista = allExamenes();
         const mat = route && route.materiaId
           ? (materiasWithTemas().find(x => x.id === route.materiaId) || null) : null;
         ac = new AbortController();
 
-        const oficiales = lista.length ? `
-          <p class="ex-sub">Convocatorias reales, enteras y en su orden. No se trocean por temas:
-            lo que entrenan es justo el conjunto y el reparto que no eliges.</p>
-          <div class="ofi-lista">${lista.map(fichaHtml).join('')}</div>`
-          : '<p class="ex-sub">Todavía no hay convocatorias cargadas.</p>';
+        const reales = examenesPorTipo('oficial');
+        const simulados = examenesPorTipo('simulacro');
+
+        /* Dos secciones, y el porque va escrito: no se separan por orden sino
+           por PROCEDENCIA de las respuestas. En una convocatoria la correcta es
+           la que marco el tribunal; en un simulacro se deduce de la norma. Las
+           dos sirven para estudiar, pero solo una es la prueba. */
+        const bloque = (titulo, sub, arr) => arr.length ? `
+          <h2 class="ofi-h2">${titulo}</h2>
+          <p class="ex-sub">${sub}</p>
+          <div class="ofi-lista">${arr.map(fichaHtml).join('')}</div>` : '';
+
+        const oficiales = (reales.length || simulados.length) ? (
+          bloque('Convocatorias oficiales',
+            'Exámenes reales, enteros y en su orden. No se trocean por temas: lo que entrenan es justo '
+            + 'el conjunto y el reparto que no eliges. Las respuestas son las del tribunal.',
+            reales)
+          + bloque('Simulacros',
+            'No han caído en ninguna convocatoria: se han montado para repasar. Las respuestas están '
+            + 'razonadas contra la norma, no firmadas por un tribunal — sirven para practicar, pero '
+            + 'ante una duda manda el texto legal.',
+            simulados)
+        ) : '<p class="ex-sub">Todavía no hay exámenes cargados.</p>';
 
         root.innerHTML = `<div class="wrap view-examenes">
           <nav class="controls" aria-label="Navegación">
             <div class="nav-left"><a class="btn ghost" href="${mat ? '#/materia/' + esc(mat.id) : '#/'}">← ${mat ? esc(mat.label) : 'Temario'}</a></div>
           </nav>
-          <h1>Exámenes oficiales</h1>
+          <h1>Exámenes completos</h1>
           ${oficiales}
         </div>`;
 

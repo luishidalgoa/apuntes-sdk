@@ -23,6 +23,12 @@ let EXAMENES = [];
 
 export function setExamenes(lista){ EXAMENES = Array.isArray(lista) ? lista : []; }
 export function allExamenes(){ return EXAMENES; }
+/* Separar por procedencia es cosa del modelo, no de cada vista: si el filtro se
+   repite en la vista, el indice y el modal, basta olvidarlo en uno para que un
+   simulacro aparezca entre las convocatorias. */
+export function examenesPorTipo(t){
+  return EXAMENES.filter(e => (e.tipo === 'simulacro' ? 'simulacro' : 'oficial') === t);
+}
 export function examenById(id){ return EXAMENES.find(e => e.id === id) || null; }
 
 /* Normaliza un examen declarado por la app y avisa de lo que falta. No lanza:
@@ -55,6 +61,16 @@ export function normalizarExamen(ex){
        respuestas que pueden moverse no es lo mismo que con respuestas cerradas.
        Lo que más cambia entre provisional y definitiva son las anulaciones. */
     provisional: !!ex.provisional,
+    /* PROCEDENCIA de las respuestas, que es de donde sale todo lo demas.
+       'oficial'   → la `correcta` es la que marco el tribunal.
+       'simulacro' → la `correcta` se DEDUCE de la norma, por buena que sea la
+                     deduccion. No es peor material para estudiar, pero no tiene
+                     la misma autoridad, y mezclarlos borra justo esa diferencia.
+       Por defecto 'oficial' porque los que ya existian lo son; declarar un
+       simulacro es responsabilidad de quien lo escribe. Un simulacro presentado
+       como oficial hace creer que unas respuestas deducidas las firmo un
+       tribunal — el mismo fallo silencioso que corregir sin plantilla. */
+    tipo: ex.tipo === 'simulacro' ? 'simulacro' : 'oficial',
     /* Penalizacion por error, en fracción del valor de un acierto. El examen
        real de TAI descuenta E/3, y eso NO es un detalle de puntuación: con un
        tercio de descuento, contestar al azar entre cuatro opciones tiene
