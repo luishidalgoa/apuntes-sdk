@@ -567,15 +567,29 @@ async function cargarExamenes(registryPath){
   return { examenes: out, dir };
 }
 
-function revisarRefs(TEMAS, EXAMENES){
+function revisarRefs(TEMAS, EXAMENES, declarados){
   /* Prefijos REALES: los que aparecen en las claves declaradas, no una lista
      adivinada. Si manana una materia usa otro, esto lo aprende solo. */
-  const prefijos = new Set();
+  /* Si la app EXPORTA sus `externalPrefixes` desde el registro, se usan esos y
+     punto. Derivarlos de las claves era adivinar de mas: daba por buena
+     `LOTC-8` porque quitando el prefijo queda un `8`... de otra norma. Con la
+     lista declarada la comprobacion es exacta y deja de haber un aviso que solo
+     dice «no puedo saberlo». */
+  /* DOS conjuntos, porque son dos preguntas distintas y confundirlas clasifica mal:
+       · `prefijos`  — los que el motor puede QUITAR (los declara la app).
+       · `conocidos` — los que aparecen en las claves reales, para saber si un
+                       prefijo es plausible o se lo ha inventado el autor.
+     `LOTC-` es conocido (hay secciones LOTC-*) y NO es de quitar: una referencia
+     `LOTC-8` esta bien escrita y apunta a algo sin desarrollar, no es un error. */
+  const prefijos = new Set(Array.isArray(declarados) ? declarados : []);
+  const conocidos = new Set();
+  const sonDeclarados = Array.isArray(declarados);
   let hayClavesPlanas = false;
   for(const t of TEMAS){
     for(const k of Object.keys((t.engine && t.engine.sections) || {})){
       const m = String(k).match(/^([A-Za-zÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑ]*)-/);
-      if(m) prefijos.add(m[1] + '-'); else hayClavesPlanas = true;
+      if(m){ conocidos.add(m[1] + '-'); if(!sonDeclarados) prefijos.add(m[1] + '-'); }
+      else hayClavesPlanas = true;
     }
   }
   const directo = (key) => {
@@ -644,7 +658,7 @@ function revisarRefs(TEMAS, EXAMENES){
       if(duenos.length > 1 && duenos.indexOf(desempata) === -1)
         ambiguas.push(`${t.id} · "${k}" → ${duenos.join(' o ')}`);
       const via = comoResuelve(k);
-      if(via){ dependenPrefijo.push(`${t.id} · "${k}" (quitando «${via}»)`); }
+      if(via && !sonDeclarados){ dependenPrefijo.push(`${t.id} · "${k}" (quitando «${via}»)`); }
       if(via !== null) continue;
 
       /* 1. Espacios: NINGUNA clave declarada lleva ninguno. Ademas se puede
@@ -662,11 +676,11 @@ function revisarRefs(TEMAS, EXAMENES){
             prefijo. Este es el caso que la forma sola no distingue, porque hay
             materias con claves planas donde «75.3» tambien seria valido. */
       let sugerida = null;
-      for(const p of prefijos){ if(resuelve(p + k)){ sugerida = p + k; break; } }
+      for(const p of conocidos){ if(resuelve(p + k)){ sugerida = p + k; break; } }
       if(sugerida){ malEscritas.push(`${t.id} · "${k}" → "${sugerida}"`); continue; }
       /* 3. Prefijo inventado: lleva uno que no usa ninguna materia. */
       const m = k.match(/^([A-Za-zÁÉÍÓÚÑ][A-Za-z0-9ÁÉÍÓÚÑ]*)-/);
-      if(m && !prefijos.has(m[1] + '-')){ malEscritas.push(`${t.id} · "${k}"`); continue; }
+      if(m && !conocidos.has(m[1] + '-')){ malEscritas.push(`${t.id} · "${k}"`); continue; }
       /* 4. Bien escrita y sin destino: decision, no error. */
       sinDesarrollar.push(`${t.id} · "${k}"`);
       }
@@ -753,10 +767,13 @@ revisarComentarios(resolve(registryPath, '..', '..'));
 revisarMotores(resolve(registryPath, '..', '..'));
 const document = await montarDom();
 
-let TEMAS;
+let TEMAS, PREFIJOS_DECLARADOS = null;
 try {
   const mod = await import(registryUrl);
   TEMAS = mod.TEMAS || mod.default;
+  /* Opcional: si el registro los exporta, `verify` comprueba con la lista real
+     en vez de deducirla. Ver la nota de `revisarRefs`. */
+  PREFIJOS_DECLARADOS = mod.EXTERNAL_PREFIXES || mod.externalPrefixes || null;
 } catch (e) {
   add('(app)', 'error', 'import', `No se pueden importar los temas: ${e.message}`);
   process.exit(informe(0) || 1);
@@ -782,7 +799,7 @@ for(const t of TEMAS){
 }
 
 const { examenes: EXAMENES, dir: dirEx } = await cargarExamenes(registryPath);
-revisarRefs(TEMAS, EXAMENES);
+revisarRefs(TEMAS, EXAMENES, PREFIJOS_DECLARADOS);
 revisarClaves(resolve(registryPath, '..', '..'));
 
 /* Claves de glosario que no aparecen en NINGÚN tema: esas sí están muertas. */
