@@ -178,9 +178,18 @@ export function mountExamenHoja(host, examen, opts = {}){
         /* Sin penalización verificada la nota sale MÁS ALTA que la real y no es
            comparable con la de un examen que sí la declara. Decirlo aquí, junto
            al número, es lo único que evita que se lea como una nota buena. */
-        : '<p class="exh-consejo aviso">Este examen corrige <b>sin descuento por error</b> '
-          + 'porque su criterio de penalización no está verificado. La nota sale '
-          + '<b>más alta que la real</b> y no es comparable con la de los exámenes que sí lo declaran.</p>')
+        /* En un SIMULACRO no hay criterio oficial que verificar, asi que hablar
+           de «sin verificar» inventaria una deuda inexistente y de paso daria a
+           entender que el examen es oficial. Lo que si sigue siendo cierto —y es
+           lo que importa al leer la nota— es que no es comparable con la de una
+           convocatoria que si descuenta. */
+        : (examen.tipo === 'simulacro'
+          ? '<p class="exh-consejo aviso">Este simulacro corrige <b>sin descuento por error</b>. '
+            + 'La nota <b>no es comparable</b> con la de una convocatoria que penaliza los fallos: '
+            + 'ahí, contestar al azar entre cuatro opciones no suma nada.</p>'
+          : '<p class="exh-consejo aviso">Este examen corrige <b>sin descuento por error</b> '
+            + 'porque su criterio de penalización no está verificado. La nota sale '
+            + '<b>más alta que la real</b> y no es comparable con la de los exámenes que sí lo declaran.</p>'))
       + '<p class="exh-nota-fin">Sobre ' + plural(r.corregibles, 'pregunta') + ' corregible'
       + (r.corregibles === 1 ? '' : 's') + ' · <b>' + nota + '</b> / 10'
       + (r.anuladas ? ' · las anuladas no cuentan' : '') + '</p>'
