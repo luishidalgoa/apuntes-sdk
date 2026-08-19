@@ -15,6 +15,18 @@ let currentTarget = null;
 export function resolveQuestionRef(q){
   if(!q.articulo) return null;
   const key = String(q.articulo);
+  /* PRIMERO el tema de la propia pregunta. Sin esto gana el primero del registro,
+     y con claves planas («37») dos materias distintas la reclaman: el art. 37 de
+     la Constitucion y el 37 de la Ley de Transparencia. El fallo no se parece a
+     un fallo — se abre un panel correcto, con un articulo real, que no es el de
+     la pregunta. La pregunta ya sabe de quien es; solo habia que preguntarselo. */
+  if(q.temaId){
+    const propio = allTemas().find(t => t.id === q.temaId);
+    if(propio){
+      const [base] = splitKey(key, propio.engine.keySplit);
+      if(propio.engine.sections[base]) return { tema: propio, key };
+    }
+  }
   for(const t of allTemas()){
     const [base] = splitKey(key, t.engine.keySplit);
     if(t.engine.sections[base]) return { tema: t, key };

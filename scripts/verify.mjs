@@ -577,11 +577,25 @@ function revisarRefs(TEMAS){
     return false;
   };
 
-  const malEscritas = [], sinDesarrollar = [];
+  const malEscritas = [], sinDesarrollar = [], ambiguas = [];
   for(const t of TEMAS){
     for(const q of (t.questions || [])){
       if(!q.articulo) continue;
       const k = String(q.articulo);
+      /* AMBIGUA: mas de un tema reclama la clave. Con claves planas pasa de
+         verdad — el «37» es un articulo de la Constitucion y otro de la Ley de
+         Transparencia — y entonces gana el primero del registro. No es una
+         referencia rota: se abre un panel correcto, de un articulo real, que no
+         es el de la pregunta. Por eso va aparte de las otras dos.
+         El tema de la propia pregunta desempata, asi que solo se avisa cuando NO
+         puede: cuando el dueño no esta entre los candidatos. */
+      const duenos = TEMAS.filter(x => {
+        const secs = (x.engine && x.engine.sections) || {};
+        const [b] = splitKey(k, x.engine && x.engine.keySplit);
+        return !!secs[b];
+      }).map(x => x.id);
+      if(duenos.length > 1 && duenos.indexOf(t.id) === -1)
+        ambiguas.push(`${t.id} · "${k}" → ${duenos.join(' o ')}`);
       if(resuelve(k)) continue;
 
       /* 1. Espacios: NINGUNA clave declarada lleva ninguno. Ademas se puede
@@ -614,6 +628,13 @@ function revisarRefs(TEMAS){
     'La clave no tiene la forma que usa el motor, asi que «Ver en el temario» NO\n' +
     '     SE PINTA: sin error y sin hueco, la pregunta se ve perfecta y pierde su\n' +
     '     enlace. Donde sale una flecha, esa es la clave que si resuelve.');
+  if(ambiguas.length) add('(app)', 'warn', 'ref-ambigua',
+    `${ambiguas.length} referencia(s) las reclaman dos temas y gana el orden del registro${muestra(ambiguas)}`,
+    'Dos materias usan la misma clave plana (el «37» de la Constitucion y el de la\n' +
+    '     Ley de Transparencia) y resuelve el PRIMERO del registro. No se ve como un\n' +
+    '     fallo: abre un panel correcto, de un articulo real, que no es el de la\n' +
+    '     pregunta. Declara `temaId` en la pregunta —el banco lo pone solo, un examen\n' +
+    '     hay que declararlo— o usa la clave con prefijo.');
   if(sinDesarrollar.length) add('(app)', 'warn', 'ref-sin-desarrollar',
     `${sinDesarrollar.length} referencia(s) apuntan a articulos que ningun tema desarrolla${muestra(sinDesarrollar)}`,
     'Estan BIEN escritas: el problema no es la clave sino que ese articulo aun no\n' +
