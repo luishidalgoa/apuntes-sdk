@@ -5,7 +5,7 @@ import { getLatestBookmark, clearBookmark, anchorLabel, relTime } from '../core/
 import { openSearch, SEARCH_ICON } from '../core/search-ui.js';
 import { bindMateriaCards } from '../core/materia-cards.js';
 import { openExam } from './examen.js';
-import { allExamenes } from '../core/examen-oficial.js';
+import { allExamenes, examenesPorTipo } from '../core/examen-oficial.js';
 import { openStudyPlan } from '../core/studyplan.js';
 
 /* Portada y hubs. Con `appConfig.materias`, la portada (#/) es un SELECTOR de
@@ -112,9 +112,20 @@ function examCardHtml(cfg, materiaId){
    y obligaban a decidir entre ellas desde fuera, sin haber visto ninguna. */
 function examenesCardHtml(cfg, materiaId){
   const n = allExamenes().length;
-  const kicker = n ? `Banco por temas · ${n} convocatoria${n === 1 ? '' : 's'} oficial${n === 1 ? '' : 'es'}` : 'Banco único · todos los temas';
+  /* «Convocatorias oficiales» solo si TODOS lo son. Un simulacro contado como
+     convocatoria en la portada es la mentira mas barata de cometer y la que mas
+     lejos llega: es lo primero que se lee. */
+  const nReales = examenesPorTipo('oficial').length;
+  const soloReales = n > 0 && nReales === n;
+  const kicker = n
+    ? (soloReales
+      ? `Banco por temas · ${n} convocatoria${n === 1 ? '' : 's'} oficial${n === 1 ? '' : 'es'}`
+      : `Banco por temas · ${n} ${n === 1 ? 'examen completo' : 'exámenes completos'}`)
+    : 'Banco único · todos los temas';
   const desc = n
-    ? 'Practica por temas o haz un examen oficial entero, con su orden y su tiempo.'
+    ? (soloReales
+      ? 'Practica por temas o haz un examen oficial entero, con su orden y su tiempo.'
+      : 'Practica por temas o haz un examen entero: convocatorias oficiales y simulacros de repaso.')
     : (cfg.examLede || 'Preguntas filtrables por materia, tema y bloque, con temporizador opcional.');
   /* Abre el MODAL, no una pantalla intermedia: la elección entre banco por temas
      y convocatoria oficial se hace dentro, que es donde ya estás. Solo elegir
