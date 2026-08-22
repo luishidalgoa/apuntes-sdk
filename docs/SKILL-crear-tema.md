@@ -195,9 +195,18 @@ import { assignCardKeys } from 'apuntes-sdk';
 renderContent(el){
   el.innerHTML = MI_HTML;
   assignCardKeys(el);   // clave + ancla `sec-<clave>` en cada tarjeta
-  numerarEsquema(el);
+  numerarEsquema(el);   // SOLO en el camino a mano — ver el aviso de abajo
 }
 ```
+
+> **`numerarEsquema` es del camino A MANO, no del de datos.** Existe porque un
+> tema escrito en HTML no tiene de dónde sacar el número de cada tarjeta. Por el
+> camino de datos ese número ya viene en `sig`, así que llamar a los dos lo pinta
+> **dos veces**: «1.3 1.3Qué hace el SGBD…». No falla nada —no hay error ni
+> aviso— y por eso se cuela: pasó al estrenar el camino de datos, copiando el
+> arranque de un tema escrito a mano.
+>
+> Regla: **si tus tarjetas llevan `sig`, no llames a `numerarEsquema`.**
 
 > **Si tu tema ya publica anclas, díselo antes de adoptar el helper.** También
 > pone el ancla del `.node`, con el `anchorPrefix` de la app, que es **uno para
