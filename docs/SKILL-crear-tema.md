@@ -64,7 +64,7 @@ export default {
 
   // ── Navegación ─────────────────────────────────────────────
   materia: 'biologia',        // opcional: agrupa temas en el hub (1er nivel)
-  bloque: 'Citología',        // opcional: agrupa DENTRO de la materia
+  bloque: 'Citología',        // opcional: agrupa DENTRO de la materia — ver aviso
   chips: [                    // saltos rápidos a secciones de esta página
     { cls: 'c1', anchor: 'estructura', label: 'Estructura' }
   ],
@@ -119,6 +119,21 @@ dice qué función del SDK depende de ella.
 ### 3.2 Apartado (nivel por encima de la sección) → `.apartado-head` con `id`
 
 Úsalo solo si tu tema tiene dos o más grandes bloques hermanos.
+
+> **Un campo que AGRUPA hay que ponerlo en todos los del grupo, no solo en el que
+> lo estrena.** Pasó al añadir un tema nuevo: se le declaró `bloque` y a los
+> cuatro anteriores no, así que el hub pintó la cabecera del bloque **justo antes
+> del último** y los otros cuatro quedaron sueltos encima. Leído de arriba abajo
+> decía lo contrario de la verdad: que solo ese pertenecía al bloque.
+>
+> Ninguna herramienta lo ve: los cinco manifiestos son válidos por separado y
+> `verify` los mira de uno en uno. El defecto no está en el dato que añadiste
+> —que era correcto— sino **en los que no tocaste**.
+>
+> Al estrenar un campo de agrupación, la pregunta no es «¿lo he puesto bien?»
+> sino **«¿quién más debería tenerlo?»**. Y la contraria también cuenta: si una
+> materia no está dividida, **no le inventes bloques por simetría** — un grupo de
+> uno no agrupa nada.
 
 ```html
 <div class="apartado-head reveal" id="ap-citologia">
