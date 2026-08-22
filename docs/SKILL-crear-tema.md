@@ -120,8 +120,8 @@ dice qué función del SDK depende de ella.
 
 Úsalo solo si tu tema tiene dos o más grandes bloques hermanos.
 
-> **Un campo que AGRUPA hay que ponerlo en todos los del grupo, no solo en el que
-> lo estrena.** Pasó al añadir un tema nuevo: se le declaró `bloque` y a los
+> **Un campo que AGRUPA, ORDENA o ROTULA un conjunto hay que ponerlo en todos los
+> del conjunto, no solo en el que lo estrena.** Pasó al añadir un tema nuevo: se le declaró `bloque` y a los
 > cuatro anteriores no, así que el hub pintó la cabecera del bloque **justo antes
 > del último** y los otros cuatro quedaron sueltos encima. Leído de arriba abajo
 > decía lo contrario de la verdad: que solo ese pertenecía al bloque.
@@ -130,10 +130,17 @@ dice qué función del SDK depende de ella.
 > `verify` los mira de uno en uno. El defecto no está en el dato que añadiste
 > —que era correcto— sino **en los que no tocaste**.
 >
-> Al estrenar un campo de agrupación, la pregunta no es «¿lo he puesto bien?»
-> sino **«¿quién más debería tenerlo?»**. Y la contraria también cuenta: si una
-> materia no está dividida, **no le inventes bloques por simetría** — un grupo de
-> uno no agrupa nada.
+> Al estrenar uno de estos campos, la pregunta no es «¿lo he puesto bien?» sino
+> **«¿qué pasa con los que no lo tienen?»** — que es más útil que «¿quién más
+> debería tenerlo?» porque también responde cuando la respuesta es *nadie*.
+>
+> No es solo `bloque`. `sig` **ordena**: si lo declaran unas tarjetas y otras no,
+> la numeración sale a trozos. `chips` **rotula**: media docena de saltos rápidos
+> en un tema y ninguno en su hermano hace parecer que al segundo le falta algo.
+> Todos fallan igual — el defecto vive **en los que no tocaste**.
+>
+> Y la contraria también cuenta: si una materia no está dividida, **no le
+> inventes bloques por simetría** — un grupo de uno no agrupa nada.
 
 ```html
 <div class="apartado-head reveal" id="ap-citologia">
