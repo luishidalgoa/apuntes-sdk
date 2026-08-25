@@ -837,7 +837,33 @@ npm run build      # debe compilar sin errores
 
 `npm run verify` comprueba automáticamente casi todo lo de esta sección y te dice
 **qué está mal y por qué importa**. Sale con código ≠ 0 si hay errores, así que
-sirve en CI. Detecta, entre otros:
+sirve en CI.
+
+Tres niveles, y conviene saber leerlos:
+
+| | Qué significa | Qué hacer |
+|---|---|---|
+| `✗ error` | rompe una función del SDK | arreglarlo; el script sale con código ≠ 0 |
+| `! aviso` | no rompe nada, pero es deuda | mirarlo: casi siempre hay algo detrás |
+| `· nota` | ni error ni deuda: **una decisión tuya, listada** | releerla |
+
+**La nota no detecta nada: enumera.** Existe porque hay decisiones cuyo efecto es
+una **ausencia** —una tarjeta declarada `omitir` desaparece del plan y sus
+preguntas salen del banco— y las ausencias no se revisan: si sobra una, nada la
+delata. La nota pone los nombres delante, y un nombre que no encaja frena al leerlo
+aunque no estuvieras buscando un error.
+
+Se listan igual que lo demás pero **no cuentan como avisos**: un tema con solo notas
+sigue diciendo «todo en orden». Es a propósito — un aviso que salta siempre por algo
+deliberado se aprende a ignorar, y con él se van los que sí importan.
+
+> Pasó de verdad: un extractor de anotaciones que no leía el color dejó una tarjeta
+> declarada `omitir` que no debía estarlo. No fallaba nada. En la lista de la nota
+> habría aparecido «Pactos y Acuerdos» entre cosas claramente prescindibles, y ese
+> nombre canta. **Las decisiones deliberadas envejecen** — esa tenía cuarenta minutos
+> y ya era falsa.
+
+Detecta, entre otros:
 
 | Comprueba | Por qué |
 |---|---|
