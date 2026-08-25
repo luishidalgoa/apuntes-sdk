@@ -228,6 +228,33 @@ function revisarDom(t, box, idsGlobales){
      baja) y no deja rastro. Por eso el render marca su propio rechazo con
      `data-prio-invalido` y aquí se caza: es el único modo de fallo que tiene el
      campo, y sin esto es invisible. */
+  /* `sig` anuncia un RANGO y el detalle no lo cubre. Promete contenido que no
+     esta: la tarjeta dice «Arts. 16-19» y dentro solo van el 16, 17 y 18, asi
+     que el 19 se anuncia y no se desarrolla. No falla nada —ni error, ni hueco
+     visible— y solo se nota si alguien va a buscar ese articulo concreto.
+     Medido antes de añadirlo: 16 tarjetas con rango y detalle en el contenido
+     real, 0 con huecos. Una regla que solo salta cuando hay algo que arreglar. */
+  const rangosRotos = [];
+  for(const c of box.querySelectorAll('.card')){
+    const sig = (((c.querySelector('.sig') || {}).textContent) || '').trim();
+    const m = sig.match(/(\d+)\s*[-–—]\s*(\d+)\s*$/);
+    if(!m) continue;
+    const a = +m[1], b = +m[2];
+    if(!(b > a) || b - a > 40) continue;
+    const nums = new Set([...c.querySelectorAll('[id]')].map(e => {
+      const mm = String(e.id).match(/^[A-Za-z]+-(\d+)$/); return mm ? +mm[1] : null;
+    }).filter(n => n !== null));
+    if(!nums.size) continue;   /* sin detalle: el rango es un rotulo, no una promesa */
+    const faltan = [];
+    for(let n = a; n <= b; n++) if(!nums.has(n)) faltan.push(n);
+    if(faltan.length) rangosRotos.push('"' + sig + '" no desarrolla ' + faltan.join(', '));
+  }
+  if(rangosRotos.length) add(id, 'warn', 'rango-incompleto',
+    `${rangosRotos.length} tarjeta(s) anuncian un rango que no desarrollan${muestra(rangosRotos)}`,
+    ['El rotulo promete articulos que la tarjeta no trae. O se añaden a `artNums`,',
+     '     o se corrige el rango para que diga lo que hay: un rango que no se cumple',
+     '     manda a buscar dentro algo que no esta.'].join('\n'));
+
   const prioMalas = [...box.querySelectorAll('[data-prio-invalido]')]
     .map(e => (((e.querySelector('.name') || {}).textContent || '').trim()
       || e.getAttribute('data-mark-id') || '?').slice(0, 34)
