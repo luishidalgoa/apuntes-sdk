@@ -262,11 +262,25 @@ function revisarDom(t, box, idsGlobales){
      una AUSENCIA —la tarjeta desaparece del plan y sus preguntas salen del
      banco— y las ausencias no se revisan: si sobra una, nada la delata. Con la
      lista delante, el autor la ve cada vez que verifica. */
+  /* Con los ARTICULOS que cubre, no solo el nombre. Un nombre puede sonar
+     prescindible —«Mesas de Negociacion»— y esconder tres articulos enteros, dos
+     de ellos vivos. Una decision no se puede releer si no dice sobre QUE es.
+
+     Los articulos se sacan por ESTRUCTURA y no con un patron: un id es de
+     apartado si otro id es prefijo suyo (`sec-EBEP-20-1` cuelga de
+     `sec-EBEP-20`). Adivinar la forma del id con un regex es lo que ya fallo al
+     copiar `splitKey`: la forma la decide la app, la estructura no. */
   const omitidas = [...box.querySelectorAll('[data-prio="omitir"]')]
-    .map(e => (((e.querySelector('.name') || {}).textContent) || '').trim()
-      || e.getAttribute('data-mark-id') || '?');
+    .map(e => {
+      const nombre = (((e.querySelector('.name') || {}).textContent) || '').trim()
+        || e.getAttribute('data-mark-id') || '?';
+      const ids = [...e.querySelectorAll('[id]')].map(x => x.id);
+      const bases = ids.filter(a => !ids.some(b => b !== a && a.indexOf(b + '-') === 0));
+      const arts = [...new Set(bases.map(x => x.slice(x.indexOf('-') + 1)))];
+      return nombre + (arts.length ? ' (' + arts.join(', ') + ')' : '');
+    });
   if(omitidas.length) add(id, 'info', 'declara-omitir',
-    `declara ${omitidas.length} tarjeta(s) para omitir${muestra(omitidas)}`,
+    `declara ${omitidas.length} tarjeta(s) para omitir: ${omitidas.map(x => '«' + x + '»').join(', ')}`,
     ['No salen en el Plan de estudio y sus preguntas no caen en el banco. Si alguna',
      '     no deberia estar aqui, quitale `prioridad` — nada mas te lo va a decir.'].join('\n'));
 
