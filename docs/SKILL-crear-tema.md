@@ -471,8 +471,15 @@ que el opositor ya descartó—. **Cuándo no**: para esconder lo que te costó
 redactar. Una tarjeta declarada `omitir` desaparece del Plan de estudio y sus
 preguntas dejan de caer en el banco; si el contenido merece estar, merece contar.
 
-`baja` no hace falta declararlo: **es el defecto de todo**. Declararlo solo tiene
-sentido para dejar constancia de que la decisión se tomó.
+**`baja` sí hay que declararlo** si lo quieres: el suelo no es `baja`, es **sin
+prioridad** —lo que nadie ha triado todavía—, y se pinta neutro. Es la diferencia
+entre «alguien decidió que esto es menor» y «nadie ha dicho nada de esto», y solo
+tiene sentido separarlas desde que el contenido puede declarar la primera.
+
+Los cinco niveles, de menos a más: **sin prioridad** (gris, el suelo) · **omitir**
+(azul) · **baja** (verde) · **media** (ámbar) · **alta** (rojo). El clic recorre
+`baja › media › alta › omitir`; **sin prioridad no está en el ciclo** —no es una
+elección, es el punto de partida— y se vuelve a ella manteniendo pulsado.
 
 > **La prioridad se declara POR TARJETA, así que la tarjeta tiene que ser
 > homogénea en prioridad.** Si agrupas por tema —«negociación colectiva», arts.

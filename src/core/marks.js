@@ -4,13 +4,24 @@
    estable por tema: en tarjetas `data-mark-id` (lo pone renderCard), en bloques
    y bandas el propio `id`.
 
-   NIVELES:  -1 = omitir (azul) · 1 = baja (verde) · 2 = media (ámbar) · 3 = alta (rojo)
+   NIVELES:  0 = sin prioridad (gris) · -1 = omitir (azul)
+             1 = baja (verde) · 2 = media (ámbar) · 3 = alta (rojo)
 
-   BAJA ES EL DEFECTO, no un estado que haya que elegir: todo lo que no tiene
-   nivel asignado ES de prioridad baja, y así se pinta. Antes existía un «sin
-   marcar» (0) distinto de «baja», y la distinción no significaba nada para quien
-   estudia — lo que no has marcado no es que no tenga importancia, es que tiene
-   la que traía de serie.
+   SIN PRIORIDAD ES EL SUELO: lo que nadie ha triado todavía. No es «poca
+   importancia», es AUSENCIA DE JUICIO, y por eso se pinta neutro y no verde.
+
+   Esto revierte una decisión anterior, y conviene saber por qué era correcta
+   entonces y dejó de serlo. Se habían fundido «sin marcar» y «baja» con este
+   argumento: lo que no has marcado no es que no tenga importancia, es que tiene
+   la que traía de serie. Impecable MIENTRAS EL CONTENIDO NO PODÍA DECIR NADA —
+   con una sola fuente de verdad, «baja» solo podía significar una cosa.
+
+   Desde que un tema puede declarar `prioridad:'baja'` (v0.10.1), esa fusión hace
+   que «baja» signifique dos cosas incompatibles: «alguien decidió que esto es
+   menor» y «nadie ha dicho nada de esto». Se vio en cuanto se usó: un temario
+   con seis artículos bajados a mano se veía igual que los cuarenta que nadie
+   había tocado. No es un matiz estético — es que el vocabulario nuevo ya no
+   cabía en la escala vieja.
 
    OMITIR va POR DEBAJO del defecto porque es la única marca que dice algo que el
    defecto no puede decir: «esto he decidido saltármelo». Por eso no se llega a
@@ -24,11 +35,13 @@
 
 const KEY = 'tai-marks';
 const OMITIR = -1;
-const DEFECTO = 1;                       // «baja»: lo que trae todo de serie
-/* Recorrido del clic. `baja` va primero porque es donde empieza todo, y `omitir`
-   al final: se elige a propósito, no de paso. */
+const SIN = 0;                           // sin prioridad: nadie lo ha triado
+const DEFECTO = SIN;
+/* Recorrido del clic: baja → media → alta → omitir → baja. `sin prioridad` NO
+   está en el ciclo — no se llega a ella pulsando porque no es una elección, es
+   el punto de partida. Para volver, pulsación larga (ver `bindMarks`). */
 const CICLO = [1, 2, 3, OMITIR];
-const LEVEL_NAMES = { [OMITIR]: 'omitir', 1: 'baja', 2: 'media', 3: 'alta' };
+const LEVEL_NAMES = { [OMITIR]: 'omitir', [SIN]: 'sin prioridad', 1: 'baja', 2: 'media', 3: 'alta' };
 
 /* NIVELES DECLARADOS POR EL CONTENIDO.
 
@@ -50,6 +63,8 @@ const LEVEL_NAMES = { [OMITIR]: 'omitir', 1: 'baja', 2: 'media', 3: 'alta' };
    `baja` cuando es una decision explicita (ver `cycleMark`). */
 const DECLARADAS = new Map();          // temaId → { id: nivel }
 const NOMBRE_A_NIVEL = { omitir: OMITIR, baja: 1, media: 2, alta: 3 };
+/* `sin prioridad` no se declara: NO declarar `prioridad` ya lo dice. Un valor
+   explícito sería una segunda forma de escribir lo mismo. */
 
 /* Registra lo declarado leyendo un DOM ya renderizado. Lo llaman `bindMarks` y
    el Plan de estudio, que ya tienen el árbol delante: no cuesta un render extra. */
@@ -107,7 +122,7 @@ function levelsOf(temaId){
    ya no existe. */
 export function markLevel(temaId, id){
   const v = levelsOf(temaId)[id];
-  return (v === undefined || v === null || v === 0) ? defectoDe(temaId, id) : v;
+  return (v === undefined || v === null) ? defectoDe(temaId, id) : v;
 }
 /* Nivel DECLARADO: lo que el usuario eligió de verdad, o 0 si nunca tocó esto.
    Sirve para inventariar decisiones, no para pintar. */
@@ -115,7 +130,7 @@ export function markSet(temaId, id){ return levelsOf(temaId)[id] || 0; }
 export function isOmitido(temaId, id){ return markLevel(temaId, id) === OMITIR; }
 export function markedIds(temaId){ return new Set(Object.keys(levelsOf(temaId))); }
 /* compat: «marcado» pasa a significar «con nivel declarado distinto del defecto». */
-export function isMarked(temaId, id){ const v = levelsOf(temaId)[id]; return !!v && v !== DEFECTO; }
+export function isMarked(temaId, id){ return markLevel(temaId, id) !== SIN; }
 
 /* Cicla: baja → media → alta → omitir → baja. Devuelve el nuevo nivel.
    `baja` se guarda borrando la clave, así el mapa solo contiene decisiones. */
@@ -125,8 +140,10 @@ export function cycleMark(temaId, id){
   if(Array.isArray(map)){ const m = {}; map.forEach(x => { m[x] = 3; }); map = m; }
   map = map || {};
   const def = defectoDe(temaId, id);
-  const actual = (map[id] === undefined || map[id] === null || map[id] === 0) ? def : map[id];
+  const actual = (map[id] === undefined || map[id] === null) ? def : map[id];
   const i = CICLO.indexOf(actual);
+  /* Desde «sin prioridad» (que no está en el ciclo) el primer clic entra por
+     `baja`, que es el escalón más bajo de los que SÍ son una decisión. */
   const next = CICLO[(i === -1 ? 0 : i + 1) % CICLO.length];
   /* Se guarda solo la DESVIACIÓN respecto al defecto de esa clave. Así el mapa
      sigue conteniendo únicamente decisiones, y la ausencia significa una sola
@@ -134,23 +151,40 @@ export function cycleMark(temaId, id){
      declara el tema y el usuario lo sube a `baja`, eso SÍ se guarda — es una
      decisión suya, y borrar la clave la haría volver a omitir en la próxima
      visita. */
+  /* `baja` ya NO se guarda como ausencia: la ausencia significa ahora «sin
+     prioridad», y una cosa no puede escribirse igual que otra. Solo se borra la
+     clave cuando el nivel coincide con el defecto de ESA clave (el declarado por
+     el contenido, o «sin prioridad» si no declara nada). */
   if(next === def) delete map[id]; else map[id] = next;
   all[temaId] = map; writeAll(all);
   return next;
 }
+/* Devuelve el bloque a su defecto: el declarado por el contenido, o «sin
+   prioridad». Es RETIRAR una decisión, no elegir un nivel más — por eso no está
+   en el ciclo y por eso borra la clave en vez de escribir un 0. */
+export function clearMark(temaId, id){
+  const all = readAll();
+  let map = all[temaId];
+  if(Array.isArray(map)){ const m = {}; map.forEach(x => { m[x] = 3; }); map = m; }
+  map = map || {};
+  delete map[id];
+  all[temaId] = map; writeAll(all);
+  return defectoDe(temaId, id);
+}
+
 /* compat: toggle → cicla (no lo usa la app). */
 export function toggleMark(temaId, id){ return cycleMark(temaId, id) > 0; }
 
 function levelTitle(level){
-  const n = LEVEL_NAMES[level] || LEVEL_NAMES[DEFECTO];
-  return level === OMITIR
-    ? 'Marcado para OMITIR · clic para volver a baja'
-    : ('Prioridad: ' + n + ' · clic: baja › media › alta › omitir');
+  const n = LEVEL_NAMES[level] != null ? LEVEL_NAMES[level] : LEVEL_NAMES[SIN];
+  if(level === SIN) return 'Sin prioridad · clic para asignar una (baja › media › alta › omitir)';
+  if(level === OMITIR) return 'Marcado para OMITIR · clic: vuelve a baja · mantén pulsado: quitar prioridad';
+  return 'Prioridad: ' + n + ' · clic para cambiar · mantén pulsado para quitarla';
 }
 /* Botón indicador: 3 barras que se rellenan y colorean según el nivel (el CSS lo
    pinta con var(--mk) por severidad). */
 const BARS = '<span class="mk-bars"><i></i><i></i><i></i></span>';
-export function markButton(id, level = DEFECTO){
+export function markButton(id, level = SIN){
   return '<button class="mark-btn" type="button" data-mark="' + id + '" data-level="' + level + '"'
     + ' aria-label="Importancia" title="' + levelTitle(level) + '">' + BARS + '</button>';
 }
@@ -196,12 +230,47 @@ export function bindMarks(root, temaId, { signal } = {}){
     place(h, h, h.id, 'beforeend');   // esquina sup. derecha (CSS)
   });
 
+  const bloqueDe = (btn) => btn.closest('.card, .art-block, .band, .apartado-head');
+
+  /* PULSACIÓN LARGA para quitar la prioridad. No está en el ciclo porque
+     retirar una decisión no es elegir otra: si «sin prioridad» fuese un paso
+     más, se pasaría por ella al cambiar de nivel y volvería a significar algo
+     que no significa. */
+  let largaEn = null, temp = null;
+  const cancelar = () => { clearTimeout(temp); temp = null; largaEn = null; };
+  root.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('.mark-btn');
+    if(!btn) return;
+    largaEn = btn;
+    temp = setTimeout(() => {
+      temp = null;
+      const nivel = clearMark(temaId, btn.getAttribute('data-mark'));
+      applyLevel(btn, bloqueDe(btn), nivel);
+      /* Deja el botón «armado» para que el click que viene detrás no vuelva a
+         asignar: en un puntero, soltar dispara click SIEMPRE. */
+      btn.dataset.largaHecha = '1';
+    }, 550);
+  }, { signal });
+  for(const ev of ['pointerup', 'pointercancel', 'pointerleave']) root.addEventListener(ev, cancelar, { signal });
+
   root.addEventListener('click', (e) => {
     const btn = e.target.closest('.mark-btn');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation();
+    if(btn.dataset.largaHecha){ delete btn.dataset.largaHecha; return; }
     const level = cycleMark(temaId, btn.getAttribute('data-mark'));
-    applyLevel(btn, btn.closest('.card, .art-block, .band, .apartado-head'), level);
+    applyLevel(btn, bloqueDe(btn), level);
+  }, { signal });
+
+  /* Con teclado no se puede mantener pulsado, así que Supr/Retroceso hacen lo
+     mismo. Sin esto, quien navega con el teclado puede asignar prioridad y no
+     retirarla — una función a la que se entra y no se sale. */
+  root.addEventListener('keydown', (e) => {
+    if(e.key !== 'Delete' && e.key !== 'Backspace') return;
+    const btn = e.target.closest && e.target.closest('.mark-btn');
+    if(!btn) return;
+    e.preventDefault();
+    applyLevel(btn, bloqueDe(btn), clearMark(temaId, btn.getAttribute('data-mark')));
   }, { signal });
 }
 
@@ -221,4 +290,5 @@ export function levelsMap(temaId){
 }
 export const TEMA_MARK_KEY = TEMA_KEY;
 export const NIVEL_OMITIR = OMITIR;
+export const NIVEL_SIN = SIN;
 export const NIVEL_DEFECTO = DEFECTO;

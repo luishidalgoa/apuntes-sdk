@@ -9,7 +9,7 @@
    prioridad propia, solo pliega y hace roll-up). Overlay SPA. Comparte storage
    con el marcador del contenido (marks.js): marcar aquí se refleja en el tema. */
 import { allTemas, materiasWithTemas, hasMaterias } from '../registry.js';
-import { levelsMap, cycleTemaLevel, cycleMark, markLevel, registrarDeclaradas, TEMA_MARK_KEY, NIVEL_OMITIR, NIVEL_DEFECTO } from './marks.js';
+import { levelsMap, cycleTemaLevel, cycleMark, markLevel, registrarDeclaradas, TEMA_MARK_KEY, NIVEL_OMITIR, NIVEL_SIN, NIVEL_DEFECTO } from './marks.js';
 import { registerLayer } from './modal-stack.js';
 import { esc } from './dom.js';
 
@@ -162,7 +162,7 @@ function oculta(lv){
 }
 function ocultaRama(map, node){
   const ks = walkIds(node, []);
-  const nivs = ks.length ? ks.map(k => map[k] || NIVEL_DEFECTO) : [NIVEL_DEFECTO];
+  const nivs = ks.length ? ks.map(k => (map[k] === undefined || map[k] === null) ? NIVEL_DEFECTO : map[k]) : [NIVEL_DEFECTO];
   /* Una rama se oculta solo si TODOS sus nodos se ocultan: si dentro queda algo
      que estudiar, la rama tiene que seguir viéndose para poder llegar. */
   return nivs.every(oculta);
@@ -171,14 +171,14 @@ function ocultaRama(map, node){
 /* Conteo {alta, media, omit} de un conjunto de ids según el storage del tema. */
 function countIds(map, ids){
   let alta = 0, media = 0, omit = 0;
-  ids.forEach(id => { const lv = map[id] || NIVEL_DEFECTO;
+  ids.forEach(id => { const lv = (map[id] === undefined || map[id] === null) ? NIVEL_DEFECTO : map[id];
     if(lv === 3) alta++; else if(lv === 2) media++; else if(lv === NIVEL_OMITIR) omit++; });
   return { alta, media, omit };
 }
 /* Claves de prioridad del subárbol de un nodo (incluido él). */
 function walkIds(node, acc){ if(node.pk) acc.push(node.pk); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
 function branchCounts(map, node){ return countIds(map, walkIds(node, []).filter(k => k !== node.pk)); }
-function branchMax(map, node){ const ks = walkIds(node, []); return ks.length ? Math.max(...ks.map(k => map[k] || NIVEL_DEFECTO)) : NIVEL_DEFECTO; }
+function branchMax(map, node){ const ks = walkIds(node, []); return ks.length ? Math.max(...ks.map(k => (map[k] === undefined || map[k] === null) ? NIVEL_DEFECTO : map[k])) : NIVEL_DEFECTO; }
 function temaCounts(tema, map){
   const ids = [TEMA_MARK_KEY];
   tema.nodes.forEach(n => walkIds(n, ids));
@@ -211,7 +211,7 @@ function labelHtml(temaId, o, cls){
 /* Fila de un nodo (recursivo): hoja si no tiene hijos; rama colapsable si los
    tiene. TODO nodo lleva botón de prioridad (por su clave `pk`). */
 function nodeHtml(temaId, o, map){
-  const lv = map[o.pk] || NIVEL_DEFECTO;
+  const lv = (map[o.pk] === undefined || map[o.pk] === null) ? NIVEL_DEFECTO : map[o.pk];
   const kids = o.children || [];
   const isSec = o.kind === 'section';
   const btn = setBtn('node', temaId, o.pk, lv);
@@ -239,7 +239,7 @@ function nodeHtml(temaId, o, map){
 
 function temaHtml(tema){
   const map = levelsMap(tema.id);
-  const tLv = map[TEMA_MARK_KEY] || NIVEL_DEFECTO;
+  const tLv = (map[TEMA_MARK_KEY] === undefined || map[TEMA_MARK_KEY] === null) ? NIVEL_DEFECTO : map[TEMA_MARK_KEY];
   const c = temaCounts(tema, map);
   const inner = tema.nodes.map(n => nodeHtml(tema.id, n, map)).join('');
   const maxChild = Math.max(tLv, ...tema.nodes.map(n => branchMax(map, n)), NIVEL_DEFECTO);

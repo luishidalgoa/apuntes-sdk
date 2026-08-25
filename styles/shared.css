@@ -121,7 +121,11 @@ a.opts-item{text-decoration:none;}
 .mark-btn{border:none;background:none;cursor:pointer;padding:3px;margin:0 6px 0 -2px;flex:none;line-height:0;
   transition:transform .12s ease,opacity .15s ease;}
 .mark-btn:hover{transform:scale(1.14);}
-.mark-btn[data-level="0"]{opacity:.5;}
+/* SIN PRIORIDAD: barras vacías y sin color. Es el suelo —nadie ha triado esto—
+   y tiene que verse como ausencia, no como el escalón más bajo: pintarlo de
+   verde diría «esto es de poca importancia», que es una afirmación que nadie ha
+   hecho. Atenuado para que un temario sin triar no parezca un semáforo. */
+.mark-btn[data-level="0"]{opacity:.45;}
 .mark-btn[data-level="0"]:hover{opacity:1;}
 /* barras crecientes: se rellenan y colorean con --mk según cuántas cubra el nivel */
 .mk-bars{display:inline-flex;align-items:flex-end;gap:2.5px;height:16px;}
