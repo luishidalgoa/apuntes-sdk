@@ -78,7 +78,7 @@ export { linkify, renderCard, renderArtRow, renderCardTreesInto, renderSectionsI
 export { assignCardKeys, cardTitle, slugify } from './core/render-tema.js';
 export { config, anchorId } from './config.js';
 export { revealAnchor } from './core/panels.js';
-export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark } from './core/marks.js';
+export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycleMark, registrarDeclaradas, precargarDeclaradas, nivelDeclarado } from './core/marks.js';
 export { wrapGlossary, mountGlossary, closeAcro } from './core/glossary.js';
 export { mountStudyPlan, openStudyPlan, closeStudyPlan } from './core/studyplan.js';
 export { temaLevel, cycleTemaLevel, levelsMap } from './core/marks.js';

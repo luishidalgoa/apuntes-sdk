@@ -8,7 +8,7 @@ import { allTemas, temasOfMateria, bloqueOf, hasBloques, materiaOf, hasMaterias 
 import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
 import { openRefPreview, questionRefs, refLabel, resolveQuestionRef } from '../exam/preview.js';
-import { markLevel, NIVEL_OMITIR, TEMA_MARK_KEY } from '../core/marks.js';
+import { markLevel, precargarDeclaradas, NIVEL_OMITIR, TEMA_MARK_KEY } from '../core/marks.js';
 import { anchorId } from '../config.js';
 import { registerLayer } from '../core/modal-stack.js';
 import { examenesPorTipo, normalizarExamen } from '../core/examen-oficial.js';
@@ -68,6 +68,10 @@ function esOmitida(q){
 function buildScope(materiaId){
   const temas = materiaId ? temasOfMateria(materiaId) : allTemas();
   QUESTIONS = temas.flatMap(t => t.questions.map(q => ({ ...q, temaId: t.id })));
+  /* Antes de contar nada: el banco se abre desde la portada, donde puede que no
+     se haya visitado ningún tema y el registro de prioridades declaradas esté
+     vacío. */
+  precargarDeclaradas(temas);
   TEMA_GROUPS = temas.map(t => {
     const num = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1];
     return { id: t.id, label: num ? ('Tema ' + num + ' · ' + t.titulo) : (t.titulo || t.id),

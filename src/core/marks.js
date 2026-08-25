@@ -30,6 +30,62 @@ const DEFECTO = 1;                       // «baja»: lo que trae todo de serie
 const CICLO = [1, 2, 3, OMITIR];
 const LEVEL_NAMES = { [OMITIR]: 'omitir', 1: 'baja', 2: 'media', 3: 'alta' };
 
+/* NIVELES DECLARADOS POR EL CONTENIDO.
+
+   El autor puede marcar un bloque con `data-prio="omitir"` y eso pasa a ser SU
+   DEFECTO — no una imposición: cuenta como punto de partida, y en cuanto el
+   usuario toca ese bloque manda lo suyo. El caso real es un temario anotado a
+   mano donde el propio opositor ya decidió en papel qué se salta; el contenido
+   solo traslada esa decisión, no la sustituye.
+
+   Por qué no se «siembra» en localStorage, que es lo primero que uno piensa:
+   sembrar obliga a distinguir «nunca tocado» de «tocado y devuelto al defecto»,
+   y como `baja` se guarda borrando la clave, esas dos cosas se escriben igual.
+   Se resolvería con una marca de «ya sembrado», pero entonces cambiar la
+   declaración más tarde no llegaría a quien ya la tuviera sembrada.
+
+   Tratarlo como DEFECTO en vez de como valor inicial evita las dos cosas: no
+   hay estado que migrar, y si el autor cambia la declaración, la ve todo el que
+   no haya decidido por su cuenta. Lo único que hace falta es guardar tambien
+   `baja` cuando es una decision explicita (ver `cycleMark`). */
+const DECLARADAS = new Map();          // temaId → { id: nivel }
+const NOMBRE_A_NIVEL = { omitir: OMITIR, baja: 1, media: 2, alta: 3 };
+
+/* Registra lo declarado leyendo un DOM ya renderizado. Lo llaman `bindMarks` y
+   el Plan de estudio, que ya tienen el árbol delante: no cuesta un render extra. */
+export function registrarDeclaradas(temaId, root){
+  if(!temaId || !root || DECLARADAS.has(temaId)) return;
+  const map = {};
+  root.querySelectorAll('[data-prio]').forEach(el => {
+    const n = NOMBRE_A_NIVEL[String(el.getAttribute('data-prio')).toLowerCase()];
+    const id = el.getAttribute('data-mark-id') || el.id;
+    if(n && id) map[id] = n;
+  });
+  DECLARADAS.set(temaId, map);
+}
+/* Rellena el registro de los temas que aún no se hayan visitado, renderizándolos
+   en un div suelto. Hace falta porque el BANCO se puede abrir desde la portada
+   sin haber entrado en ningún tema: sin esto, una tarjeta declarada «omitir»
+   seguiría soltando sus preguntas hasta que alguien abriera su tema — un fallo
+   que depende de por dónde entres, de los que no dan síntoma. Cachea por tema,
+   así que la segunda llamada no cuesta nada. */
+export function precargarDeclaradas(temas){
+  for(const t of (temas || [])){
+    if(!t || !t.id || DECLARADAS.has(t.id) || typeof t.renderContent !== 'function') continue;
+    try {
+      const box = document.createElement('div');
+      t.renderContent(box);
+      registrarDeclaradas(t.id, box);
+    } catch(e){ DECLARADAS.set(t.id, {}); }   // un tema que no renderiza no bloquea al resto
+  }
+}
+export function nivelDeclarado(temaId, id){
+  const m = DECLARADAS.get(temaId);
+  return (m && m[id]) || 0;
+}
+/* Defecto EFECTIVO de una clave: lo que declara el contenido, o baja. */
+function defectoDe(temaId, id){ return nivelDeclarado(temaId, id) || DEFECTO; }
+
 function readAll(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } }
 function writeAll(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
 
@@ -51,7 +107,7 @@ function levelsOf(temaId){
    ya no existe. */
 export function markLevel(temaId, id){
   const v = levelsOf(temaId)[id];
-  return (v === undefined || v === null || v === 0) ? DEFECTO : v;
+  return (v === undefined || v === null || v === 0) ? defectoDe(temaId, id) : v;
 }
 /* Nivel DECLARADO: lo que el usuario eligió de verdad, o 0 si nunca tocó esto.
    Sirve para inventariar decisiones, no para pintar. */
@@ -68,10 +124,17 @@ export function cycleMark(temaId, id){
   let map = all[temaId];
   if(Array.isArray(map)){ const m = {}; map.forEach(x => { m[x] = 3; }); map = m; }
   map = map || {};
-  const actual = (map[id] === undefined || map[id] === null || map[id] === 0) ? DEFECTO : map[id];
+  const def = defectoDe(temaId, id);
+  const actual = (map[id] === undefined || map[id] === null || map[id] === 0) ? def : map[id];
   const i = CICLO.indexOf(actual);
   const next = CICLO[(i === -1 ? 0 : i + 1) % CICLO.length];
-  if(next === DEFECTO) delete map[id]; else map[id] = next;
+  /* Se guarda solo la DESVIACIÓN respecto al defecto de esa clave. Así el mapa
+     sigue conteniendo únicamente decisiones, y la ausencia significa una sola
+     cosa: «aquí mando yo, el contenido». Si el defecto es `omitir` porque lo
+     declara el tema y el usuario lo sube a `baja`, eso SÍ se guarda — es una
+     decisión suya, y borrar la clave la haría volver a omitir en la próxima
+     visita. */
+  if(next === def) delete map[id]; else map[id] = next;
   all[temaId] = map; writeAll(all);
   return next;
 }
@@ -105,6 +168,7 @@ function applyLevel(btn, block, level){
 /* Coloca los indicadores en cada bloque marcable, aplica el estado guardado y
    delega los clics (ciclo). Idempotente: no duplica (marca con data-marked). */
 export function bindMarks(root, temaId, { signal } = {}){
+  registrarDeclaradas(temaId, root);
   const levels = levelsOf(temaId);
   const place = (block, host, id, where) => {
     host.insertAdjacentHTML(where, markButton(id));
@@ -147,8 +211,14 @@ const TEMA_KEY = '__tema__';
 export function temaLevel(temaId){ return markLevel(temaId, TEMA_KEY); }
 export function cycleTemaLevel(temaId){ return cycleMark(temaId, TEMA_KEY); }
 
-/* Mapa completo { id: nivel } de un tema (para el árbol de prioridades). */
-export function levelsMap(temaId){ return { ...levelsOf(temaId) }; }
+/* Mapa EFECTIVO { id: nivel } de un tema: lo declarado por el contenido, con lo
+   que el usuario haya decidido encima. Devolver ya resuelto el efectivo evita
+   tener que pasar el `temaId` por las seis funciones del árbol de prioridades
+   solo para poder consultar el defecto — y evita que a una se le olvide, que es
+   como un nodo declarado «omitir» aparecería como baja sin que nada fallara. */
+export function levelsMap(temaId){
+  return { ...(DECLARADAS.get(temaId) || {}), ...levelsOf(temaId) };
+}
 export const TEMA_MARK_KEY = TEMA_KEY;
 export const NIVEL_OMITIR = OMITIR;
 export const NIVEL_DEFECTO = DEFECTO;

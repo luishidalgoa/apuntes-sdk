@@ -105,7 +105,16 @@ export function renderCard(ctx, card, cls){
      así `markId` manda: si un día cambia el numeral de una tarjeta publicada,
      es la única forma de conservar lo que el usuario tenía guardado. */
   const markId = card.markId || (hasDetail ? card.artNums[0] : card.sig);
-  return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '">'
+  /* `prioridad` la declara el AUTOR y vale como defecto de esa tarjeta, no como
+     imposición: en cuanto el usuario la toca, manda lo suyo. Nace de temarios
+     anotados a mano donde el propio opositor ya decidió qué se salta. */
+  const prioOk = ['omitir', 'baja', 'media', 'alta'];
+  const prioVal = String(card.prioridad || '').toLowerCase();
+  /* Vocabulario CERRADO: se valida en vez de escapar. Un valor inventado no se
+     pinta —mejor que salga el defecto que un atributo que nadie interpreta— y
+     así tampoco hay nada del autor que llegue crudo al HTML. */
+  const prio = prioOk.includes(prioVal) ? ' data-prio="' + prioVal + '"' : '';
+  return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '"' + prio + '>'
     + '<div class="card-head"><div class="body">'
     + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span></div>'
     + '<p class="desc">' + card.desc + '</p>'

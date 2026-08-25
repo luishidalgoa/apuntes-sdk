@@ -446,6 +446,36 @@ const questions = [
 - `explicacion` es obligatoria en la práctica: es lo que se estudia al fallar.
 - `articulo` es opcional pero muy recomendable: habilita "ir a la teoría".
 
+### 6.1 Declarar la prioridad de una tarjeta
+
+Una tarjeta puede traer su prioridad de fábrica con `prioridad`, y el valor más
+útil es `'omitir'`:
+
+```js
+{ sig: '4.2', name: 'Indemnizaciones por razón del servicio',
+  prioridad: 'omitir',            // 'omitir' | 'baja' | 'media' | 'alta'
+  desc: '…' }
+```
+
+En HTML escrito a mano, el atributo equivalente: `data-prio="omitir"`.
+
+**Es un DEFECTO, no una imposición.** Vale como punto de partida y en cuanto el
+usuario toca ese bloque manda lo suyo — incluso si lo devuelve a `baja`, que se
+guarda precisamente para que no vuelva a omitirse en la siguiente visita. Nace
+de temarios anotados a mano donde el propio opositor ya decidió qué se salta: el
+contenido traslada esa decisión, no la sustituye.
+
+**Cuándo usarlo**: cuando la fuente misma dice que algo es prescindible —un
+epígrafe que el temario menciona sin desarrollar, un anexo de tablas, una parte
+que el opositor ya descartó—. **Cuándo no**: para esconder lo que te costó
+redactar. Una tarjeta declarada `omitir` desaparece del Plan de estudio y sus
+preguntas dejan de caer en el banco; si el contenido merece estar, merece contar.
+
+`baja` no hace falta declararlo: **es el defecto de todo**. Declararlo solo tiene
+sentido para dejar constancia de que la decisión se tomó.
+
+---
+
 ### 7.1 La referencia apunta a lo que RESUELVE la pregunta
 
 No al punto que el enunciado menciona. **No es lo mismo**, y confundirlo manda al

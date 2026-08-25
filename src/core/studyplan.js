@@ -9,7 +9,7 @@
    prioridad propia, solo pliega y hace roll-up). Overlay SPA. Comparte storage
    con el marcador del contenido (marks.js): marcar aquí se refleja en el tema. */
 import { allTemas, materiasWithTemas, hasMaterias } from '../registry.js';
-import { levelsMap, cycleTemaLevel, cycleMark, TEMA_MARK_KEY, NIVEL_OMITIR, NIVEL_DEFECTO } from './marks.js';
+import { levelsMap, cycleTemaLevel, cycleMark, markLevel, registrarDeclaradas, TEMA_MARK_KEY, NIVEL_OMITIR, NIVEL_DEFECTO } from './marks.js';
 import { registerLayer } from './modal-stack.js';
 import { esc } from './dom.js';
 
@@ -123,6 +123,7 @@ function buildStructure(){
     try {
       const box = document.createElement('div');
       t.renderContent(box);
+      registrarDeclaradas(t.id, box);   // el árbol ya está delante: no cuesta un render extra
       let apartado = null, band = null;
       // Recorrido de nivel superior: cabeceras (orden) + bloques sin ancestro
       // estructural (los anidados los recoge blockNode por contención).
