@@ -113,7 +113,12 @@ export function renderCard(ctx, card, cls){
   /* Vocabulario CERRADO: se valida en vez de escapar. Un valor inventado no se
      pinta —mejor que salga el defecto que un atributo que nadie interpreta— y
      así tampoco hay nada del autor que llegue crudo al HTML. */
-  const prio = prioOk.includes(prioVal) ? ' data-prio="' + prioVal + '"' : '';
+  /* Y si NO lo es, se deja rastro. Sin esto, `prioridad:'omitr'` da exactamente
+     el mismo resultado visible que no declarar nada —sale baja y nadie se entera—,
+     que es el único modo de fallo que tiene el campo. El atributo es inerte para
+     CSS y JS; solo existe para que `verify` pueda cazarlo. */
+  const prio = prioOk.includes(prioVal) ? ' data-prio="' + prioVal + '"'
+    : (prioVal ? ' data-prio-invalido="' + prioVal.replace(/[^a-z0-9_-]/g, '') + '"' : '');
   return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '"' + prio + '>'
     + '<div class="card-head"><div class="body">'
     + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span></div>'

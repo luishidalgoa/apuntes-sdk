@@ -474,6 +474,21 @@ preguntas dejan de caer en el banco; si el contenido merece estar, merece contar
 `baja` no hace falta declararlo: **es el defecto de todo**. Declararlo solo tiene
 sentido para dejar constancia de que la decisión se tomó.
 
+> **La prioridad se declara POR TARJETA, así que la tarjeta tiene que ser
+> homogénea en prioridad.** Si agrupas por tema —«negociación colectiva», arts.
+> 31-38— y dentro hay artículos que se omiten y otros que no, no puedes declarar
+> nada sin llevarte por delante los que sí importan.
+>
+> Pasó al trasladar un temario anotado: una banda de 3 tarjetas temáticas tuvo
+> que pasar a 9 para que cada una fuera de una sola prioridad. **Es una
+> consecuencia real del campo, no un efecto secundario**: el reparto en tarjetas
+> deja de responder solo a la materia y empieza a responder también a cómo se va
+> a estudiar.
+>
+> Si no quieres reordenar, la salida es no declarar y dejarlo en `baja`: «poco
+> importante pero todavía preguntable» es una respuesta legítima, y suele ser la
+> correcta cuando dentro queda algo que sí cae.
+
 ---
 
 ### 7.1 La referencia apunta a lo que RESUELVE la pregunta

@@ -222,6 +222,22 @@ function revisarDom(t, box, idsGlobales){
      los deep-links llevan el tema (#/tema/<id>/<ancla>), así que dos temas pueden
      reutilizar el mismo ancla sin conflicto (p.ej. `sec-10` en dos leyes). */
 
+  /* `prioridad` con un valor que no existe. El vocabulario es cerrado, así que
+     `renderCard` no pinta un valor desconocido — y ahí está el problema: una
+     errata da EXACTAMENTE el mismo resultado visible que no declarar nada (sale
+     baja) y no deja rastro. Por eso el render marca su propio rechazo con
+     `data-prio-invalido` y aquí se caza: es el único modo de fallo que tiene el
+     campo, y sin esto es invisible. */
+  const prioMalas = [...box.querySelectorAll('[data-prio-invalido]')]
+    .map(e => (((e.querySelector('.name') || {}).textContent || '').trim()
+      || e.getAttribute('data-mark-id') || '?').slice(0, 34)
+      + ' -> "' + e.getAttribute('data-prio-invalido') + '"');
+  if(prioMalas.length) add(id, 'warn', 'prioridad-desconocida',
+    `${prioMalas.length} tarjeta(s) declaran una prioridad que no existe${muestra(prioMalas)}`,
+    ['Los valores validos son `omitir`, `baja`, `media` y `alta`. Uno desconocido no',
+     '     se aplica y la tarjeta sale con el defecto (baja), igual que si no hubieras',
+     '     declarado nada: sin error, sin aviso y sin diferencia visible.'].join('\n'));
+
   /* contrato de las tarjetas (agregado: una línea por tipo de fallo, con ejemplos) */
   const sinMark = [], sinNombre = [], porClave = new Map();
   for(const card of box.querySelectorAll('.card')){
