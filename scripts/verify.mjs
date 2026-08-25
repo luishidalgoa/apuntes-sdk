@@ -255,6 +255,21 @@ function revisarDom(t, box, idsGlobales){
      '     o se corrige el rango para que diga lo que hay: un rango que no se cumple',
      '     manda a buscar dentro algo que no esta.'].join('\n'));
 
+  /* INVENTARIO de lo declarado «omitir». Va como NOTA y no como aviso: es una
+     decision tomada, no algo que arreglar, y un aviso que salta siempre por una
+     decision deliberada se aprende a ignorar.
+     Pero tiene que decirse, porque `omitir` es la unica prioridad cuyo efecto es
+     una AUSENCIA —la tarjeta desaparece del plan y sus preguntas salen del
+     banco— y las ausencias no se revisan: si sobra una, nada la delata. Con la
+     lista delante, el autor la ve cada vez que verifica. */
+  const omitidas = [...box.querySelectorAll('[data-prio="omitir"]')]
+    .map(e => (((e.querySelector('.name') || {}).textContent) || '').trim()
+      || e.getAttribute('data-mark-id') || '?');
+  if(omitidas.length) add(id, 'info', 'declara-omitir',
+    `declara ${omitidas.length} tarjeta(s) para omitir${muestra(omitidas)}`,
+    ['No salen en el Plan de estudio y sus preguntas no caen en el banco. Si alguna',
+     '     no deberia estar aqui, quitale `prioridad` — nada mas te lo va a decir.'].join('\n'));
+
   const prioMalas = [...box.querySelectorAll('[data-prio-invalido]')]
     .map(e => (((e.querySelector('.name') || {}).textContent || '').trim()
       || e.getAttribute('data-mark-id') || '?').slice(0, 34)
@@ -498,24 +513,33 @@ function revisarClaves(raiz){
 function informe(nTemas){
   const errores = findings.filter(f => f.level === 'error');
   const avisos  = findings.filter(f => f.level === 'warn');
+  /* `info` NO cuenta como aviso: describe una decision ya tomada, no algo por
+     arreglar. Un aviso que salta siempre por algo deliberado se aprende a
+     ignorar, y con el se van los que si importan — pero una decision cuyo
+     efecto es una AUSENCIA tampoco puede quedar sin decirse, porque nadie
+     revisa lo que no esta. El informe la enseña y el recuento no la suma. */
+  const infos = findings.filter(f => f.level === 'info');
   const porTema = new Map();
   for(const f of findings){ if(!porTema.has(f.tema)) porTema.set(f.tema, []); porTema.get(f.tema).push(f); }
 
   for(const [tema, fs] of porTema){
     console.log(`\n${B}${tema}${RESET}`);
     for(const f of fs){
-      const tag = f.level === 'error' ? `${RED}✗ error${RESET}` : `${YEL}! aviso${RESET}`;
+      const tag = f.level === 'error' ? `${RED}✗ error${RESET}`
+        : (f.level === 'info' ? `${DIM}· nota${RESET}` : `${YEL}! aviso${RESET}`);
       console.log(`  ${tag} ${DIM}[${f.code}]${RESET} ${f.msg}`);
       if(f.hint) console.log(`     ${DIM}→ ${f.hint}${RESET}`);
     }
   }
 
   console.log(`\n${DIM}─────────────────────────────${RESET}`);
-  if(!findings.length){
-    console.log(`${GRN}✓ ${nTemas} tema(s) verificados: todo en orden.${RESET}`);
+  if(!errores.length && !avisos.length){
+    console.log(`${GRN}✓ ${nTemas} tema(s) verificados: todo en orden.${RESET}`
+      + (infos.length ? `${DIM} (${infos.length} nota(s) informativa(s) arriba)${RESET}` : ''));
     return 0;
   }
-  console.log(`${nTemas} tema(s) · ${errores.length ? RED : ''}${errores.length} error(es)${RESET} · ${avisos.length} aviso(s)`);
+  console.log(`${nTemas} tema(s) · ${errores.length ? RED : ''}${errores.length} error(es)${RESET} · ${avisos.length} aviso(s)`
+    + (infos.length ? `${DIM} · ${infos.length} nota(s)${RESET}` : ''));
   if(errores.length){
     console.log(`${RED}✗ Hay errores que romperán funciones del SDK.${RESET}`);
     return 1;
