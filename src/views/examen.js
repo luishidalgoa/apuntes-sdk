@@ -7,7 +7,9 @@
 import { allTemas, temasOfMateria, bloqueOf, hasBloques, materiaOf, hasMaterias } from '../registry.js';
 import { config } from '../config.js';
 import { renderAiPanel } from '../exam/ai.js';
-import { openRefPreview, questionRefs, refLabel } from '../exam/preview.js';
+import { openRefPreview, questionRefs, refLabel, resolveQuestionRef } from '../exam/preview.js';
+import { markLevel, NIVEL_OMITIR, TEMA_MARK_KEY } from '../core/marks.js';
+import { anchorId } from '../config.js';
 import { registerLayer } from '../core/modal-stack.js';
 import { examenesPorTipo, normalizarExamen } from '../core/examen-oficial.js';
 
@@ -27,10 +29,40 @@ let overlay = null, sheet = null, examBody = null, titleEl = null;
 let examState = null;
 let examTimer = null;
 let QUESTIONS = [];
+let incluirOmitidas = false;   // por defecto, lo marcado «omitir» no cae
 let TEMA_GROUPS = [];   // [{ id, label, apartados:[...] }] — solo apartados con preguntas
 let currentScope;       // materiaId (string) | null (global) | undefined (nunca abierto)
 
 function clearExamTimer(){ if(examTimer){ clearInterval(examTimer); examTimer = null; } }
+
+/* ¿Esta pregunta cuelga de algo que has marcado para OMITIR?
+
+   No hay un campo que ate una pregunta a un bloque marcable, así que se usa lo
+   que sí existe: su referencia al temario, resuelta con el mismo resolutor que
+   pinta «Ver en el temario». De ahí salen las claves candidatas —la clave tal
+   cual, su artículo base y las anclas— y basta que UNA esté marcada.
+
+   Medido sobre el contenido real, esto ata entre el 90 % y el 96 % de las
+   preguntas con referencia en cada tema. Las que no atan simplemente NO se
+   excluyen: ante la duda, la pregunta cae. Es la dirección segura del error —
+   estudiar de más molesta; que desaparezca sin saber por qué, no.
+
+   Una pregunta SIN `articulo` solo se excluye si su tema entero está omitido. */
+const baseDe = (k) => { const i = String(k).indexOf('.'); return i === -1 ? String(k) : String(k).slice(0, i); };
+function esOmitida(q){
+  const tema = q.temaId;
+  if(!tema) return false;
+  if(markLevel(tema, TEMA_MARK_KEY) === NIVEL_OMITIR) return true;
+  for(const r of questionRefs(q)){
+    const res = resolveQuestionRef(r);
+    const destino = res ? res.tema.id : tema;
+    const key = res ? String(res.key) : String(r.ref);
+    const base = baseDe(key);
+    const cands = [key, base, anchorId(base), anchorId(base, key === base ? null : key.slice(base.length + 1))];
+    if(cands.some(c => c && markLevel(destino, c) === NIVEL_OMITIR)) return true;
+  }
+  return false;
+}
 
 /* Agrega las preguntas del ámbito (una materia o todo) y sus grupos de temas. */
 function buildScope(materiaId){
@@ -53,6 +85,7 @@ function showExamSetup(initialTema){
   const countTema = (g) => g.apartados.reduce((s, b) => s + countApartado(b), 0);
   const hasInitial = initialTema && TEMA_GROUPS.some(g => g.id === initialTema);
   const total = QUESTIONS.length;
+  const nOmitidas = QUESTIONS.filter(esOmitida).length;
 
   let idx = 0;
   const temaGroupHtml = (g) => {
@@ -106,7 +139,11 @@ function showExamSetup(initialTema){
   } else {
     groupsHtml = TEMA_GROUPS.map(temaGroupHtml).join('');
   }
-  const selCount = hasInitial ? countTema(TEMA_GROUPS.find(g => g.id === initialTema)) : total;
+  /* Los números de cada apartado dicen CUÁNTAS TIENE ese apartado —describen el
+     banco y por eso no se mueven—. Pero «Todas (N)» dice cuántas van a CAER, así
+     que ahí sí descuenta lo omitido: es el único número que promete algo. */
+  const enAmbito = (q) => !hasInitial || q.temaId === initialTema;
+  const selCount = QUESTIONS.filter(q => enAmbito(q) && (incluirOmitidas || !esOmitida(q))).length;
 
   /* Convocatorias oficiales DENTRO del modal: la decisión «banco por temas o
      examen real» se toma aquí, que es donde ya estás, y no en una pantalla
@@ -138,6 +175,13 @@ function showExamSetup(initialTema){
     + groupsHtml
     + '</div>'
     + '<p class="exam-setup-warn" id="examSetupWarn" style="display:none">Selecciona al menos un apartado.</p>'
+    /* La casilla solo aparece si hay algo omitido: ofrecer «incluir las omitidas»
+       cuando no has omitido ninguna es un control que no hace nada y que hay que
+       leer igual. */
+    + (nOmitidas
+      ? '<div class="exam-omit-row"><input type="checkbox" id="examIncOmit"' + (incluirOmitidas ? ' checked' : '') + '/>'
+        + '<label for="examIncOmit">Incluir las ' + nOmitidas + ' de lo que marcaste para omitir</label></div>'
+      : '')
     + '<p class="exam-setup-label">¿Con temporizador?</p>'
     + '<div class="opts exam-time-opts"><button class="btn" data-timed="0">Sin temporizador</button><button class="btn" data-timed="1">⏱ Con temporizador (45s/pregunta)</button></div>'
     + '<p class="exam-setup-label">¿Cuántas preguntas?</p>'
@@ -156,6 +200,8 @@ function showExamSetup(initialTema){
   const apartadoCbs = [...examBody.querySelectorAll('.exam-apartado-cb')];
   const bloquegCbs = [...examBody.querySelectorAll('.exam-bloqueg-cb')];
   const poolCountEl = examBody.querySelector('#examPoolCount');
+  const incOmit = examBody.querySelector('#examIncOmit');
+  if(incOmit) incOmit.addEventListener('change', () => { incluirOmitidas = incOmit.checked; updatePoolCount(); });
   const warnEl = examBody.querySelector('#examSetupWarn');
   let timedChoice = false;
 
@@ -182,7 +228,8 @@ function showExamSetup(initialTema){
     const on = apartadoCbs.filter(c => c.checked).length;
     allCb.checked = on === apartadoCbs.length; allCb.indeterminate = on > 0 && on < apartadoCbs.length;
   }
-  function updatePoolCount(){ const sel = seleccionados(); poolCountEl.textContent = QUESTIONS.filter(q => sel.includes(apartadoDe(q))).length; }
+  function updatePoolCount(){ const sel = seleccionados();
+    poolCountEl.textContent = QUESTIONS.filter(q => sel.includes(apartadoDe(q)) && (incluirOmitidas || !esOmitida(q))).length; }
 
   TEMA_GROUPS.forEach(g => syncTema(g.id)); syncAll();
   allCb.addEventListener('change', () => {
@@ -234,7 +281,7 @@ function shuffled(arr){
 }
 
 function startExam(n, apartados, timed){
-  let pool = QUESTIONS.filter(q => apartados.includes(apartadoDe(q)));
+  let pool = QUESTIONS.filter(q => apartados.includes(apartadoDe(q)) && (incluirOmitidas || !esOmitida(q)));
   pool = shuffled(pool);
   if(n) pool = pool.slice(0, n);
   examState = { pool, index: 0, score: 0, wrongList: [], timed: !!timed, qstate: [] };

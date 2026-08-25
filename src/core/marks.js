@@ -1,14 +1,34 @@
-/* Marcar IMPORTANCIA de bloques de contenido, en 3 NIVELES (app de un solo
-   usuario → localStorage). Genérico: funciona sobre tarjetas (.card), bloques de
-   sección (.art-block) y bandas/títulos (.band[id]). Cada bloque marcable expone
-   un id estable por tema: en tarjetas `data-mark-id` (lo pone renderCard), en
-   bloques y bandas el propio `id`.
-   Niveles: 1=baja (verde) · 2=media (ámbar) · 3=alta (rojo). Clic cicla
-   off→1→2→3→off. Estado: { temaId: { id: nivel } }. */
+/* Marcar IMPORTANCIA de bloques de contenido (app de un solo usuario →
+   localStorage). Genérico: funciona sobre tarjetas (.card), bloques de sección
+   (.art-block) y bandas/títulos (.band[id]). Cada bloque marcable expone un id
+   estable por tema: en tarjetas `data-mark-id` (lo pone renderCard), en bloques
+   y bandas el propio `id`.
+
+   NIVELES:  -1 = omitir (azul) · 1 = baja (verde) · 2 = media (ámbar) · 3 = alta (rojo)
+
+   BAJA ES EL DEFECTO, no un estado que haya que elegir: todo lo que no tiene
+   nivel asignado ES de prioridad baja, y así se pinta. Antes existía un «sin
+   marcar» (0) distinto de «baja», y la distinción no significaba nada para quien
+   estudia — lo que no has marcado no es que no tenga importancia, es que tiene
+   la que traía de serie.
+
+   OMITIR va POR DEBAJO del defecto porque es la única marca que dice algo que el
+   defecto no puede decir: «esto he decidido saltármelo». Por eso no se llega a
+   ella subiendo, y por eso el ciclo la deja al final del recorrido — se elige a
+   propósito, no de paso.
+
+   El ciclo es baja → media → alta → omitir → baja. En almacenamiento, `baja` se
+   guarda como AUSENCIA (se borra la clave): así el defecto no ocupa nada y el
+   inventario solo lista lo que decidiste de verdad.
+   Estado: { temaId: { id: nivel } }. */
 
 const KEY = 'tai-marks';
-const MAX = 3;
-const LEVEL_NAMES = { 1: 'baja', 2: 'media', 3: 'alta' };
+const OMITIR = -1;
+const DEFECTO = 1;                       // «baja»: lo que trae todo de serie
+/* Recorrido del clic. `baja` va primero porque es donde empieza todo, y `omitir`
+   al final: se elige a propósito, no de paso. */
+const CICLO = [1, 2, 3, OMITIR];
+const LEVEL_NAMES = { [OMITIR]: 'omitir', 1: 'baja', 2: 'media', 3: 'alta' };
 
 function readAll(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } }
 function writeAll(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
@@ -27,18 +47,31 @@ function levelsOf(temaId){
   return v || {};
 }
 
-export function markLevel(temaId, id){ return levelsOf(temaId)[id] || 0; }
+/* Nivel efectivo: el guardado o el defecto (baja). Nunca devuelve 0 — ese estado
+   ya no existe. */
+export function markLevel(temaId, id){
+  const v = levelsOf(temaId)[id];
+  return (v === undefined || v === null || v === 0) ? DEFECTO : v;
+}
+/* Nivel DECLARADO: lo que el usuario eligió de verdad, o 0 si nunca tocó esto.
+   Sirve para inventariar decisiones, no para pintar. */
+export function markSet(temaId, id){ return levelsOf(temaId)[id] || 0; }
+export function isOmitido(temaId, id){ return markLevel(temaId, id) === OMITIR; }
 export function markedIds(temaId){ return new Set(Object.keys(levelsOf(temaId))); }
-export function isMarked(temaId, id){ return markLevel(temaId, id) > 0; }
+/* compat: «marcado» pasa a significar «con nivel declarado distinto del defecto». */
+export function isMarked(temaId, id){ const v = levelsOf(temaId)[id]; return !!v && v !== DEFECTO; }
 
-/* Cicla el nivel del bloque: off→1→2→3→off. Devuelve el nuevo nivel (0..3). */
+/* Cicla: baja → media → alta → omitir → baja. Devuelve el nuevo nivel.
+   `baja` se guarda borrando la clave, así el mapa solo contiene decisiones. */
 export function cycleMark(temaId, id){
   const all = readAll();
   let map = all[temaId];
   if(Array.isArray(map)){ const m = {}; map.forEach(x => { m[x] = 3; }); map = m; }
   map = map || {};
-  const next = ((map[id] || 0) + 1) % (MAX + 1);
-  if(next === 0) delete map[id]; else map[id] = next;
+  const actual = (map[id] === undefined || map[id] === null || map[id] === 0) ? DEFECTO : map[id];
+  const i = CICLO.indexOf(actual);
+  const next = CICLO[(i === -1 ? 0 : i + 1) % CICLO.length];
+  if(next === DEFECTO) delete map[id]; else map[id] = next;
   all[temaId] = map; writeAll(all);
   return next;
 }
@@ -46,13 +79,15 @@ export function cycleMark(temaId, id){
 export function toggleMark(temaId, id){ return cycleMark(temaId, id) > 0; }
 
 function levelTitle(level){
-  return level ? ('Importancia: ' + LEVEL_NAMES[level] + ' · clic para cambiar')
-               : 'Marcar importancia · clic: baja › media › alta';
+  const n = LEVEL_NAMES[level] || LEVEL_NAMES[DEFECTO];
+  return level === OMITIR
+    ? 'Marcado para OMITIR · clic para volver a baja'
+    : ('Prioridad: ' + n + ' · clic: baja › media › alta › omitir');
 }
 /* Botón indicador: 3 barras que se rellenan y colorean según el nivel (el CSS lo
    pinta con var(--mk) por severidad). */
 const BARS = '<span class="mk-bars"><i></i><i></i><i></i></span>';
-export function markButton(id, level = 0){
+export function markButton(id, level = DEFECTO){
   return '<button class="mark-btn" type="button" data-mark="' + id + '" data-level="' + level + '"'
     + ' aria-label="Importancia" title="' + levelTitle(level) + '">' + BARS + '</button>';
 }
@@ -74,7 +109,7 @@ export function bindMarks(root, temaId, { signal } = {}){
   const place = (block, host, id, where) => {
     host.insertAdjacentHTML(where, markButton(id));
     const btn = where === 'beforeend' ? host.lastElementChild : host.firstElementChild;
-    applyLevel(btn, block, levels[id] || 0);
+    applyLevel(btn, block, markLevel(temaId, id));
   };
 
   root.querySelectorAll('.card[data-mark-id]:not([data-marked])').forEach(c => {
@@ -109,9 +144,11 @@ export function bindMarks(root, temaId, { signal } = {}){
 /* Nivel de importancia del TEMA entero (clave reservada `__tema__`). Se fija
    desde la vista de Plan de estudio; se muestra en la tarjeta del tema. */
 const TEMA_KEY = '__tema__';
-export function temaLevel(temaId){ return levelsOf(temaId)[TEMA_KEY] || 0; }
+export function temaLevel(temaId){ return markLevel(temaId, TEMA_KEY); }
 export function cycleTemaLevel(temaId){ return cycleMark(temaId, TEMA_KEY); }
 
 /* Mapa completo { id: nivel } de un tema (para el árbol de prioridades). */
 export function levelsMap(temaId){ return { ...levelsOf(temaId) }; }
 export const TEMA_MARK_KEY = TEMA_KEY;
+export const NIVEL_OMITIR = OMITIR;
+export const NIVEL_DEFECTO = DEFECTO;

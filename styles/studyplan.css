@@ -42,6 +42,12 @@
 /* franja de severidad a la izquierda según nivel del propio nodo */
 .sp-row[data-level="1"],.sp-row[data-level="2"],.sp-row[data-level="3"]{
   box-shadow:inset 3px 0 0 var(--mk);}
+/* OMITIDA: franja discontinua y texto atenuado con el título tachado. De serie
+   no se ve (el plan lista lo que queda por estudiar); aparece con «Omitibles»,
+   y ahí tiene que leerse como descartada, no como una fila más de baja. */
+.sp-row[data-level="-1"]{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--mk) 40%,transparent);}
+.sp-row[data-level="-1"] .sp-label{color:var(--ink-faint);text-decoration:line-through;
+  text-decoration-color:color-mix(in srgb,var(--mk) 60%,transparent);text-decoration-thickness:1.5px;}
 
 .sp-caret{border:none;background:none;cursor:pointer;color:var(--ink-faint);font-size:11px;line-height:1;
   padding:4px;flex:none;width:20px;text-align:center;transition:color .12s,transform .12s;}
@@ -63,6 +69,10 @@ a.sp-label:hover{text-decoration:underline;text-underline-offset:2px;}
 .sp-roll-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
   padding:0 5px;border-radius:99px;font-size:11px;font-weight:700;line-height:1;color:#fff;
   background:var(--mk);}
+/* el recuento de omitidas va hueco, no macizo: no es trabajo pendiente como los
+   otros dos, es lo que ya has decidido quitarte de encima. */
+.sp-roll-n[data-level="-1"]{background:transparent;color:var(--mk);
+  box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--mk) 55%,transparent);}
 
 /* el botón de prioridad reusa .mark-btn (relleno de barras) pero sin el margen del contenido */
 .sp-row .mk-set{margin:0;flex:none;}

@@ -109,10 +109,11 @@ a.opts-item{text-decoration:none;}
   .bm-chip{animation:none;}
 }
 
-/* Marcar IMPORTANCIA en 3 niveles: indicador de barras + resalte del bloque por
-   color de SEVERIDAD (baja=verde · media=ámbar · alta=rojo). El color por nivel
-   (--mk) es independiente del acento de la materia (la importancia es ortogonal).
-   Clic cicla off→baja→media→alta→off (marks.js). */
+/* Marcar PRIORIDAD: indicador de barras + resalte del bloque por color de
+   severidad. El color por nivel (--mk) es independiente del acento de la materia
+   (la prioridad es ortogonal). Clic cicla baja→media→alta→omitir→baja.
+   `baja` es el DEFECTO: lo que no tienes marcado ya es baja, no «sin marcar». */
+[data-level="-1"],[data-mark-level="-1"]{--mk:#3b7ddd;}  /* omitir · azul  */
 [data-level="1"],[data-mark-level="1"]{--mk:#3f9d68;}   /* baja  · verde */
 [data-level="2"],[data-mark-level="2"]{--mk:#e0a13a;}   /* media · ámbar */
 [data-level="3"],[data-mark-level="3"]{--mk:#d1493f;}   /* alta  · rojo  */
@@ -131,6 +132,13 @@ a.opts-item{text-decoration:none;}
 .mark-btn[data-level="1"] .mk-bars i:nth-child(-n+1),
 .mark-btn[data-level="2"] .mk-bars i:nth-child(-n+2),
 .mark-btn[data-level="3"] .mk-bars i:nth-child(-n+3){background:var(--mk);}
+/* OMITIR no es «menos barras»: está fuera de la escala, así que no se dibuja
+   como el escalón más bajo sino TACHADO. Unas barras vacías se leerían como
+   «baja», que es justo lo contrario de lo que dice. */
+.mark-btn[data-level="-1"] .mk-bars{position:relative;}
+.mark-btn[data-level="-1"] .mk-bars i{background:color-mix(in srgb,var(--mk) 30%,transparent);}
+.mark-btn[data-level="-1"] .mk-bars::after{content:'';position:absolute;left:-2px;right:-2px;top:50%;
+  height:2px;border-radius:2px;background:var(--mk);transform:rotate(-18deg);}
 /* indicador de banda/título: esquina superior derecha */
 .band{position:relative;}
 .band > .mark-btn{position:absolute;top:12px;right:14px;margin:0;}
@@ -144,6 +152,21 @@ a.opts-item{text-decoration:none;}
 .apartado-head{position:relative;}
 .apartado-head > .mark-btn{position:absolute;top:4px;right:2px;margin:0;}
 .apartado-head[data-mark-level]{box-shadow:inset 5px 0 0 var(--mk);padding-left:13px;}
+
+/* OMITIDO: va DESPUÉS de las reglas genéricas a propósito. `[data-mark-level="-1"]`
+   y `[data-mark-level]` tienen la MISMA especificidad, así que decide el orden:
+   puesto antes, el anillo y el tinte de arriba ganarían y un bloque descartado se
+   pintaría como uno importante.
+   Y no se dibuja como «prioridad mínima» sino atenuado y sin realce: lo que has
+   decidido saltarte no debe llamar la atención. Tampoco desaparece —sigue ahí,
+   con su borde discontinuo— y al pasar el ratón vuelve entero, para reconsiderarlo. */
+.card[data-mark-level="-1"],
+.art-block[data-mark-level="-1"]{opacity:.55;filter:saturate(.6);}
+.card[data-mark-level="-1"]{background:color-mix(in srgb,var(--mk) 5%,#fff);
+  box-shadow:none;border:1px dashed color-mix(in srgb,var(--mk) 45%,transparent);}
+.art-block[data-mark-level="-1"]{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--mk) 55%,transparent);}
+.card[data-mark-level="-1"]:hover,
+.art-block[data-mark-level="-1"]:hover{opacity:1;filter:none;}
 
 /* Panel lateral derecho tipo cajón (.bks-*): lo usa el editor de colores de
    subrayado (highlight.js). Nació con los ajustes del marcapáginas (retirados

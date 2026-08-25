@@ -9,15 +9,24 @@
    prioridad propia, solo pliega y hace roll-up). Overlay SPA. Comparte storage
    con el marcador del contenido (marks.js): marcar aquí se refleja en el tema. */
 import { allTemas, materiasWithTemas, hasMaterias } from '../registry.js';
-import { levelsMap, cycleTemaLevel, cycleMark, TEMA_MARK_KEY } from './marks.js';
+import { levelsMap, cycleTemaLevel, cycleMark, TEMA_MARK_KEY, NIVEL_OMITIR, NIVEL_DEFECTO } from './marks.js';
 import { registerLayer } from './modal-stack.js';
 import { esc } from './dom.js';
 
 let overlay = null, sheet = null, body = null;
 let struct = null;           // estructura cacheada (jerarquía por tema)
 let filterMin = 0;           // nivel mínimo visible (0 = todo)
+/* «Omitibles» no es un mínimo sino una selección EXACTA: pedir «≥ omitir» no
+   significa nada, porque omitir está fuera de la escala de importancia. Por eso
+   el filtro tiene dos modos y no un número más. */
+let filterSolo = 0;          // 0 = sin filtro exacto · NIVEL_OMITIR = solo omitibles
 const collapsed = new Set(); // claves de grupos plegados; persiste entre re-renders
-const caretGlyph = (key) => collapsed.has(key) ? '▸' : '▾';
+/* Con el filtro «Omitibles» puesto, los grupos se pintan ABIERTOS aunque estén
+   plegados: ese filtro existe para revisar lo que descartaste, y un plegado lo
+   deja escondido justo cuando lo has pedido. El plegado del usuario no se pierde
+   —se ignora mientras dura el filtro y vuelve al quitarlo—. */
+const plegado = (key) => collapsed.has(key) && !filterSolo;
+const caretGlyph = (key) => plegado(key) ? '▸' : '▾';
 
 const BARS = '<span class="mk-bars"><i></i><i></i><i></i></span>';
 const LNAME = { 1: 'baja', 2: 'media', 3: 'alta' };
@@ -140,27 +149,49 @@ function buildStructure(){
   return struct;
 }
 
-/* Conteo {alta, media} de un conjunto de ids según el storage del tema. */
+/* ¿Se oculta una fila? Dos filtros distintos: `filterMin` es un umbral (ver de
+   media para arriba) y `filterSolo` una selección exacta (ver solo lo descartado).
+   Además, SIN filtro las omitidas se ocultan de serie: el plan es la lista de lo
+   que queda por estudiar, y lo que decidiste saltarte no queda. Se recupera con
+   el botón «Omitibles», que existe justo para poder reconsiderarlo. */
+function oculta(lv){
+  if(filterSolo) return lv !== filterSolo;
+  if(filterMin) return lv < filterMin;
+  return lv === NIVEL_OMITIR;
+}
+function ocultaRama(map, node){
+  const ks = walkIds(node, []);
+  const nivs = ks.length ? ks.map(k => map[k] || NIVEL_DEFECTO) : [NIVEL_DEFECTO];
+  /* Una rama se oculta solo si TODOS sus nodos se ocultan: si dentro queda algo
+     que estudiar, la rama tiene que seguir viéndose para poder llegar. */
+  return nivs.every(oculta);
+}
+
+/* Conteo {alta, media, omit} de un conjunto de ids según el storage del tema. */
 function countIds(map, ids){
-  let alta = 0, media = 0;
-  ids.forEach(id => { const lv = map[id] || 0; if(lv === 3) alta++; else if(lv === 2) media++; });
-  return { alta, media };
+  let alta = 0, media = 0, omit = 0;
+  ids.forEach(id => { const lv = map[id] || NIVEL_DEFECTO;
+    if(lv === 3) alta++; else if(lv === 2) media++; else if(lv === NIVEL_OMITIR) omit++; });
+  return { alta, media, omit };
 }
 /* Claves de prioridad del subárbol de un nodo (incluido él). */
 function walkIds(node, acc){ if(node.pk) acc.push(node.pk); (node.children || []).forEach(c => walkIds(c, acc)); return acc; }
 function branchCounts(map, node){ return countIds(map, walkIds(node, []).filter(k => k !== node.pk)); }
-function branchMax(map, node){ const ks = walkIds(node, []); return ks.length ? Math.max(...ks.map(k => map[k] || 0)) : 0; }
+function branchMax(map, node){ const ks = walkIds(node, []); return ks.length ? Math.max(...ks.map(k => map[k] || NIVEL_DEFECTO)) : NIVEL_DEFECTO; }
 function temaCounts(tema, map){
   const ids = [TEMA_MARK_KEY];
   tema.nodes.forEach(n => walkIds(n, ids));
   return countIds(map, ids);
 }
 
-function rollupHtml(alta, media){
-  if(!alta && !media) return '';
+function rollupHtml(alta, media, omit){
+  if(!alta && !media && !omit) return '';
   return '<span class="sp-roll">'
     + (alta ? '<span class="sp-roll-n" data-level="3">' + alta + '</span>' : '')
     + (media ? '<span class="sp-roll-n" data-level="2">' + media + '</span>' : '')
+    /* Las omitidas se cuentan aparte y no suman a «lo que queda»: el recuento
+       existe para saber cuánto has descartado, no para inflar el trabajo. */
+    + (omit ? '<span class="sp-roll-n" data-level="-1" title="omitidas">' + omit + '</span>' : '')
     + '</span>';
 }
 const setBtn = (scope, temaId, id, lv) =>
@@ -179,26 +210,26 @@ function labelHtml(temaId, o, cls){
 /* Fila de un nodo (recursivo): hoja si no tiene hijos; rama colapsable si los
    tiene. TODO nodo lleva botón de prioridad (por su clave `pk`). */
 function nodeHtml(temaId, o, map){
-  const lv = map[o.pk] || 0;
+  const lv = map[o.pk] || NIVEL_DEFECTO;
   const kids = o.children || [];
   const isSec = o.kind === 'section';
   const btn = setBtn('node', temaId, o.pk, lv);
   if(!kids.length){
-    const hide = filterMin && lv < filterMin ? ' sp-hidden' : '';
+    const hide = oculta(lv) ? ' sp-hidden' : '';
     return '<div class="sp-row ' + (isSec ? 'sp-sec' : 'sp-sub') + hide + '" data-level="' + lv + '">'
       + '<span class="sp-indent"></span>'
       + labelHtml(temaId, o, isSec ? ' sp-sec-label' : '')
       + btn + '</div>';
   }
   const c = branchCounts(map, o);
-  const hide = filterMin && branchMax(map, o) < filterMin ? ' sp-hidden' : '';
+  const hide = ocultaRama(map, o) ? ' sp-hidden' : '';
   const key = 'x:' + temaId + '/' + o.gid;
-  const col = collapsed.has(key) ? ' collapsed' : '';
+  const col = plegado(key) ? ' collapsed' : '';
   return '<div class="sp-group sp-sec-group' + hide + col + '" data-key="' + esc(key) + '">'
     + '<div class="sp-row sp-sec" data-level="' + lv + '">'
     +   '<button class="sp-caret" type="button" aria-label="Plegar/desplegar">' + caretGlyph(key) + '</button>'
     +   labelHtml(temaId, o, ' sp-sec-label')
-    +   rollupHtml(c.alta, c.media)
+    +   rollupHtml(c.alta, c.media, c.omit)
     +   btn
     + '</div>'
     + '<div class="sp-children">' + kids.map(k => nodeHtml(temaId, k, map)).join('') + '</div>'
@@ -207,19 +238,23 @@ function nodeHtml(temaId, o, map){
 
 function temaHtml(tema){
   const map = levelsMap(tema.id);
-  const tLv = map[TEMA_MARK_KEY] || 0;
+  const tLv = map[TEMA_MARK_KEY] || NIVEL_DEFECTO;
   const c = temaCounts(tema, map);
   const inner = tema.nodes.map(n => nodeHtml(tema.id, n, map)).join('');
-  const maxChild = Math.max(tLv, ...tema.nodes.map(n => branchMax(map, n)), 0);
-  const hide = filterMin && maxChild < filterMin ? ' sp-hidden' : '';
+  const maxChild = Math.max(tLv, ...tema.nodes.map(n => branchMax(map, n)), NIVEL_DEFECTO);
+  /* El tema entero se oculta si TODO lo suyo se oculta: su propio nivel y cada
+     rama. Un tema marcado «omitir» desaparece del plan aunque dentro tenga cosas
+     sin marcar — decidir saltarse un tema es decidirlo entero. */
+  const hide = (tLv === NIVEL_OMITIR || (oculta(maxChild) && tema.nodes.every(n => ocultaRama(map, n))))
+    ? ' sp-hidden' : '';
   const hasNodes = tema.nodes.length > 0;
   const key = 't:' + tema.id;
-  const col = collapsed.has(key) ? ' collapsed' : '';
+  const col = plegado(key) ? ' collapsed' : '';
   return '<div class="sp-group sp-tema-group' + hide + col + '" data-key="' + esc(key) + '">'
     + '<div class="sp-row sp-tema" data-level="' + tLv + '">'
     +   (hasNodes ? '<button class="sp-caret" type="button" aria-label="Plegar/desplegar">' + caretGlyph(key) + '</button>' : '<span class="sp-indent"></span>')
     +   '<a class="sp-label sp-tema-label" href="#/tema/' + esc(tema.id) + '">Tema ' + esc(tema.num) + ' · ' + esc(tema.titulo) + '</a>'
-    +   rollupHtml(c.alta, c.media)
+    +   rollupHtml(c.alta, c.media, c.omit)
     +   setBtn('tema', tema.id, '', tLv)
     + '</div>'
     + (hasNodes ? '<div class="sp-children">' + inner + '</div>' : '')
@@ -234,13 +269,13 @@ function buildTree(){
     materiasWithTemas().forEach(m => {
       const temas = m.temas.map(t => byId.get(t.id)).filter(Boolean);
       const inner = temas.map(temaHtml).join('');
-      const tot = temas.reduce((a, t) => { const c = temaCounts(t, levelsMap(t.id)); a.alta += c.alta; a.media += c.media; return a; }, { alta: 0, media: 0 });
+      const tot = temas.reduce((a, t) => { const c = temaCounts(t, levelsMap(t.id)); a.alta += c.alta; a.media += c.media; a.omit += c.omit; return a; }, { alta: 0, media: 0, omit: 0 });
       const mkey = 'm:' + m.id;
       html += '<div class="sp-group sp-mat-group' + (collapsed.has(mkey) ? ' collapsed' : '') + '" data-key="' + esc(mkey) + '" style="--sp-accent:' + esc(m.accent || 'var(--ink)') + '">'
         + '<div class="sp-row sp-mat">'
         +   '<button class="sp-caret" type="button" aria-label="Plegar/desplegar">' + caretGlyph(mkey) + '</button>'
         +   '<span class="sp-label sp-mat-label">' + esc(m.label) + '</span>'
-        +   rollupHtml(tot.alta, tot.media)
+        +   rollupHtml(tot.alta, tot.media, tot.omit)
         + '</div>'
         + '<div class="sp-children">' + inner + '</div></div>';
     });
@@ -284,9 +319,10 @@ function render(){
     +   '</div>'
     +   '<div class="sp-filter" role="group" aria-label="Filtrar por prioridad">'
     +     '<span class="sp-ctl-lbl">Prioridad:</span>'
-    +     '<button type="button" data-min="0"' + (filterMin === 0 ? ' class="on"' : '') + '>Todo</button>'
-    +     '<button type="button" data-min="2"' + (filterMin === 2 ? ' class="on"' : '') + '>≥ Media</button>'
-    +     '<button type="button" data-min="3"' + (filterMin === 3 ? ' class="on"' : '') + '>Solo alta</button>'
+    +     '<button type="button" data-min="0"' + (filterMin === 0 && !filterSolo ? ' class="on"' : '') + '>Todo</button>'
+    +     '<button type="button" data-min="2"' + (filterMin === 2 && !filterSolo ? ' class="on"' : '') + '>≥ Media</button>'
+    +     '<button type="button" data-min="3"' + (filterMin === 3 && !filterSolo ? ' class="on"' : '') + '>Solo alta</button>'
+    +     '<button type="button" data-solo="omitir"' + (filterSolo ? ' class="on"' : '') + '>Omitibles</button>'
     +   '</div>'
     + '</div></div>'
     + '<div class="sp-tree">' + buildTree() + '</div>';
@@ -335,7 +371,11 @@ export function mountStudyPlan(shell){
     const label = e.target.closest('.sp-label[href]');
     if(label){ closeStudyPlan(); /* el href (#/…) navega solo */ return; }
     const f = e.target.closest('.sp-filter button');
-    if(f){ filterMin = parseInt(f.getAttribute('data-min'), 10) || 0; render(); }
+    if(f){
+      if(f.hasAttribute('data-solo')){ filterSolo = filterSolo ? 0 : NIVEL_OMITIR; }
+      else { filterSolo = 0; filterMin = parseInt(f.getAttribute('data-min'), 10) || 0; }
+      render();
+    }
   });
 }
 

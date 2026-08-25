@@ -153,3 +153,9 @@
   .ref-preview-card{transition:none;}
   #refPreviewOverlay::before{transition:none;}
 }
+
+/* Casilla «incluir las omitidas» del banco por temas. Va discreta y pegada al
+   selector de temas: es una excepción puntual, no una opción de configuración. */
+.exam-omit-row{display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:13px;color:var(--ink-soft);}
+.exam-omit-row input{accent-color:#3b7ddd;}
+.exam-omit-row label{cursor:pointer;}
