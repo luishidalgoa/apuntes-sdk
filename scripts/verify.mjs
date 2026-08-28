@@ -284,6 +284,70 @@ function revisarDom(t, box, idsGlobales){
     ['No salen en el Plan de estudio y sus preguntas no caen en el banco. Si alguna',
      '     no deberia estar aqui, quitale `prioridad` — nada mas te lo va a decir.'].join('\n'));
 
+  /* HUERFANA: una tarjeta VIVA que menciona un articulo declarado `omitir`.
+     Omitir no retira solo ese articulo: deja huerfano lo que otras tarjetas
+     digan de el. Paso de verdad — al omitir el art. 41 quedo un truco del 39
+     defendiendo de una confusion con contenido ya retirado del temario, asi que
+     mandaba a comparar con algo que el lector ya no puede leer.
+     Es el unico de esa familia de fallos que una herramienta caza sola: los
+     demas piden releer. */
+  /* Las claves llevan la LEY delante («EBEP-20») y el texto no («art. 20»), asi
+     que hay que emparejar por ley y no por numero: en un tema donde conviven dos
+     normas, el art. 20 del EBEP y el 20 de la Ley de Transparencia son cosas
+     distintas. Comparando solo la cifra, la primera version acusaba a dos
+     tarjetas de Transparencia de apoyarse en articulos del EBEP omitidos.
+     Es la colision del «37» otra vez, ahora DENTRO de un tema. */
+  const leyDe = (el) => {
+    const ids = [...el.querySelectorAll('[id]')].map(x => x.id);
+    const fuentes = ids.concat([el.getAttribute('data-mark-id') || '']);
+    for(const f of fuentes){
+      const m = String(f).match(/([A-Za-z]{2,})-\d+$/);
+      if(m) return m[1].toUpperCase();
+    }
+    return '';                     /* claves planas: la ley «por defecto» del tema */
+  };
+  const fuera = new Map();         /* ley → Set(numeros omitidos) */
+  for(const c of box.querySelectorAll('[data-prio="omitir"]')){
+    const ley = leyDe(c);
+    const ids = [...c.querySelectorAll('[id]')].map(x => x.id);
+    const bases = ids.filter(a => !ids.some(b => b !== a && a.indexOf(b + '-') === 0));
+    const fuentes = bases.length ? bases : [c.getAttribute('data-mark-id') || ''];
+    for(const f of fuentes){
+      const m = String(f).match(/(\d+)$/);
+      /* Se descartan numeros implausibles como articulo: un `data-mark-id` tipo
+         «RD 462/2002» acabaria buscando «art. 2002». */
+      if(m && +m[1] <= 999){ if(!fuera.has(ley)) fuera.set(ley, new Set()); fuera.get(ley).add(m[1]); }
+    }
+  }
+  const huerfanas = [];
+  if(fuera.size){
+    for(const c of box.querySelectorAll('.card')){
+      if(c.getAttribute('data-prio') === 'omitir') continue;
+      const nums = fuera.get(leyDe(c));
+      if(!nums) continue;          /* otra ley: sus numeros no se refieren a esto */
+      const txt = (c.textContent || '').replace(/\s+/g, ' ');
+      for(const n of nums){
+        /* Se exige la palabra «art»: un numero suelto no es una referencia. */
+        /* Patron SIN barras invertidas a proposito: `[.]` en vez de escapar el
+           punto y `[ ]` en vez de un atajo de espacio. Esta cadena pasa por
+           varias capas de comillas al editarse y una barra perdida no rompe
+           nada — solo deja de casar, en silencio, que es como se colo la
+           primera version de esta misma regla. */
+        if(new RegExp('art(?:[.]|iculo|ículo|s[.])?[ ]*' + n + '(?![0-9])', 'i').test(txt)){
+          const nombre = (((c.querySelector('.name') || {}).textContent) || '').trim()
+            || c.getAttribute('data-mark-id') || '?';
+          huerfanas.push(nombre.slice(0, 30) + ' → art. ' + n);
+        }
+      }
+    }
+  }
+  if(huerfanas.length) add(id, 'warn', 'referencia-huerfana',
+    `${huerfanas.length} tarjeta(s) vivas se apoyan en un articulo declarado «omitir»${muestra(huerfanas)}`,
+    ['Ese articulo ya no esta en el temario: la tarjeta manda a comparar con algo',
+     '     que el lector no puede leer. O se recupera el articulo, o se reescribe lo',
+     '     que se apoyaba en el. Omitir no retira solo un articulo: deja huerfano lo',
+     '     que otros digan de el.'].join('\n'));
+
   const prioMalas = [...box.querySelectorAll('[data-prio-invalido]')]
     .map(e => (((e.querySelector('.name') || {}).textContent || '').trim()
       || e.getAttribute('data-mark-id') || '?').slice(0, 34)

@@ -641,6 +641,11 @@ memorizable**: no «`free -h` muestra la memoria», sino que la columna que impo
 es *available* y no *free*. Es la diferencia entre una lista que se olvida y algo
 que se entiende una vez.
 
+> **Cuando el tema esté escrito, pásale `SKILL-ilustrar.md`.** §9.1 guía *cómo se
+> escribe* una tarjeta y se aplica mientras redactas, donde todo parece claro
+> porque acabas de entenderlo tú. Aquella pasada pregunta *si lo escrito basta*, y
+> eso solo se ve releyendo. Son momentos distintos: ninguna sustituye a la otra.
+
 ### 9.2 Reglas visuales
 
 - **Colores**: solo variables de la paleta (`var(--t1)`, `var(--tema-accent)`).
