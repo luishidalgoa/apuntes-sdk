@@ -7,6 +7,16 @@ Cómo consume una app una versión (en su `package.json`):
 `"apuntes-sdk": "git+https://github.com/luishidalgoa/apuntes-sdk.git#vX.Y.Z"`
 (el lockfile debe quedar en `git+https`, no `git+ssh`, para el `npm ci` de Vercel).
 
+## v0.12.1
+
+- **Fix: una tarjeta sin `illus` pintaba «undefined».** `renderCard` concatenaba
+  `card.illus` sin comprobarlo, así que en el hueco del dibujo salía la palabra
+  literal. `illus` es opcional según el contrato; ahora, si falta, no se pinta el
+  contenedor y el texto ocupa el ancho entero. Lo destaparon los dos primeros
+  temas que dejaron tarjetas sin icono (41 tarjetas afectadas en producción).
+  Sin cambios de API: los temas que ya traían `illus` en todas sus tarjetas
+  renderizan idéntico.
+
 ## v0.3.0
 
 - **Claves de tarjeta estables** — nueva API `assignCardKeys(root)` (+ `cardTitle`,

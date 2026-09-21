@@ -125,7 +125,13 @@ export function renderCard(ctx, card, cls){
     + '<p class="desc">' + card.desc + '</p>'
     + '<p class="truco"><span class="bulb">' + (card.trucoIcon || '💡') + '</span><span>' + card.truco + '</span></p>'
     + '</div>'
-    + '<div class="illus" aria-hidden="true">' + card.illus + '</div>'
+    /* `illus` es OPCIONAL (así lo dice el contrato, SKILL-crear-tema §3.3), y
+       hasta la v0.12.0 este renglón lo concatenaba sin mirar: una tarjeta sin
+       dibujo pintaba la palabra «undefined» en el hueco del dibujo. Los temas
+       anteriores no lo destapaban porque todas sus tarjetas traían icono; los
+       dos primeros que dejaron tarjetas sin él salieron así a producción. Sin
+       dibujo no hay columna: el texto ocupa el ancho entero. */
+    + (card.illus ? '<div class="illus" aria-hidden="true">' + card.illus + '</div>' : '')
     + '</div>'
     + detail
     + (card.extra || '')
