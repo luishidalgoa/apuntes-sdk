@@ -378,6 +378,12 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.4
+- **Cambio (notas)**: el panel de cada nota tiene dos pestañas, como en GitHub:
+  **Escribir** (el editor, donde va la notación de markdown) y **Vista previa**
+  (el texto ya compilado). Por defecto se ve la vista previa; una nota vacía se
+  abre en Escribir. Sustituye a la vista en bruto y la previa a la vez de v0.12.3.
+
 ## v0.12.3
 - **Nuevo (notas)**: las notas admiten **markdown** y se muestran formateadas
   mientras se escribe (vista previa en vivo bajo el texto). Soporta negrita,
