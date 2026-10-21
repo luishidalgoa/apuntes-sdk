@@ -378,6 +378,18 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.2
+- **Nuevo (anotación)**: **notas personales por bloque**. Cada tarjeta y cada
+  artículo gana un botón de post-it junto a la estrella ★: el usuario escribe lo
+  que le ha costado entender y la nota se guarda sola. Se muestra abierta si ya
+  hay texto y se borra vaciándola. Se guarda en `localStorage` (clave
+  `tai-notes`, por tema y bloque), igual que las marcas; la copia de seguridad ya
+  respalda todas las claves, así que entra sin cambios.
+  - Nuevo módulo `core/notes.js`, exportado desde el índice: `bindNotes`,
+    `noteButton`, `getNote`, `setNote`. Las bandas de título no tienen nota.
+  - No hace falta tocar la app: `createApp` lo engancha en la vista del tema.
+  - Estilos en `styles/shared.css` (`.note-*`).
+
 ## v0.1.20
 - **Nuevo (estructura)**: capa opcional **«bloque»** por encima del tema, para
   agrupar temas (p. ej. «Bloque 1», «Bloque 2»…). Contrato agnóstico: un tema
