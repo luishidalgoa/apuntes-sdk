@@ -33,18 +33,40 @@ export function noteButton(id){
     + '" aria-label="Añadir nota" title="Añadir nota">' + PEN + '</button>';
 }
 
+/* Panel con dos pestañas, como en GitHub: «Escribir» (editor) y «Vista previa»
+   (el markdown ya compilado). Por defecto se ve la vista previa. */
 function panelHtml(){
   return '<div class="note-panel" hidden>'
-    + '<label class="note-label">Mi nota</label>'
-    + '<textarea class="note-text" rows="3" placeholder="Lo que te ha costado entender, con tus palabras…"></textarea>'
-    + '<div class="note-preview" aria-label="Vista previa"></div>'
+    + '<div class="note-head"><span class="note-label">Mi nota</span>'
+    + '<div class="note-tabs" role="tablist">'
+    + '<button class="note-tab" type="button" role="tab" data-tab="edit" aria-selected="false" tabindex="-1">Escribir</button>'
+    + '<button class="note-tab" type="button" role="tab" data-tab="preview" aria-selected="true" tabindex="0">Vista previa</button>'
+    + '</div></div>'
+    + '<div class="note-view" data-view="edit" hidden>'
+    + '<textarea class="note-text" rows="4" placeholder="Lo que te ha costado entender, con tus palabras…"></textarea>'
     + '<p class="note-hint">Markdown: **negrita**, *cursiva*, `código`, - listas, # títulos, &gt; citas</p>'
+    + '</div>'
+    + '<div class="note-view" data-view="preview"><div class="note-preview"></div></div>'
     + '<div class="note-foot"><span class="note-state" aria-live="polite"></span>'
     + '<button class="note-clear" type="button">Borrar nota</button></div></div>';
 }
 
 /* Identidad del bloque: en tarjetas `data-mark-id`, en artículos su `id`. */
 const blockOf = el => el.closest('.card, .art-block');
+
+/* Vista previa: lo que ve el alumno cuando la nota está vacía. */
+const EMPTY = '<p class="note-empty">Sin texto todavía. Pulsa «Escribir» para añadir tu nota.</p>';
+const renderPreview = (src) => renderMarkdown(src) || EMPTY;
+
+/* Cambia de pestaña: marca la activa y muestra solo su vista. */
+function setTab(panel, name){
+  panel.querySelectorAll('.note-tab').forEach(t => {
+    const on = t.getAttribute('data-tab') === name;
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+    t.tabIndex = on ? 0 : -1;
+  });
+  panel.querySelectorAll('.note-view').forEach(v => { v.hidden = v.getAttribute('data-view') !== name; });
+}
 const idOf = b => b.classList.contains('card') ? b.getAttribute('data-mark-id') : b.id;
 
 /* Pone el botón de nota y el panel en cada tarjeta / artículo marcable, muestra
@@ -68,13 +90,13 @@ export function bindNotes(root, temaId, { signal } = {}){
     const text = saved[id] || '';
     const panel = b.querySelector('.note-panel');
     panel.querySelector('.note-text').value = text;
-    panel.querySelector('.note-preview').innerHTML = renderMarkdown(text);
+    panel.querySelector('.note-preview').innerHTML = renderPreview(text);
     panel.hidden = !text;
     if(text){ b.classList.add('has-note'); b.querySelector('.note-btn').classList.add('on'); }
   });
 
   /* Vista previa: se formatea en cada pulsación, sin esperar al guardado. */
-  const refresh = (ta) => { blockOf(ta).querySelector('.note-preview').innerHTML = renderMarkdown(ta.value); };
+  const refresh = (ta) => { blockOf(ta).querySelector('.note-preview').innerHTML = renderPreview(ta.value); };
 
   /* Guarda el texto del bloque (con debounce; al salir del campo, al momento). */
   const pending = new Map();
@@ -93,7 +115,19 @@ export function bindNotes(root, temaId, { signal } = {}){
       e.preventDefault(); e.stopPropagation();
       const panel = blockOf(btn).querySelector('.note-panel');
       panel.hidden = !panel.hidden;
-      if(!panel.hidden) panel.querySelector('.note-text').focus();
+      if(!panel.hidden){
+        const ta = panel.querySelector('.note-text');
+        if(ta.value.trim()){ setTab(panel, 'preview'); }
+        else { setTab(panel, 'edit'); ta.focus(); }
+      }
+      return;
+    }
+    const tab = e.target.closest('.note-tab');
+    if(tab){
+      e.preventDefault(); e.stopPropagation();
+      const panel = tab.closest('.note-panel'); const name = tab.getAttribute('data-tab');
+      setTab(panel, name);
+      if(name === 'edit') panel.querySelector('.note-text').focus();
       return;
     }
     const clear = e.target.closest('.note-clear');

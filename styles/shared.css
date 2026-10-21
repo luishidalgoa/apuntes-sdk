@@ -687,7 +687,14 @@ div.ap-txt,div.atxt{display:block;}
 
 /* Vista previa en vivo de las notas (markdown, core/markdown.js) */
 .note-preview{margin-top:8px;font-size:14px;line-height:1.55;color:var(--ink);overflow-wrap:anywhere;}
-.note-preview:empty{display:none;}
+.note-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.note-head .note-label{margin:0;}
+.note-tabs{display:flex;gap:4px;}
+.note-tab{border:none;background:none;font:inherit;font-size:12.5px;color:var(--ink-faint);padding:4px 8px;cursor:pointer;border-bottom:2px solid transparent;}
+.note-tab:hover{color:var(--ink);}
+.note-tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--tema-accent);}
+.note-view[hidden]{display:none;}
+.note-empty{margin:0;font-size:13px;color:var(--ink-faint);font-style:italic;}
 .note-preview p{margin:0 0 6px;}
 .note-preview h4,.note-preview h5,.note-preview h6{margin:8px 0 4px;font-size:14px;letter-spacing:.01em;}
 .note-preview ul,.note-preview ol{margin:4px 0 6px;padding-left:20px;}
