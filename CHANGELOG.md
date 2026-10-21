@@ -378,6 +378,15 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.3
+- **Nuevo (notas)**: las notas admiten **markdown** y se muestran formateadas
+  mientras se escribe (vista previa en vivo bajo el texto). Soporta negrita,
+  cursiva, tachado, `código`, ==resaltado==, enlaces http(s), títulos (`#`),
+  listas (`-` y `1.`), citas (`>`) y párrafos; un salto de línea es un salto real.
+  El HTML que escriba el alumno sale como texto: nunca se interpreta.
+  - Nuevo módulo `core/markdown.js`, exportado como `renderMarkdown(texto)`
+    por si una app quiere el mismo formato fuera de las notas.
+
 ## v0.12.2
 - **Nuevo (anotación)**: **notas personales por bloque**. Cada tarjeta y cada
   artículo gana un botón de post-it junto a la estrella ★: el usuario escribe lo

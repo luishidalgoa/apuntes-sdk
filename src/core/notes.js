@@ -2,7 +2,10 @@
    costado entender. Va junto a las marcas ★ (mismo sitio, mismo id estable) y
    se guarda igual: app de un solo usuario → localStorage. Como respalda TODAS las
    claves de localStorage, la copia de seguridad (backup.js) ya incluye las notas.
-   Estado: { temaId: { blockId: texto } }. Un bloque sin texto no guarda nada. */
+   Estado: { temaId: { blockId: texto } }. Un bloque sin texto no guarda nada.
+   El texto admite markdown: se muestra formateado mientras se escribe (vista
+   previa en vivo), con el mismo intérprete seguro que el resto del SDK. */
+import { renderMarkdown } from './markdown.js';
 
 const KEY = 'tai-notes';
 const SAVE_DELAY = 400;
@@ -34,6 +37,8 @@ function panelHtml(){
   return '<div class="note-panel" hidden>'
     + '<label class="note-label">Mi nota</label>'
     + '<textarea class="note-text" rows="3" placeholder="Lo que te ha costado entender, con tus palabras…"></textarea>'
+    + '<div class="note-preview" aria-label="Vista previa"></div>'
+    + '<p class="note-hint">Markdown: **negrita**, *cursiva*, `código`, - listas, # títulos, &gt; citas</p>'
     + '<div class="note-foot"><span class="note-state" aria-live="polite"></span>'
     + '<button class="note-clear" type="button">Borrar nota</button></div></div>';
 }
@@ -63,9 +68,13 @@ export function bindNotes(root, temaId, { signal } = {}){
     const text = saved[id] || '';
     const panel = b.querySelector('.note-panel');
     panel.querySelector('.note-text').value = text;
+    panel.querySelector('.note-preview').innerHTML = renderMarkdown(text);
     panel.hidden = !text;
     if(text){ b.classList.add('has-note'); b.querySelector('.note-btn').classList.add('on'); }
   });
+
+  /* Vista previa: se formatea en cada pulsación, sin esperar al guardado. */
+  const refresh = (ta) => { blockOf(ta).querySelector('.note-preview').innerHTML = renderMarkdown(ta.value); };
 
   /* Guarda el texto del bloque (con debounce; al salir del campo, al momento). */
   const pending = new Map();
@@ -93,6 +102,7 @@ export function bindNotes(root, temaId, { signal } = {}){
       const block = blockOf(clear);
       const ta = block.querySelector('.note-text');
       ta.value = '';
+      refresh(ta);
       commit(ta);
       block.querySelector('.note-state').textContent = 'Nota borrada';
     }
@@ -102,6 +112,7 @@ export function bindNotes(root, temaId, { signal } = {}){
     const ta = e.target.closest && e.target.closest('.note-text');
     if(!ta) return;
     const block = blockOf(ta); const id = idOf(block);
+    refresh(ta);
     block.querySelector('.note-state').textContent = 'Guardando…';
     clearTimeout(pending.get(id));
     pending.set(id, setTimeout(() => commit(ta), SAVE_DELAY));
