@@ -9,6 +9,7 @@ import { bindDropdown } from '../core/dropdown.js';
 import { createBookmarkUI, markAnchor, anchorFromClick, clearBookmark, getBookmark } from '../core/bookmark.js';
 import { bindMarks } from '../core/marks.js';
 import { wrapGlossary } from '../core/glossary.js';
+import { bindNotes } from '../core/notes.js';
 import { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton } from '../core/highlight.js';
 import { exportBackup, importBackup } from '../core/backup.js';
 import { registerLayer, registerExclusive } from '../core/modal-stack.js';
@@ -168,6 +169,7 @@ export const temaViewFactory = {
 
         bindCardInteractions(root, { signal });
         bindMarks(root.querySelector('#temaContent'), tema.id, { signal });   // ★ marcar importante
+        bindNotes(root.querySelector('#temaContent'), tema.id, { signal });   // 📝 nota personal por bloque
 
         /* 🖍️ subrayado: reaplica los guardados, engancha selección/quitar y el botón */
         const hlRoot = root.querySelector('#temaContent');

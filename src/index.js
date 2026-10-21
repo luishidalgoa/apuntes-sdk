@@ -82,6 +82,7 @@ export { bindMarks, markButton, isMarked, toggleMark, markedIds, markLevel, cycl
 export { wrapGlossary, mountGlossary, closeAcro } from './core/glossary.js';
 export { mountStudyPlan, openStudyPlan, closeStudyPlan } from './core/studyplan.js';
 export { temaLevel, cycleTemaLevel, levelsMap } from './core/marks.js';
+export { bindNotes, noteButton, getNote, setNote } from './core/notes.js';
 export { renderInfographic, renderInfographicInto, INFO_ICONS } from './core/infographic.js';
 export { mountStepper, mountSteppersAll } from './core/stepper.js';
 export { bindHighlighting, applyHighlightsInto, toggleHighlight, registerHighlightButton,
