@@ -378,6 +378,14 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.5
+- **Cambio (navegación)**: el desplegable «Temas» del navbar es compacto. Cada
+  tema muestra solo su número y su título (antes listaba todos sus apartados
+  debajo, y el menú ocupaba casi toda la pantalla). Los bloques se pliegan y se
+  abre el que contiene el tema actual; plegar un bloque no cierra el menú. El
+  «Plan de estudio» queda arriba como fila compacta, y el menú tiene altura máxima
+  con desplazamiento.
+
 ## v0.12.4
 - **Cambio (notas)**: el panel de cada nota tiene dos pestañas, como en GitHub:
   **Escribir** (el editor, donde va la notación de markdown) y **Vista previa**
