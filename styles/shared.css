@@ -39,18 +39,29 @@ button.btn svg,a.btn svg{width:16px;height:16px;}
     display:flex;flex-direction:column;gap:2px;}
 .opts-pop[hidden]{display:none;}
 .opts-pop-left{left:0;right:auto;min-width:290px;}
-/* items del desplegable de Temas */
-a.opts-item{text-decoration:none;}
-.ti-num{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
-    font-family:"Fraunces",serif;font-weight:700;font-size:13px;background:var(--paper-2);color:var(--ink-soft);}
-.opts-item.on .ti-num{background:color-mix(in srgb,var(--tema-accent) 18%,#fff);color:color-mix(in srgb,var(--tema-accent) 82%,#000);}
-.ti-body{display:flex;flex-direction:column;min-width:0;}
-.ti-title{font-size:13.5px;font-weight:700;}
-.ti-desc{font-size:11.5px;font-weight:500;color:var(--ink-faint);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
-/* Cabecera de bloque dentro del desplegable de Temas (capa por encima del tema). */
-.ti-bloque-head{font:800 10px/1 "Hanken Grotesk",system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
-    color:var(--ink-faint);padding:9px 12px 5px;}
-.ti-bloque-head:not(:first-child){border-top:1px solid var(--line);margin-top:3px;}
+/* Desplegable de Temas, compacto: plan arriba, bloques plegables, temas en una línea */
+.opts-pop.tm-pop{width:300px;min-width:0;max-height:min(68vh,500px);overflow:auto;padding:6px;}
+.tm-plan{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:none;
+  border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);text-align:left;}
+.tm-plan:hover{background:var(--paper-2);}
+.tm-plan-ico{font-size:15px;line-height:1;}
+.tm-sep{height:1px;background:var(--line);margin:6px 4px;}
+.tm-group + .tm-group{border-top:1px solid var(--line);margin-top:4px;padding-top:2px;}
+.tm-group-head{list-style:none;display:flex;align-items:center;gap:8px;padding:8px 10px 6px;cursor:pointer;user-select:none;}
+.tm-group-head::-webkit-details-marker{display:none;}
+.tm-group-head::before{content:"▸";font-size:10px;color:var(--ink-faint);transition:transform .15s;}
+.tm-group[open] > .tm-group-head::before{transform:rotate(90deg);}
+.tm-group-label{font:800 10.5px/1 "Hanken Grotesk",system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);}
+.tm-group-count{margin-left:auto;font-size:11px;font-weight:700;color:var(--ink-faint);background:var(--paper-2);border-radius:999px;padding:1px 7px;}
+.tm-item{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 14px;border-radius:9px;text-decoration:none;
+  color:var(--ink);font-size:13.5px;font-weight:600;min-width:0;}
+.tm-item:hover{background:var(--paper-2);}
+.tm-item.on{background:color-mix(in srgb,var(--tema-accent) 12%,#fff);color:color-mix(in srgb,var(--tema-accent) 82%,#000);}
+.tm-num{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;
+  font-family:"Fraunces",serif;font-weight:700;font-size:12px;background:var(--paper-2);color:var(--ink-soft);}
+.tm-item.on .tm-num{background:var(--tema-accent);color:#fff;}
+.tm-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
 .opts-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px 8px;}
 .opts-label{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);}
 .opts-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;font-size:14px;font-weight:600;

@@ -38,12 +38,12 @@ function temaItemHtml(t, current){
   const i = allTemas().indexOf(t);
   // número real del tema (de su `k`, p.ej. "Tema 2 · …"); si no, la posición
   const n = (String(t.k || '').match(/Tema\s+(\d+)/i) || [])[1] || String(i + 1);
-  // los bloques/secciones del tema (sus chips de salto), separados y con ellipsis
-  const blq = (t.chips || []).map(c => c.label).join(' · ');
+  // Una sola línea: número y título. Sin los apartados del tema (se ven dentro
+  // de la página); listarlos aquí hacía el menú enorme.
+  const on = t === current;
   return `
-                <a class="opts-item${t === current ? ' on' : ''}" href="#/tema/${t.id}">
-                  <span class="ti-num">${n}</span>
-                  <span class="ti-body"><span class="ti-title">Tema ${n} — ${t.titulo}</span>${blq ? `<span class="ti-desc">${blq}</span>` : `<span class="ti-desc">${t.descripcion || ''}</span>`}</span>
+                <a class="tm-item${on ? ' on' : ''}" href="#/tema/${t.id}"${on ? ' aria-current="page"' : ''}>
+                  <span class="tm-num">${n}</span><span class="tm-title">${t.titulo}</span>
                 </a>`;
 }
 function temasDropdownHtml(tema){
@@ -61,9 +61,13 @@ function temasDropdownHtml(tema){
       if(!g){ g = { label: b ? b.label : null, temas: [] }; byId.set(key, g); groups.push(g); }
       g.temas.push(t);
     });
-    inner = groups.map(g =>
-      (g.label ? `<div class="ti-bloque-head" role="presentation">${g.label}</div>` : '')
-      + g.temas.map(t => temaItemHtml(t, tema)).join('')
+    /* Cada bloque se pliega; se abre el que contiene el tema actual. */
+    inner = groups.map(g => g.label
+      ? `<details class="tm-group"${g.temas.includes(tema) ? ' open' : ''}>`
+        + `<summary class="tm-group-head"><span class="tm-group-label">${g.label}</span>`
+        + `<span class="tm-group-count">${g.temas.length}</span></summary>`
+        + g.temas.map(t => temaItemHtml(t, tema)).join('') + `</details>`
+      : g.temas.map(t => temaItemHtml(t, tema)).join('')
     ).join('');
   } else {
     inner = temas.map(t => temaItemHtml(t, tema)).join('');
@@ -71,12 +75,11 @@ function temasDropdownHtml(tema){
   return `
             <div class="opts-wrap">
               <button class="btn ghost" id="temasBtn" aria-haspopup="true" aria-expanded="false"><span class="nav-ico">${ICONS.list}</span><span class="nav-lab">Temas</span></button>
-              <div class="opts-pop opts-pop-left" id="temasPop" role="menu" hidden>
-                <button class="opts-item ti-action" id="planItem" type="button" role="menuitem">
-                  <span class="ti-num ti-num-ico">📋</span>
-                  <span class="ti-body"><span class="ti-title">Plan de estudio</span><span class="ti-desc">Prioridades de todo el temario, en árbol</span></span>
+              <div class="opts-pop opts-pop-left tm-pop" id="temasPop" role="menu" hidden>
+                <button class="tm-plan" id="planItem" type="button" role="menuitem">
+                  <span class="tm-plan-ico" aria-hidden="true">📋</span><span>Plan de estudio</span>
                 </button>
-                <div class="ti-sep" role="separator"></div>
+                <div class="tm-sep" role="separator"></div>
                 ${inner}
               </div>
             </div>`;
@@ -186,6 +189,10 @@ export const temaViewFactory = {
         /* Desplegables del navbar: Temas (navegación) y Opciones (herramientas).
            En Opciones los clics internos NO cierran el menú (son toggles). */
         bindDropdown(root.querySelector('#temasBtn'), root.querySelector('#temasPop'), { signal });
+        /* Plegar un bloque no cierra el menú: el clic en su cabecera no llega al cierre por clic fuera. */
+        root.querySelector('#temasPop').addEventListener('click', (e) => {
+          if(e.target.closest('summary')) e.stopPropagation();
+        }, { signal });
         root.querySelector('#planItem')?.addEventListener('click', () => openStudyPlan(), { signal });
         const opts = bindDropdown(root.querySelector('#optsBtn'), root.querySelector('#optsPop'), { signal, closeOnItemClick: false });
 
