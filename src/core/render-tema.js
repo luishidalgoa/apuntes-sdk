@@ -9,7 +9,9 @@ import { listData } from './enum-list.js';
 export function linkify(text, refs){
   if(!refs || !text) return text;
   refs.forEach(r => {
-    text = text.replace(r.t, '<button class="ref-tag" data-ref="' + r.r + '" type="button">→ ' + r.t + '</button>');
+    /* `rs` = varios destinos para el mismo texto: el panel los lista todos. */
+    const key = r.rs && r.rs.length > 1 ? 'multi:' + r.rs.join('|') : (r.rs ? r.rs[0] : r.r);
+    text = text.replace(r.t, '<button class="ref-tag" data-ref="' + key + '" type="button">→ ' + r.t + '</button>');
   });
   return text;
 }
@@ -121,7 +123,12 @@ export function renderCard(ctx, card, cls){
     : (prioVal ? ' data-prio-invalido="' + prioVal.replace(/[^a-z0-9_-]/g, '') + '"' : '');
   return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '"' + prio + '>'
     + '<div class="card-head"><div class="body">'
-    + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span></div>'
+    + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span>'
+    /* Tarjeta padre: badge con los artículos que la amplían (engine.relations). */
+    + (((ctx && ctx.relations) || {})[markId] && ((ctx.relations || {})[markId]).length
+      ? ' <button class="rel-badge" type="button" data-ref="rel:' + markId + '" title="Artículos que la amplían">↳ amplía ' + ((ctx.relations || {})[markId]).length + '</button>'
+      : '')
+    + '</div>'
     + '<p class="desc">' + card.desc + '</p>'
     + '<p class="truco"><span class="bulb">' + (card.trucoIcon || '💡') + '</span><span>' + card.truco + '</span></p>'
     + '</div>'

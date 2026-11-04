@@ -72,23 +72,69 @@ function tagRows(c, ap){
   }).join('');
 }
 
+/* `external` admite UN destino (objeto) o VARIOS (lista). Cada destino tiene su
+   prefijo (T1-, T3-…): se usa el primero cuyo prefijo case con la clave. */
+export function externalsOf(c){ return c && c.external ? [].concat(c.external) : []; }
+export function externalFor(c, k){
+  return externalsOf(c).find(e => String(k).indexOf(e.prefix) === 0) || null;
+}
+
+/* Título legible de una clave de referencia (sección del tema, o externa). */
+function titleOfKey(c, k){
+  const resolved = resolveRef(c, k);
+  if(resolved) return c.labelFor(resolved.artNum) + ' · ' + resolved.art.title;
+  const ext = externalFor(c, k);
+  if(ext){
+    const num = k.slice(ext.prefix.length);
+    return ext.label + ' · ' + (ext.map[num.split('.')[0]] || ('artículo ' + num));
+  }
+  return k;
+}
+
+/* Varios destinos en un mismo texto («arts. 9.2, 10, 14 y 49»): un panel con el
+   contenido de cada uno, separados. Clave: `multi:K1|K2|…`. */
+function multiContent(c, keys){
+  const parts = keys.map(sk => buildPanelContent(c, sk));
+  return {
+    title: parts.length + ' referencias',
+    kind: 'ref',
+    body: parts.map(p => '<h4 class="rp-h">' + p.title + '</h4>' + p.body).join('<hr class="rp-sep">')
+  };
+}
+
+/* Badge de una tarjeta padre: lista de artículos que la amplían. Clave: `rel:<padre>`.
+   Los hijos son claves de referencia normales: cada una abre su propio panel. */
+function relContent(c, parentKey){
+  const kids = ((c.relations || {})[parentKey]) || [];
+  return {
+    title: 'Amplían ' + parentKey,
+    kind: 'ref',
+    body: '<ul class="rel-list">' + kids.map(k =>
+      '<li><button class="ref-tag" data-ref="' + k + '" type="button">→ ' + titleOfKey(c, k) + '</button></li>').join('')
+      + '</ul>'
+  };
+}
+
 export function buildPanelContent(c, key){
   const k = String(key);
+  if(k.indexOf('multi:') === 0) return multiContent(c, k.slice(6).split('|'));
+  if(k.indexOf('rel:') === 0) return relContent(c, k.slice(4));
   /* Referencia a OTRO tema (p.ej. T1-53.2 desde Tema 2): panel con enlace
      de navegación interna (antes abría el archivo del Tema 1 en otra pestaña). */
-  if(c.external && k.indexOf(c.external.prefix) === 0){
-    const num = k.slice(c.external.prefix.length);
+  const ext = externalFor(c, k);
+  if(ext){
+    const num = k.slice(ext.prefix.length);
     const dot = num.indexOf('.');
     const artNum = dot === -1 ? num : num.slice(0, dot);
     const apN = dot === -1 ? null : num.slice(dot + 1);
-    const title = c.external.map[artNum] || ('artículo ' + artNum);
+    const title = ext.map[artNum] || ('artículo ' + artNum);
     const anchor = anchorId(artNum, apN);
     return {
-      title: num + ' · ' + c.external.label,
+      title: num + ' · ' + ext.label,
       kind: 'ext',
-      body: '<p><span class="sp-pill">Contenido de ' + c.external.label + '</span></p>'
-        + '<p><b>' + title + '</b> vive en ' + c.external.label + ', no en este tema.</p>'
-        + '<p><a class="btn small on" href="#/tema/' + c.external.temaId + '/' + anchor + '">→ Abrir en ' + c.external.label + '</a></p>'
+      body: '<p><span class="sp-pill">Contenido de ' + ext.label + '</span></p>'
+        + '<p><b>' + title + '</b> vive en ' + ext.label + ', no en este tema.</p>'
+        + '<p><a class="btn small on" href="#/tema/' + ext.temaId + '/' + anchor + '">→ Abrir en ' + ext.label + '</a></p>'
     };
   }
   const resolved = resolveRef(c, key);
@@ -230,7 +276,7 @@ export function revealAnchor(id, { flash = true, saveReturn = false } = {}){
 
 function jumpTo(tag, key){
   const k = String(key);
-  if(ctx.external && k.indexOf(ctx.external.prefix) === 0){ openPanel(tag, key); return; }
+  if(externalFor(ctx, k)){ openPanel(tag, key); return; }
   const resolved = resolveRef(ctx, key);
   if(!resolved){ openPanel(tag, key); return; }
   const { artNum, ap } = resolved;
@@ -300,7 +346,7 @@ export function mountPanels(shell){
       if(panel.classList.contains('open')) closePanel();
       return;
     }
-    const tag = e.target.closest('.ref-tag, .susp-tag');
+    const tag = e.target.closest('.ref-tag, .susp-tag, .rel-badge');
     if(tag){
       e.stopPropagation();
       if(ftPanel.classList.contains('open')) closeFullText();

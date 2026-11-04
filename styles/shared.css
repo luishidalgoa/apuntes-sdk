@@ -714,3 +714,12 @@ div.ap-txt,div.atxt{display:block;}
 .note-preview mark{background:color-mix(in srgb,var(--tema-accent) 22%,transparent);color:inherit;padding:0 2px;border-radius:3px;}
 .note-preview a{color:var(--tema-accent);}
 .note-hint{margin:6px 0 0;font-size:11.5px;color:var(--ink-faint);}
+
+/* Relaciones entre artículos (engine.relations, varios destinos en refs) */
+.rel-badge{display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;border:1px solid var(--line);
+  background:var(--paper-2);color:var(--ink-soft);border-radius:999px;padding:1px 8px;font:600 11px/1.4 "Hanken Grotesk",system-ui,sans-serif;cursor:pointer;}
+.rel-badge:hover{color:var(--tema-accent);border-color:var(--tema-accent);}
+.rel-list{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.rel-list .ref-tag{text-align:left;}
+.rp-h{margin:4px 0 6px;font-size:13.5px;}
+.rp-sep{border:0;border-top:1px dashed var(--line);margin:12px 0;}
