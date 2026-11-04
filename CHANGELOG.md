@@ -378,6 +378,14 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.7
+- **Cambio (relaciones)**: `engine.relations` se declara desde la tarjeta
+  AMPLIADA: `{ 'LOPDGDD-13': ['LOPDGDD-12'] }`. Sustituye al formato de v0.12.6
+  (que lo declaraba desde la padre).
+  - La ampliada muestra una flecha de entrada «← N» con quién la amplía.
+  - La ampliadora muestra una flecha de salida «→ N» con a quién amplía. Esa
+    salida se deduce invirtiendo el mismo mapa: no hay que escribirla.
+
 ## v0.12.6
 - **Nuevo (referencias)**: tres ampliaciones del formato de referencias, sin
   tocar los temas que ya funcionan:
