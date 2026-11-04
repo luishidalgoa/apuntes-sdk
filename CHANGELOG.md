@@ -378,6 +378,17 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.6
+- **Nuevo (referencias)**: tres ampliaciones del formato de referencias, sin
+  tocar los temas que ya funcionan:
+  - `relations` en el `engine` del tema: `{ claveTarjeta: [claves hijas] }`.
+    La tarjeta padre muestra un badge «amplía N» y, al pulsarlo, lista los hijos
+    (cada uno abre su panel). Las hijas no llevan badge.
+  - `external` admite una lista de destinos (cada uno con su prefijo). Un objeto
+    sigue valiendo.
+  - `refs` admite `rs: [destinos]` para un mismo texto. El panel muestra el
+    contenido de cada destino. Con un solo elemento funciona como `r`.
+
 ## v0.12.5
 - **Cambio (navegación)**: el desplegable «Temas» del navbar es compacto. Cada
   tema muestra solo su número y su título (antes listaba todos sus apartados
