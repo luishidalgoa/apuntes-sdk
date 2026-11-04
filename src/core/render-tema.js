@@ -5,6 +5,7 @@
              sourceDigitFallback, specialTags?, external? } */
 import { anchorId, config } from '../config.js';
 import { listData } from './enum-list.js';
+import { ampliadorasDe, ampliadasDe } from './relations.js';
 
 export function linkify(text, refs){
   if(!refs || !text) return text;
@@ -124,9 +125,13 @@ export function renderCard(ctx, card, cls){
   return '<div class="node reveal"><div class="card ' + cls + '" data-mark-id="' + markId + '"' + prio + '>'
     + '<div class="card-head"><div class="body">'
     + '<div class="row1"><span class="sig">' + card.sig + '</span><span class="name">' + card.name + '</span>'
-    /* Tarjeta padre: badge con los artículos que la amplían (engine.relations). */
-    + (((ctx && ctx.relations) || {})[markId] && ((ctx.relations || {})[markId]).length
-      ? ' <button class="rel-badge" type="button" data-ref="rel:' + markId + '" title="Artículos que la amplían">↳ amplía ' + ((ctx.relations || {})[markId]).length + '</button>'
+    /* Relaciones (engine.relations): ← si esta tarjeta es AMPLIADA por otras,
+       → si ella AMPLÍA a otras (esa salida se deduce del mismo mapa). */
+    + (ampliadorasDe(ctx, markId).length
+      ? ' <button class="rel-badge rel-in" type="button" data-ref="rel:in:' + markId + '" title="Ampliada por otros artículos">← ' + ampliadorasDe(ctx, markId).length + '</button>'
+      : '')
+    + (ampliadasDe(ctx, markId).length
+      ? ' <button class="rel-badge rel-out" type="button" data-ref="rel:out:' + markId + '" title="Amplía a otros artículos">→ ' + ampliadasDe(ctx, markId).length + '</button>'
       : '')
     + '</div>'
     + '<p class="desc">' + card.desc + '</p>'

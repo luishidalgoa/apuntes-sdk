@@ -74,6 +74,8 @@ function tagRows(c, ap){
 
 /* `external` admite UN destino (objeto) o VARIOS (lista). Cada destino tiene su
    prefijo (T1-, T3-…): se usa el primero cuyo prefijo case con la clave. */
+import { ampliadorasDe, ampliadasDe } from './relations.js';
+
 export function externalsOf(c){ return c && c.external ? [].concat(c.external) : []; }
 export function externalFor(c, k){
   return externalsOf(c).find(e => String(k).indexOf(e.prefix) === 0) || null;
@@ -102,15 +104,20 @@ function multiContent(c, keys){
   };
 }
 
-/* Badge de una tarjeta padre: lista de artículos que la amplían. Clave: `rel:<padre>`.
-   Los hijos son claves de referencia normales: cada una abre su propio panel. */
-function relContent(c, parentKey){
-  const kids = ((c.relations || {})[parentKey]) || [];
+/* Badge de relación de una tarjeta. Clave: `rel:in:<k>` (← ampliada por…) o
+   `rel:out:<k>` (→ amplía a…). Cada elemento de la lista es una clave normal:
+   al pulsarlo abre su propio panel. */
+function relContent(c, spec){
+  const cut = spec.indexOf(':');
+  const entrada = spec.slice(0, cut) === 'in';
+  const key = spec.slice(cut + 1);
+  const otras = entrada ? ampliadorasDe(c, key) : ampliadasDe(c, key);
   return {
-    title: 'Amplían ' + parentKey,
+    title: entrada ? 'Ampliada por' : 'Amplía a',
     kind: 'ref',
-    body: '<ul class="rel-list">' + kids.map(k =>
-      '<li><button class="ref-tag" data-ref="' + k + '" type="button">→ ' + titleOfKey(c, k) + '</button></li>').join('')
+    body: '<p><b>' + titleOfKey(c, key) + '</b> ' + (entrada ? 'es ampliado por:' : 'amplía a:') + '</p>'
+      + '<ul class="rel-list">' + otras.map(k =>
+        '<li><button class="ref-tag" data-ref="' + k + '" type="button">' + (entrada ? '← ' : '→ ') + titleOfKey(c, k) + '</button></li>').join('')
       + '</ul>'
   };
 }
