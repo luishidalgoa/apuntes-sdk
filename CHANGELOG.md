@@ -378,6 +378,13 @@ Cómo consume una app una versión (en su `package.json`):
     «✨ Responder con IA». `config.js`: `searchAiSystemPrompt` (opcional).
     `styles/search.css`. 100% agnóstico, lo heredan todas las apps del núcleo.
 
+## v0.12.8
+- **Nuevo (verify)**: comprobaciones del mapa de referencias, opt-in con
+  `engine.mapaReferencias: true`. Avisa si el tema no tiene refs ni relations
+  (`mapa-sin-aplicar`), si una clave de relations no es data-mark-id de ninguna
+  tarjeta (`relacion-sin-tarjeta`) o si una relación apunta a una clave que no
+  existe (`relacion-huerfana`). Sin el campo, no cambia nada.
+
 ## v0.12.7
 - **Cambio (relaciones)**: `engine.relations` se declara desde la tarjeta
   AMPLIADA: `{ 'LOPDGDD-13': ['LOPDGDD-12'] }`. Sustituye al formato de v0.12.6
