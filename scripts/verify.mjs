@@ -157,6 +157,42 @@ function revisarEngine(t){
     'Dos apartados con el mismo número generan la misma ancla.');
 }
 
+/* Mapa de referencias (opt-in: `engine.mapaReferencias: true`). Comprueba solo los
+   DATOS que el SDK conoce: que el mapa esté aplicado y que sus claves existan. Si un
+   proyecto tiene su propio esquema (p. ej. un referencias.md), esa parte la comprueba
+   el proyecto. Sin el campo, no mira nada. */
+function revisarMapaReferencias(t, box){
+  const eng = t.engine || {};
+  if(eng.mapaReferencias !== true) return;
+  const id = t.id;
+  const secs = eng.sections || {};
+  const rel = eng.relations || {};
+  let nRefs = box ? box.querySelectorAll('[data-ref]').length : 0;
+  for(const art of Object.values(secs)){
+    nRefs += ((art && art.refs) || []).length;
+    for(const ap of ((art && art.apartados) || [])) nRefs += ((ap.refs) || []).length;
+  }
+  if(!nRefs && !Object.keys(rel).length){
+    add(id, 'warn', 'mapa-sin-aplicar',
+      '`mapaReferencias` está declarado, pero el tema no tiene refs ni relations',
+      'El mapa no está aplicado: aplica las referencias, o quita el campo si este tema no las usa.');
+    return;
+  }
+  if(!box) return;   /* sin DOM no hay tarjetas que cotejar */
+  const marcas = new Set([...box.querySelectorAll('.card[data-mark-id]')].map(c => c.getAttribute('data-mark-id')));
+  const existe = (k) => marcas.has(k) || !!secs[splitKey(k, eng.keySplit)[0]];
+  const sinTarjeta = Object.keys(rel).filter(k => !marcas.has(k));
+  if(sinTarjeta.length) add(id, 'warn', 'relacion-sin-tarjeta',
+    `${sinTarjeta.length} clave(s) de relations no son data-mark-id de ninguna tarjeta${muestra(sinTarjeta)}`,
+    'La flecha sale en la tarjeta con ese data-mark-id: si la clave no coincide, no sale ninguna.');
+  const huerfanas = [];
+  for(const [amp, padres] of Object.entries(rel))
+    for(const p of [].concat(padres || [])) if(!existe(p)) huerfanas.push(`${amp} → ${p}`);
+  if(huerfanas.length) add(id, 'warn', 'relacion-huerfana',
+    `${huerfanas.length} relación(es) apuntan a una clave que no existe en el tema${muestra(huerfanas)}`,
+    'Revisa la grafía: la flecha de salida se calcularía sobre una tarjeta que no hay.');
+}
+
 /* CHROME del SDK: botones que trae la app, no la escena del tema. */
 const ES_CHROME = /\b(mark-btn|disclosure|stp-[\w-]+|exam-[\w-]+|acro|search-[\w-]+|sp-[\w-]+|nav-[\w-]+|btn-fav)\b/;
 
@@ -932,7 +968,7 @@ const idsVistos = new Set(), idsGlobales = new Map();
 for(const t of TEMAS){
   revisarManifiesto(t, idsVistos);
   revisarEngine(t);
-  if(typeof t.renderContent !== 'function') continue;
+  if(typeof t.renderContent !== 'function'){ revisarMapaReferencias(t, null); continue; }
   const box = document.createElement('div');
   try { t.renderContent(box); }
   catch (e) {
@@ -941,6 +977,7 @@ for(const t of TEMAS){
     continue;
   }
   revisarDom(t, box, idsGlobales);
+  revisarMapaReferencias(t, box);
 }
 
 const { examenes: EXAMENES, dir: dirEx } = await cargarExamenes(registryPath);
